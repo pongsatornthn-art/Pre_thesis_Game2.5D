@@ -1,0 +1,35 @@
+# โฟลเดอร์จำลองของ Unity (ห้ามอัปโหลด)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+
+# ไฟล์ตั้งค่าโปรแกรมเขียนโค้ด (Visual Studio / Rider)
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+ExportedObj/
+
+# ไฟล์ระบบที่สร้างอัตโนมัติ
+sysinfo.txt
+*.apk
+*.unitypackage
+*.app
