@@ -1,36 +1,57 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UI; // สำคัญมาก: ต้องมีเพื่อเรียกใช้งาน Slider
 
-public class EnemyDummy : Entity
+public class EnemyDummy : MonoBehaviour, IDamageable
 {
+    [Header("Stats")]
+    public int maxHealth = 100;
+    private int currentHealth;
+
     [Header("UI")]
-    public Slider healthBarSlider;
+    public Slider healthSlider; // เปลี่ยนจาก Image เป็น Slider
 
-    protected override void Start()
+    void Start()
     {
-        base.Start();
+        currentHealth = maxHealth;
 
-        if (healthBarSlider != null)
+        // ตั้งค่าหลอดเลือดสูงสุดให้ตรงกับ Max Health ตั้งแต่เริ่ม
+        if (healthSlider != null)
         {
-            healthBarSlider.maxValue = maxHealth;
-            healthBarSlider.value = currentHealth;
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = currentHealth;
         }
     }
 
-    public override void TakeDamage(int damageAmount)
+    public void TakeDamage(int damage, float knockback)
     {
-        base.TakeDamage(damageAmount);
+        currentHealth -= damage;
+        Debug.Log($"<color=orange>{gameObject.name} โดนฟัน {damage} ดาเมจ! เลือดเหลือ {currentHealth}</color>");
 
-        if (healthBarSlider != null)
+        UpdateHealthBar();
+
+        if (currentHealth <= 0)
         {
-            healthBarSlider.value = currentHealth;
+            Die();
         }
     }
 
-    public override void Die()
+    public void TakeDamage(int damage)
     {
-        Debug.Log($"{gameObject.name} ถูกจัดการแล้ว!");
+        TakeDamage(damage, 0f);
+    }
 
+    private void UpdateHealthBar()
+    {
+        if (healthSlider != null)
+        {
+            // ดันค่าตัวเลขเลือดปัจจุบันเข้าไปที่ Slider ได้ตรงๆ เลย
+            healthSlider.value = currentHealth;
+        }
+    }
+
+    public void Die()
+    {
+        Debug.Log("<color=red>กระสอบทรายพัง!</color>");
         Destroy(gameObject);
     }
 }

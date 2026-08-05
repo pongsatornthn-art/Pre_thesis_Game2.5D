@@ -24,4 +24,9 @@ public abstract class Entity : MonoBehaviour, IDamageable
 
     // บังคับให้คลาสลูกต้องเขียนฟังก์ชันตายของตัวเอง
     public abstract void Die();
+
+    public void TakeDamage(int damageAmount, float knockback)
+    {
+        throw new System.NotImplementedException();
+    }
 }
