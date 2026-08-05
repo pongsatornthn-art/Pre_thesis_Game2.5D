@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 740a5462962be7d4cacaaa4315c81409, type: 3}
   m_Name: teat
   m_EditorClassIdentifier: 
-  itemName: New Item
-  icon: {fileID: 0}
+  itemName: teat
+  icon: {fileID: 21300000, guid: adc76a934b766f9458aa1fd59f468e8c, type: 3}
   description: 
   descriptionImage: {fileID: 0}
   isStackable: 1

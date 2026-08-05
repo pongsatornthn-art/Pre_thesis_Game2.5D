@@ -41,16 +41,43 @@ public class InventoryUI : MonoBehaviour
         inventory = Inventory.Instance;
         if (inventory != null) inventory.OnInventoryChanged += UpdateUI;
 
-        hotbarSlots = hotbarGrid.GetComponentsInChildren<InventorySlotUI>();
-        backpackSlots = backpackGrid.GetComponentsInChildren<InventorySlotUI>();
+        // 🟢 เติมคำว่า (true) เข้าไปในวงเล็บ เพื่อสั่งให้มันค้นหาช่อง Slot เจอ "แม้ว่าจะถูกปิดซ่อนอยู่" ก็ตาม!
+        if (hotbarGrid != null) hotbarSlots = hotbarGrid.GetComponentsInChildren<InventorySlotUI>(true);
+        if (backpackGrid != null) backpackSlots = backpackGrid.GetComponentsInChildren<InventorySlotUI>(true);
 
         if (hotbarController != null) hotbarController.OnHotbarSlotSelected += MoveSelectionCursor;
+
+        // กำหนด Index ให้แต่ละช่องตั้งแต่ตอนเริ่มเกม
+        InitializeSlotIndexes();
 
         UpdateUI();
 
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         MoveSelectionCursor(0);
         SetMouseState(false);
+    }
+
+    void InitializeSlotIndexes()
+    {
+        int currentIndex = 0; // เริ่มนับจาก 0
+
+        if (hotbarSlots != null)
+        {
+            for (int i = 0; i < hotbarSlots.Length; i++)
+            {
+                hotbarSlots[i].slotIndex = currentIndex;
+                currentIndex++;
+            }
+        }
+
+        if (backpackSlots != null)
+        {
+            for (int i = 0; i < backpackSlots.Length; i++)
+            {
+                backpackSlots[i].slotIndex = currentIndex;
+                currentIndex++;
+            }
+        }
     }
 
     void OnDestroy()

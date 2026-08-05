@@ -144,10 +144,9 @@ public class Inventory : MonoBehaviour
         currentEquippedItem = null;
         OnEquipChanged?.Invoke(null);
     }
-    // ให้อยู่ใน Inventory.cs
     public void SwapItems(int fromIndex, int toIndex)
     {
-        // เติมช่องว่าง (null) ให้เต็มกัน Error ในกรณีที่ลากไปวางในช่องที่ยังไม่เคยมีข้อมูลเลย
+        // เติมช่องว่าง (null) ให้เต็มกัน Error 
         while (items.Count <= Mathf.Max(fromIndex, toIndex))
         {
             items.Add(null);
@@ -160,7 +159,7 @@ public class Inventory : MonoBehaviour
 
         Debug.Log($"<color=cyan>สลับไอเทมจากช่อง {fromIndex} ไปช่อง {toIndex} เรียบร้อย!</color>");
 
-        // ตรงนี้สำคัญ: ถ้าคุณพงศธรมีระบบอัปเดต UI (เช่น event หรือเรียก UI_Manager) อย่าลืมเรียกใช้นะครับ
-        // เช่น OnInventoryChanged?.Invoke(); หรือถ้าผูก UpdateUI ไว้ในฟังก์ชัน Update() อยู่แล้วก็จะอัปเดตทันทีครับ
+        // ⭐ บรรทัดนี้สำคัญมาก! เป็นการตะโกนบอกไฟล์ InventoryUI ว่า "เห้ย! ของสลับแล้ว วาดรูปใหม่เดี๋ยวนี้!"
+        OnInventoryChanged?.Invoke();
     }
 }
