@@ -14,7 +14,6 @@ public class InventorySlotUI : MonoBehaviour, IDropHandler, IInventorySlotUI
     {
         item = newItem;
 
-        // 🟢 เพิ่มตัวเช็ก ถ้าลืมลากช่อง Icon ให้มันค้นหาให้อัตโนมัติเลย จะได้ไม่ Error อีก
         if (icon == null)
         {
             icon = transform.Find("ItemIcon")?.GetComponent<Image>();
@@ -28,7 +27,8 @@ public class InventorySlotUI : MonoBehaviour, IDropHandler, IInventorySlotUI
 
         if (amountText != null)
         {
-            if (amount > 1)
+            // 🌟 แก้ตรงบรรทัดนี้ครับ เปลี่ยนจาก (amount > 1) เป็น (amount >= 1)
+            if (amount >= 1)
             {
                 amountText.text = amount.ToString();
                 amountText.gameObject.SetActive(true);

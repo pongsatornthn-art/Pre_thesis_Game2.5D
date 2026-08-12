@@ -1,55 +1,52 @@
 ﻿using UnityEngine;
-using UnityEngine.EventSystems; // ⭐ สำคัญมาก: ต้องมีเพื่อใช้ระบบเมาส์ลาก
+using UnityEngine.EventSystems;
 
 public class ItemDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     public InventorySlotUI mySlot;
-
-    private RectTransform rectTransform;
     private CanvasGroup canvasGroup;
-    private Canvas canvas;
-    private Vector2 startPosition;
+    private Vector3 startPosition;
     private Transform originalParent;
 
     void Awake()
     {
-        rectTransform = GetComponent<RectTransform>();
+        // ค้นหา Canvas Group ที่เราแปะไว้ใน Inspector
         canvasGroup = GetComponent<CanvasGroup>();
-        canvas = GetComponentInParent<Canvas>(); // หาตัว Canvas หลัก
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        // ถ้าช่องนั้นว่างเปล่า (ไม่มีไอเทม) ห้ามลาก
-        if (mySlot == null || mySlot.item == null) return;
-
-        startPosition = rectTransform.anchoredPosition;
+        startPosition = transform.position;
         originalParent = transform.parent;
 
-        // ดึงรูปขึ้นมาไว้ชั้นบนสุด จะได้ไม่โดนช่องอื่นบังตอนลาก
-        transform.SetParent(canvas.transform);
-        transform.SetAsLastSibling();
+        // 🌟 พระเอกของเราอยู่ตรงนี้! สั่งให้รูปไอเทม "โปร่งใสต่อเมาส์" ชั่วคราว
+        if (canvasGroup != null)
+        {
+            canvasGroup.blocksRaycasts = false;
+        }
 
-        // 💥 ปิดบล็อก Raycast รูปไอเทมตัวเองชั่วคราว เพื่อให้เมาส์สามารถทะลุไปกดช่อง Slot ข้างล่างได้
-        canvasGroup.blocksRaycasts = false;
+        // ดึงไอเทมขึ้นมาวาดหน้าสุด จะได้ไม่มุดไปอยู่ใต้กรอบ UI อื่นตอนลาก
+        transform.SetParent(transform.root);
+        transform.SetAsLastSibling();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (mySlot == null || mySlot.item == null) return;
-        // ให้รูปขยับตามเมาส์
-        rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
+        // ให้รูปไอเทมลอยตามเมาส์
+        transform.position = Input.mousePosition;
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (mySlot == null || mySlot.item == null) return;
+        // 🌟 พอปล่อยเมาส์ปุ๊บ เปิดให้มันกลับมาขวางเมาส์เหมือนเดิม (เพื่อรอบางคนมาจับลากใหม่)
+        if (canvasGroup != null)
+        {
+            canvasGroup.blocksRaycasts = true;
+        }
 
-        // ดึงรูปกลับเข้าที่เดิมของตัวเองก่อน (ส่วนการสลับของ โค้ดของ Slot จะเป็นคนทำ)
+        // ดึงรูปกลับเข้าช่องแม่เดิมทันที 
+        // (ถ้าสลับของสำเร็จเดี๋ยวสคริปต์ UpdateUI จะจัดการรีเฟรชภาพให้เอง)
         transform.SetParent(originalParent);
-        rectTransform.anchoredPosition = startPosition;
-
-        // เปิด Raycast กลับมาให้รูปคลิกได้ตามปกติ
-        canvasGroup.blocksRaycasts = true;
+        transform.position = startPosition;
     }
 }

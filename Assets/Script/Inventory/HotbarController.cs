@@ -1,69 +1,98 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+using System;
+using System.Collections;
 
-/// <summary>
-/// ⭐ รวมจุดที่เคยทำงานซ้ำกัน 2 ที่ (HotbarController เดิม + SelectHotbarSlot/HandleHotbarInput ใน InventoryUI เดิม)
-/// ให้เหลือจุดเดียว: สคริปต์นี้เป็นเจ้าของ "ช่อง hotbar ที่เลือกอยู่" ทั้งหมด
-/// InventoryUI แค่ subscribe event เพื่ออัปเดตกรอบไฮไลต์เท่านั้น ไม่ทำ logic ซ้ำอีก
-/// </summary>
 public class HotbarController : MonoBehaviour
 {
-    [Tooltip("จำนวนช่อง hotbar ที่ใช้ปุ่มเลข (1-9) ได้")]
-    public int hotbarSize = 9;
+    [Header("Hotbar Settings")]
+    public int totalSlots = 4;
+    private int selectedIndex = 0;
 
-    public int CurrentSlotIndex { get; private set; } = 0;
-
-    /// <summary>แจ้งเมื่อผู้เล่นเปลี่ยนช่อง hotbar เพื่อให้ UI (กรอบไฮไลต์) อัปเดตตาม</summary>
     public event Action<int> OnHotbarSlotSelected;
 
-    Inventory inventory;
-
-    void Start()
+    IEnumerator Start()
     {
-        inventory = Inventory.Instance;
-        if (inventory != null)
+        // 🌟 1. สมัครรับการแจ้งเตือน เมื่อกระเป๋ามีการเปลี่ยนแปลง (เช่น เก็บของ/ทิ้งของ)
+        if (Inventory.Instance != null)
         {
-            inventory.OnInventoryChanged += RefreshCurrentSlot;
+            Inventory.Instance.OnInventoryChanged += RefreshCurrentSlot;
         }
-        RefreshCurrentSlot();
+
+        yield return new WaitForEndOfFrame();
+        SelectSlot(0);
     }
 
     void OnDestroy()
     {
-        if (inventory != null) inventory.OnInventoryChanged -= RefreshCurrentSlot;
+        // ยกเลิกการรับแจ้งเตือนเมื่อลบสคริปต์ทิ้ง (กัน Error ปลายทาง)
+        if (Inventory.Instance != null)
+        {
+            Inventory.Instance.OnInventoryChanged -= RefreshCurrentSlot;
+        }
     }
 
     void Update()
     {
-        for (int i = 0; i < hotbarSize; i++)
+        if (Input.GetKeyDown(KeyCode.Alpha1)) SelectSlot(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SelectSlot(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SelectSlot(2);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) SelectSlot(3);
+
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll > 0f)
         {
-            if (Input.GetKeyDown(KeyCode.Alpha1 + i))
-            {
-                SelectSlot(i);
-            }
+            selectedIndex--;
+            if (selectedIndex < 0) selectedIndex = totalSlots - 1;
+            SelectSlot(selectedIndex);
+        }
+        else if (scroll < 0f)
+        {
+            selectedIndex++;
+            if (selectedIndex >= totalSlots) selectedIndex = 0;
+            SelectSlot(selectedIndex);
         }
     }
 
-    public void SelectSlot(int index)
+    private void SelectSlot(int index)
     {
-        if (index < 0 || index >= hotbarSize) return;
-
-        CurrentSlotIndex = index;
+        selectedIndex = index;
         OnHotbarSlotSelected?.Invoke(index);
-        RefreshCurrentSlot();
+
+        // ดึงอาวุธขึ้นมาถือ
+        ForceEquipCurrentSlot();
     }
 
-    /// <summary>สั่ง Inventory ให้สวมใส่/ถอดของตามช่องที่เลือกอยู่ตอนนี้ (เรียกซ้ำได้ปลอดภัยเมื่อของในกระเป๋าเปลี่ยน)</summary>
-    void RefreshCurrentSlot()
+    // 🌟 2. ฟังก์ชันใหม่: คอยเช็กว่าของในช่องปัจจุบัน เปลี่ยนไปจากที่ถืออยู่หรือไม่
+    private void RefreshCurrentSlot()
     {
-        if (inventory == null || inventory.items == null) return;
-        if (CurrentSlotIndex >= inventory.items.Count) return;
+        if (Inventory.Instance == null) return;
 
-        var slot = inventory.items[CurrentSlotIndex];
+        InventoryItem slotItem = Inventory.Instance.GetItemAt(selectedIndex);
+        ItemData itemInSlot = (slotItem != null) ? slotItem.itemData : null;
 
-        if (slot != null)
-            inventory.EquipItem(slot.itemData);
+        // ถ้าของในช่องที่ครอบอยู่ "ไม่ตรง" กับของที่ระบบต่อสู้ถืออยู่ (เช่น เพิ่งเก็บปืนเข้าช่องว่าง) ให้บังคับถือทันที
+        if (Inventory.Instance.currentEquippedItem != itemInSlot)
+        {
+            ForceEquipCurrentSlot();
+        }
+    }
+
+    // 🌟 3. แยกฟังก์ชันบังคับถือของออกมา เพื่อให้ใช้ร่วมกันได้
+    private void ForceEquipCurrentSlot()
+    {
+        if (Inventory.Instance == null) return;
+
+        InventoryItem slotItem = Inventory.Instance.GetItemAt(selectedIndex);
+
+        if (slotItem != null && slotItem.itemData != null)
+        {
+            Inventory.Instance.EquipItem(slotItem.itemData);
+            // Debug.Log($"ถือไอเทม: {slotItem.itemData.itemName}");
+        }
         else
-            inventory.Unequip();
+        {
+            Inventory.Instance.Unequip();
+            // Debug.Log("มือเปล่า");
+        }
     }
 }

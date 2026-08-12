@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 740a5462962be7d4cacaaa4315c81409, type: 3}
+  m_Name: Test_Gun
+  m_EditorClassIdentifier: 
+  itemName: Handgun
+  icon: {fileID: 21300000, guid: e9fce311e3e046c43a01d5dd348ea074, type: 3}
+  description: 
+  descriptionImage: {fileID: 0}
+  isStackable: 0
+  maxStack: 99
+  itemType: 2
+  equippedSprite: {fileID: 0}
+  weaponAnimatorOverride: {fileID: 0}
+  damage: 10
+  attackRange: 20
+  lightAttackCooldown: 0.5
+  attackCooldown: 0.5
+  staminaCost: 10
+  knockback: 3
+  ammoType: {fileID: 11400000, guid: 0ef6bb9d126582c4784f4fd9a1d2c3f2, type: 2}
+  magazineSize: 12
+  reloadTime: 1.5
+  focusTime: 1.5
+  maxSpreadAngle: 15
+  recoilSpread: 5
+  maxDurability: 0
+  price: 50
+  digestionReduceAmount: 20
+  healAmount: 50
+  causesBleeding: 0
+  bleedDuration: 10
+  bleedDamagePerSec: 2
