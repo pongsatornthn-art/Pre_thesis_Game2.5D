@@ -1,0 +1,110 @@
+﻿using UnityEngine;
+
+public class PlayerAnimationController : MonoBehaviour
+{
+    private Animator animator;
+    private PlayerCombat playerCombat;
+    private PlayerMovement playerMovement;
+
+    private string currentAnim;
+    private const float transitionDuration = 0.15f;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        playerCombat = GetComponentInParent<PlayerCombat>();
+        playerMovement = GetComponentInParent<PlayerMovement>();
+
+        if (animator != null)
+        {
+            animator.SetFloat("AimZ", -1f);
+        }
+    }
+
+    void Update()
+    {
+        CheckAnimationState();
+    }
+
+    void CheckAnimationState()
+    {
+        // 1. เช็กว่าถือปืนไหม?
+        bool isHoldingGun = false;
+        if (Inventory.Instance != null && Inventory.Instance.currentEquippedItem != null)
+        {
+            isHoldingGun = Inventory.Instance.currentEquippedItem.itemType == ItemType.RangedWeapon;
+        }
+
+        // 2. ดึงค่าการเคลื่อนที่
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveY = Input.GetAxisRaw("Vertical");
+        bool isMoving = (moveX != 0 || moveY != 0); // เช็กว่ามีการกดปุ่มเดินไหม
+
+        // 3. เช็กสถานะเล็งและยิง
+        bool isAiming = (playerCombat != null) && playerCombat.isAiming;
+        bool isShooting = Input.GetMouseButton(0) && isAiming && isHoldingGun;
+
+        // ------------------------------------------------------------------
+        // 🌟 จุดที่เพิ่มเข้ามาเพื่อแก้แอนิเมชันค้าง (ส่งค่าให้ Blend Tree ทำงาน)
+        // ------------------------------------------------------------------
+        if (animator != null)
+        {
+            // ส่งค่า Speed (ถ้า Blend Tree ใช้ Speed คูณความเร็วแอนิเมชัน ถ้าเป็น 0 มันจะค้าง)
+            animator.SetFloat("Speed", isMoving ? 1f : 0f);
+
+            // ถ้าไม่ได้เล็งปืนอยู่ ให้หันหน้าตามปุ่ม W A S D ที่กด (ส่งค่า AimX, AimZ)
+            if (!isAiming && isMoving)
+            {
+                // แปลงค่าให้สมูทขึ้นนิดหน่อย ป้องกันแอนิเมชันกระตุก
+                Vector2 moveDir = new Vector2(moveX, moveY).normalized;
+                animator.SetFloat("AimX", moveDir.x);
+                animator.SetFloat("AimZ", moveDir.y);
+            }
+        }
+        // ------------------------------------------------------------------
+
+        // ----- ลำดับความสำคัญในการเล่นแอนิเมชัน -----
+        if (isHoldingGun)
+        {
+            if (isShooting)
+            {
+                ChangeAnimation("Shoot_Tree");
+            }
+            else if (isAiming)
+            {
+                ChangeAnimation("Aim_Idle");
+            }
+            else if (isMoving)
+            {
+                ChangeAnimation("Gun_Movement");
+            }
+            else
+            {
+                ChangeAnimation("Idle_Gun_Tree");
+            }
+        }
+        else
+        {
+            if (isMoving)
+            {
+                ChangeAnimation("Movement");
+            }
+            else
+            {
+                ChangeAnimation("Idle");
+            }
+        }
+    }
+
+    public void ChangeAnimation(string newAnim)
+    {
+        if (currentAnim == newAnim) return;
+
+        if (animator != null)
+        {
+ 
+            animator.Play(newAnim);
+            currentAnim = newAnim;
+        }
+    }
+}

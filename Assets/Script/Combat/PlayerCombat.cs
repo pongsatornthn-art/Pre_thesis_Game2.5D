@@ -11,16 +11,21 @@ public class PlayerCombat : MonoBehaviour
     private Camera mainCam;
     public BulletTracer bulletTracerPrefab;
 
-    [Header("Unarmed Stats (สเตตัสมือเปล่า)")]
+    [Header("Unarmed Stats")]
     public int defaultDamage = 5;
     public float defaultRange = 1.5f;
     public float defaultCooldown = 0.5f;
 
-    [Header("Gun States (สถานะปืน)")]
+    [Header("Gun States")]
     public int currentAmmoInMag;
     public float currentSpreadAngle;
     private bool isReloading = false;
     public bool isAiming = false;
+
+    // 🌟 1. เพิ่มตั้งค่าความไวของการหันเมาส์ตอนเล็ง
+    [Header("360 Aiming Settings (เล็งหมุนรอบตัว)")]
+    public float aimSensitivity = 3f; // ความไวเมาส์ (ปรับใน Inspector ได้เลย)
+    private float currentAimAngle = 0f; // องศาการหันหน้าปัจจุบัน
 
     private Dictionary<ItemData, int> weaponAmmoMemory = new Dictionary<ItemData, int>();
     private float nextAttackTime = 0f;
@@ -33,6 +38,11 @@ public class PlayerCombat : MonoBehaviour
         if (Inventory.Instance != null)
         {
             Inventory.Instance.OnEquipChanged += HandleWeaponEquipped;
+
+            if (Inventory.Instance.currentEquippedItem != null)
+            {
+                HandleWeaponEquipped(Inventory.Instance.currentEquippedItem);
+            }
         }
     }
 
@@ -48,12 +58,7 @@ public class PlayerCombat : MonoBehaviour
     {
         isReloading = false;
         isAiming = false;
-
         bool holdingGun = (newWeapon != null && newWeapon.itemType == ItemType.RangedWeapon);
-        if (animator != null)
-        {
-            animator.SetBool("HasGun", holdingGun);
-        }
 
         if (holdingGun)
         {
@@ -75,23 +80,16 @@ public class PlayerCombat : MonoBehaviour
         if (isReloading) return;
 
         ItemData weapon = GetEquippedWeapon();
+        bool isHoldingGun = (weapon != null && weapon.itemType == ItemType.RangedWeapon);
 
-        if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
+        if (isHoldingGun)
         {
-            isAiming = Input.GetMouseButton(1);
+            isAiming = Input.GetMouseButton(1); // เล็งเมื่อคลิกขวา
 
-            if (animator != null)
-            {
-                animator.SetBool("IsAiming", isAiming);
-            }
-
-            if (isAiming)
-            {
-                FaceMouseCursor();
-            }
+            // 🌟 อัปเดตการหันหน้าตลอดเวลาที่ถือปืน
+            FaceMouseCursor();
 
             HandleCrosshairFocus(weapon);
-
 
             if (Input.GetKeyDown(KeyCode.R) && currentAmmoInMag < weapon.magazineSize)
             {
@@ -102,17 +100,20 @@ public class PlayerCombat : MonoBehaviour
         else
         {
             isAiming = false;
+            // ถ้าไม่ได้ถือปืน ปลดล็อคเมาส์
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
         }
 
         if (Time.time >= nextAttackTime)
         {
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0)) // กดยิง (คลิกซ้าย)
             {
                 if (weapon == null || weapon.itemType == ItemType.MeleeWeapon || weapon.itemType == ItemType.General)
                 {
                     PerformMeleeAttack(weapon);
                 }
-                else if (weapon.itemType == ItemType.RangedWeapon)
+                else if (isHoldingGun)
                 {
                     if (isAiming)
                     {
@@ -120,7 +121,7 @@ public class PlayerCombat : MonoBehaviour
                     }
                     else
                     {
-                        Debug.Log("<color=red>ยิงไม่ได้! ต้องคลิกขวาเพื่อเปลี่ยนมุมมองเล็งก่อน!</color>");
+                        Debug.Log("<color=red>ยิงไม่ได้! ต้องคลิกขวาเพื่อเล็งก่อน!</color>");
                     }
                 }
             }
@@ -147,45 +148,38 @@ public class PlayerCombat : MonoBehaviour
     {
         if (currentAmmoInMag <= 0)
         {
-            Debug.Log("<color=yellow>แชะ! กระสุนหมด (เล่นเสียงปืนเปล่า)</color>");
             return;
         }
 
         nextAttackTime = Time.time + gun.lightAttackCooldown;
         currentAmmoInMag--;
-
         weaponAmmoMemory[gun] = currentAmmoInMag;
         currentSpreadAngle = Mathf.Min(gun.maxSpreadAngle, currentSpreadAngle + gun.recoilSpread);
 
-        Ray ray = mainCam.ScreenPointToRay(GetAimScreenPosition());
-        Vector3 targetPoint = ray.GetPoint(100f);
+        // 🌟 ยิง Raycast จากลํากล้องกล้อง (Main Camera) ไปยังตำแหน่งกึ่งกลางหน้าจอ (Crosshair)
+        // หรือถ้าอยากให้ยิงตามเมาส์ ใช้ Input.mousePosition แทนได้ครับ
+        Ray ray = mainCam.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
+        Plane groundPlane = new Plane(Vector3.up, attackPoint.position);
 
-        // 🌟 อัปเดต 1: ใส่ QueryTriggerInteraction.Ignore เพื่อสั่งให้กล้องเมิน Trigger ล่องหน 🌟
-        RaycastHit[] cameraHits = Physics.RaycastAll(ray, 100f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
-        float closestDistance = Mathf.Infinity;
+        Vector3 targetPoint = attackPoint.position + (attackPoint.forward * gun.attackRange);
 
-        foreach (RaycastHit camHit in cameraHits)
+        if (groundPlane.Raycast(ray, out float distance))
         {
-            if (camHit.collider.gameObject != this.gameObject && camHit.collider.transform.root != this.transform)
-            {
-                if (camHit.distance < closestDistance)
-                {
-                    closestDistance = camHit.distance;
-                    targetPoint = camHit.point;
-                }
-            }
+            targetPoint = ray.GetPoint(distance);
         }
 
+        // คำนวณทิศทางจากปากกระบอกปืน (attackPoint) ไปยังเป้าหมายที่ Crosshair ชี้
         Vector3 aimDirection = (targetPoint - attackPoint.position).normalized;
-        aimDirection.y = 0f;
+        aimDirection.y = 0f; // ล็อกแกน Y ไม่ให้กระสุนเหิน
         if (aimDirection.sqrMagnitude > 0.001f) aimDirection.Normalize();
 
+        // คำนวณความกระจายของกระสุน (Spread)
         float randomSpread = Random.Range(-currentSpreadAngle, currentSpreadAngle);
         Vector3 shootDirection = Quaternion.Euler(0, randomSpread, 0) * aimDirection;
 
         Vector3 hitPoint;
 
-        // 🌟 อัปเดต 2: ใส่ QueryTriggerInteraction.Ignore ตอนยิงกระสุนด้วย 🌟
+        // ยิง Raycast ออกไปเช็กการชนของกระสุน
         if (Physics.Raycast(attackPoint.position, shootDirection, out RaycastHit hit, gun.attackRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             hitPoint = hit.point;
@@ -194,7 +188,6 @@ public class PlayerCombat : MonoBehaviour
             if (damageable != null && hit.collider.gameObject != this.gameObject)
             {
                 damageable.TakeDamage(gun.damage, gun.knockback);
-                Debug.Log($"<color=orange>ยิงโดนเป้าหมาย! ดาเมจ {gun.damage}</color>");
             }
         }
         else
@@ -202,17 +195,16 @@ public class PlayerCombat : MonoBehaviour
             hitPoint = attackPoint.position + (shootDirection * gun.attackRange);
         }
 
+        // สร้างเส้นวิถีกระสุน (Tracer)
         if (bulletTracerPrefab != null)
         {
             BulletTracer tracer = Instantiate(bulletTracerPrefab);
             tracer.Setup(attackPoint.position, hitPoint);
         }
 
-        // เล่นแสงแฟลชที่ปลายปืน (ถ้ามี)
+        // เอฟเฟกต์ปากกระบอกปืน
         MuzzleFlashEffect flash = attackPoint.GetComponentInChildren<MuzzleFlashEffect>();
         if (flash != null) flash.PlayFlash();
-
-        if (animator != null) animator.SetTrigger("Shoot");
     }
 
     private IEnumerator ReloadSequence(ItemData gun)
@@ -220,15 +212,9 @@ public class PlayerCombat : MonoBehaviour
         int ammoNeeded = gun.magazineSize - currentAmmoInMag;
         int ammoInInventory = Inventory.Instance.GetItemCount(gun.ammoType);
 
-        if (ammoInInventory <= 0)
-        {
-            Debug.Log("<color=red>ไม่มีกระสุนสำรองเหลือแล้ว!</color>");
-            yield break;
-        }
+        if (ammoInInventory <= 0) yield break;
 
         isReloading = true;
-        if (animator != null) animator.SetTrigger("Reload");
-
         yield return new WaitForSeconds(gun.reloadTime);
 
         int ammoToReload = Mathf.Min(ammoNeeded, ammoInInventory);
@@ -236,7 +222,6 @@ public class PlayerCombat : MonoBehaviour
 
         currentAmmoInMag += ammoToReload;
         weaponAmmoMemory[gun] = currentAmmoInMag;
-
         isReloading = false;
     }
 
@@ -244,15 +229,7 @@ public class PlayerCombat : MonoBehaviour
     {
         float cooldown = weapon != null ? weapon.lightAttackCooldown : defaultCooldown;
         nextAttackTime = Time.time + cooldown;
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Attack");
-        }
-        else
-        {
-            PerformStrikeDamage();
-        }
+        PerformStrikeDamage();
     }
 
     public void PerformStrikeDamage()
@@ -263,7 +240,6 @@ public class PlayerCombat : MonoBehaviour
         float knockback = weapon != null ? weapon.knockback : 0f;
 
         Collider[] hitEnemies = Physics.OverlapSphere(attackPoint.position, range);
-
         foreach (Collider enemy in hitEnemies)
         {
             IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -289,30 +265,59 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    // 🌟 3. ระบบล็อคเมาส์กลางจอ และรับค่าการสะบัดเมาส์หมุนตัว 360 องศา
     private void FaceMouseCursor()
-    {
-        Ray ray = mainCam.ScreenPointToRay(GetAimScreenPosition());
-        Vector3 lookDirection = ray.direction;
-        lookDirection.y = 0f;
-
-        if (lookDirection.sqrMagnitude > 0.001f)
-        {
-            lookDirection.Normalize();
-        }
-
-        if (animator != null)
-        {
-            animator.SetFloat("AimX", lookDirection.x);
-            animator.SetFloat("AimZ", lookDirection.z);
-        }
-    }
-
-    private Vector3 GetAimScreenPosition()
     {
         if (isAiming)
         {
-            return new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
+            // ล็อคเมาส์ไว้ตรงกลาง และซ่อนเมาส์
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+
+ 
+            float mouseX = Input.GetAxisRaw("Mouse X");
+
+            // แปลงองศาเป็นทิศทาง (แกน X, Z)
+            float rad = currentAimAngle * Mathf.Deg2Rad;
+            Vector3 lookDirection = new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
+
+            // ส่งข้อมูลให้ Animator เพื่อเปลี่ยนภาพหันซ้ายขวาหน้าหลัง
+            if (lookDirection.sqrMagnitude > 0.001f && animator != null)
+            {
+                animator.SetFloat("AimX", lookDirection.x);
+                animator.SetFloat("AimZ", lookDirection.z);
+            }
         }
-        return Input.mousePosition;
+        else
+        {
+            // ถ้าไม่ได้เล็ง (ปล่อยคลิกขวา) ปลดล็อคเมาส์คืนให้
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+
+            // ให้ตัวละครหันตามเมาส์ปกติไปก่อน เพื่อเก็บข้อมูลองศาล่าสุด (เวลายกปืนเล็งจะได้ไม่หันกระตุก)
+            Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
+            Plane groundPlane = new Plane(Vector3.up, transform.position);
+
+            if (groundPlane.Raycast(ray, out float distance))
+            {
+                Vector3 targetPoint = ray.GetPoint(distance);
+                Vector3 lookDirection = (targetPoint - transform.position).normalized;
+                lookDirection.y = 0f;
+
+                if (lookDirection.sqrMagnitude > 0.001f)
+                {
+                    lookDirection.Normalize();
+
+                    // เซฟองศาปัจจุบันเอาไว้
+                    currentAimAngle = Mathf.Atan2(lookDirection.x, lookDirection.z) * Mathf.Rad2Deg;
+
+                    if (animator != null)
+                    {
+                        animator.SetFloat("AimX", lookDirection.x);
+                        animator.SetFloat("AimZ", lookDirection.z);
+                    }
+                }
+            }
+        }
     }
 }
