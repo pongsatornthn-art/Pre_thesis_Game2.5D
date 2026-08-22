@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
@@ -22,6 +22,11 @@ public class PlayerMovement : MonoBehaviour
     public float baseSpeed = 5f;
     public float acceleration = 20f;
     public float deceleration = 25f;
+    
+    [Header("Sneak Settings (ย่องเบา)")]
+    public float sneakSpeedMultiplier = 0.5f;
+    [HideInInspector] public bool isSneaking = false;
+    
     private Vector3 currentVelocity;
     private Vector3 moveInput;
 
@@ -65,6 +70,9 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // 🌟 ถ้าเกมหยุด (เปิดหน้า Pause) ห้ามผู้เล่นขยับหรือหันหน้าตามเมาส์เด็ดขาด!
+        if (Time.timeScale == 0f) return;
+
         if (isDashing) return;
 
         if (currentStamina < maxStamina)
@@ -80,6 +88,14 @@ public class PlayerMovement : MonoBehaviour
 
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveZ = Input.GetAxisRaw("Vertical");
+
+        // 🌟 Toggle ย่องเบา (Sneak)
+        if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.C))
+        {
+            isSneaking = !isSneaking;
+            if (isSneaking) Debug.Log("🥷 ผู้เล่นเข้าสู่โหมด ย่องเบา (Sneak)");
+            else Debug.Log("🚶 ผู้เล่นกลับมาเดินปกติ");
+        }
 
         // 🌟 1. แก้ไขระบบเดินให้อิงตามหน้ากล้อง (Camera-Relative Movement)
         Vector3 camForward = mainCam.transform.forward;
@@ -111,7 +127,9 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isDashing) return;
 
-        Vector3 targetVelocity = moveInput * baseSpeed;
+        // คำนวณความเร็ว (ถ้าย่องอยู่ ให้คูณตัวลดความเร็ว)
+        float currentMaxSpeed = isSneaking ? (baseSpeed * sneakSpeedMultiplier) : baseSpeed;
+        Vector3 targetVelocity = moveInput * currentMaxSpeed;
 
         if (moveInput.magnitude > 0)
         {

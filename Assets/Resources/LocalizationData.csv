@@ -1,0 +1,18 @@
+﻿Key;Thai;English
+MINION_SUSPICIOUS;สงสัย (จ้องมอง...);Suspicious (Staring...)
+MINION_CHASE;วิ่งไล่ล่า!!;Chasing!!
+MINION_SEARCH;ค้นหาเป้าหมาย...;Searching for target...
+MINION_CALL_BOSS;ตะโกนเรียกบอส!!!;Calling the Stalker!!!
+MINION_ATTACK;โจมตี!;Attack!
+MINION_STUN;ติดสตัน!;Stunned!
+BOSS_ALERT;ตื่นตัว! วิ่งไปตรวจเสียง;Alert! Checking noise
+BOSS_CHASE;วิ่งไล่ฆ่า!!;Chasing to kill!!
+BOSS_STUN;ติดสตัน!;Stunned!
+BOSS_KILL;JUMPSCARE (โจมตี)!;JUMPSCARE!
+UI_RESUME;เล่นต่อ;Resume
+UI_SETTINGS;ตั้งค่า;Settings
+UI_QUIT;ออกจากเกม;Quit
+UI_BACK;ย้อนกลับ;Back
+UI_LANGUAGE;ภาษา;Language
+UI_SENSITIVITY;ความไวเมาส์;Mouse Sensitivity
+UI_VOLUME;ระดับเสียง;Master Volume

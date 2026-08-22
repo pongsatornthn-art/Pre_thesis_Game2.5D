@@ -21,6 +21,8 @@ public class PTSDMonsterAI : MonoBehaviour
     public float attackDistance = 1.5f; 
     public int attackDamage = 20; 
     public float attackCooldown = 2f;
+    public int maxHealth = 100;
+    private int currentHealth;
 
     [Header("Movement Settings")]
     public float patrolSpeed = 2f;
@@ -35,13 +37,30 @@ public class PTSDMonsterAI : MonoBehaviour
     // --- References ---
     public NavMeshAgent Agent { get; private set; }
     public Transform PlayerTransform { get; private set; }
+    public AwarenessSystem Awareness { get; private set; }
     private PlayerMovement playerScript;
     private Vector3 spawnPosition; // จำจุดเกิดของตัวเองไว้เผื่อต้องเดินกลับ
+
+    [Header("Debug UI (ข้อความลอยบนหัว)")]
+    public TMPro.TMP_Text debugStateText;
+
+    // Event สำหรับตะโกนเรียกบอส Stalker
+    public static event System.Action<Vector3> OnMinionShout;
+
+    // Event บอกตอนตัวเองตาย (ให้ Spawner ไปหักลบโควต้า)
+    public event System.Action OnDeath;
 
     private void Awake()
     {
         Agent = GetComponent<NavMeshAgent>();
+        Awareness = GetComponent<AwarenessSystem>();
+        
+        // ถ้ายังไม่ได้แปะสคริปต์ AwarenessSystem ให้เพิ่มอัตโนมัติ
+        if (Awareness == null) 
+            Awareness = gameObject.AddComponent<AwarenessSystem>();
+            
         spawnPosition = transform.position; // บันทึกจุดที่เกิดมาครั้งแรก
+        currentHealth = maxHealth; // เลือดเต็มตอนเกิด
     }
 
     private void Start()
@@ -112,62 +131,124 @@ public class PTSDMonsterAI : MonoBehaviour
         if (defaultBehavior == PatrolBehaviorType.RoamZone && assignedZone != null)
             return assignedZone.transform.position;
             
-        if (defaultBehavior == PatrolBehaviorType.FollowRoute && assignedRoute != null)
-            return assignedRoute.transform.position;
+        if (defaultBehavior == PatrolBehaviorType.FollowRoute)
+            return transform.position; // สำหรับ Waypoint ให้ใช้จุดที่มันยืนอยู่ตอนนั้นเป็นจุดอ้างอิงสายจูง
             
         return spawnPosition; // ถ้ายืนนิ่งๆ ก็ยึดจุดเกิดเป็นบ้าน
     }
 
-    public void AttackPlayer()
+    public void TakeDamage(int damage)
     {
-        Debug.Log($"<color=orange>{gameObject.name} โจมตีผู้เล่น {attackDamage} ดาเมจ!</color>");
-        if (playerScript != null) playerScript.TakeDamage(attackDamage);
+        if (currentHealth <= 0) return; // ตายไปแล้วไม่ต้องตีซ้ำ
+
+        currentHealth -= damage;
+        
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+        else
+        {
+            Debug.Log($"<color=red>{gameObject.name} โดนโจมตี {damage} ดาเมจ! ติดสตัน!</color>");
+            ChangeState(new StateStun(1.0f)); 
+        }
+    }
+
+    private void Die()
+    {
+        Debug.Log($"<color=black>💀 {gameObject.name} ตายแล้ว!</color>");
+        
+        // หยุดทุกอย่าง
+        ChangeState(null);
+        Agent.isStopped = true;
+        
+        // ตะโกนบอก Spawner ว่าฉันตายแล้ว หักโควต้าด้วย!
+        OnDeath?.Invoke();
+
+        // นอนตาย (ซ่อนตัวชั่วคราว)
+        gameObject.SetActive(false);
+    }
+
+    public void ShoutForStalker()
+    {
+        Debug.Log("📢 มินเนี่ยนตะโกนเรียก Stalker!!");
+        OnMinionShout?.Invoke(transform.position); // ส่งสัญญาณให้ Stalker ทั่วแมพรู้
+    }
+
+    public void ShowDebugText(string key, Color color)
+    {
+        if (debugStateText != null)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                debugStateText.text = "";
+            }
+            else
+            {
+                var loc = ServiceLocator.Get<ILocalizationService>();
+                debugStateText.text = loc != null ? loc.GetText(key) : key;
+            }
+            debugStateText.color = color;
+        }
     }
 
     /// <summary>
-    /// เช็คว่าเจอผู้เล่นไหม (แยกเป็น public เพื่อให้ State เรียกใช้ได้)
+    /// อัปเดตระบบการรับรู้ (Awareness) - ทำหน้าที่เติม/ลดหลอดเกจแทนการ Return True/False แบบเดิม
     /// </summary>
-    public bool CheckDetection()
+    public void UpdateDetection()
     {
-        float distToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
+        if (PlayerTransform == null) return;
         
-        // 1. ตรวจจับด้วยเสียง (วงกลมสีเหลือง - รอบตัวทะลุกำแพง)
-        if (distToPlayer <= hearingRadius) return true; 
+        float distToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
+        bool canSeeOrHear = false;
+        
+        // 1. ตรวจจับระยะใกล้ (วงกลมสีเหลือง) - ไม่ทะลุกำแพง
+        if (distToPlayer <= hearingRadius)
+        {
+            Vector3 origin = transform.position + Vector3.up * 1f;
+            Vector3 target = PlayerTransform.position + Vector3.up * 1f;
+            Vector3 rayDir = (target - origin).normalized;
+            
+            if (Physics.Raycast(origin, rayDir, out RaycastHit hit, hearingRadius, obstacleMask))
+            {
+                if (hit.collider.transform == PlayerTransform || hit.collider.transform.root == PlayerTransform.root) 
+                    canSeeOrHear = true;
+            }
+            else canSeeOrHear = true; // ทางโล่ง
+        }
 
-        // 2. ตรวจจับด้วยสายตา (รูปพัดสีแดง - ต้องไม่โดนบัง)
-        if (distToPlayer <= sightRadius)
+        // 2. ตรวจจับด้วยสายตา (รูปพัดสีแดง)
+        if (!canSeeOrHear && distToPlayer <= sightRadius)
         {
             Vector3 dirToPlayer = (PlayerTransform.position - transform.position);
             dirToPlayer.y = 0; 
             Vector3 forward = transform.forward;
             forward.y = 0;
 
-            // เช็คว่าผู้เล่นอยู่ใน "กรวยสายตา" หรือไม่ (ระหว่างเส้นสีแดง)
             if (Vector3.Angle(forward, dirToPlayer) <= sightAngle / 2f)
             {
-                // ยกจุดยิงเลเซอร์ขึ้นมาที่หน้าอก กันยิงติดขอบพื้น
                 Vector3 origin = transform.position + Vector3.up * 1f;
                 Vector3 target = PlayerTransform.position + Vector3.up * 1f;
                 Vector3 rayDir = (target - origin).normalized;
 
-                // ยิงเลเซอร์เช็คกำแพง
                 if (Physics.Raycast(origin, rayDir, out RaycastHit hit, distToPlayer, obstacleMask))
                 {
-                    // ถ้าเลเซอร์ชนโดนของที่อยู่ใน ObstacleMask
-                    // เช็คให้ชัวร์ว่าสิ่งที่ชน ดันเป็นตัวผู้เล่นเองหรือเปล่า? 
-                    // (แก้บั๊กเผื่อ Level Designer เอาผู้เล่นไปไว้ในเลเยอร์ Default เดียวกับกำแพง)
                     if (hit.collider.transform == PlayerTransform || hit.collider.transform.root == PlayerTransform.root)
-                    {
-                        return true; // มองเห็นผู้เล่นเต็มๆ!
-                    }
-                    return false; // โดนกำแพงบัง
+                        canSeeOrHear = true;
                 }
-                
-                // ไม่ชนอะไรเลย = ทางโล่ง มองเห็นแน่นอน
-                return true;
+                else canSeeOrHear = true;
             }
         }
-        return false;
+        
+        // อัปเดตลงหลอดเกจ (ถ้าเห็นให้เพิ่ม ถ้าไม่เห็นให้ลด)
+        if (canSeeOrHear)
+        {
+            Awareness.FillAwareness();
+        }
+        else
+        {
+            Awareness.DecayAwareness();
+        }
     }
 
     private void OnDrawGizmos()

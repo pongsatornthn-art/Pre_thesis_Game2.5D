@@ -19,13 +19,25 @@ public class MonsterSpawner : MonoBehaviour
     public PatrolRoute linkedRoute;
 
     [Header("Spawn Settings (การตั้งค่าการเกิด)")]
-    [Tooltip("จำนวนมอนสเตอร์ที่จะเกิดจากจุดนี้")]
+    [Tooltip("จำนวนมอนสเตอร์ตั้งต้น (โควต้าสูงสุด)")]
     [Min(1)] public int spawnCount = 1;
     [Tooltip("ระยะกระจายตัวตอนเกิด (เพื่อไม่ให้มอนสเตอร์เกิดทับกัน)")]
     public float spawnRadius = 2f;
 
+    [HideInInspector]
+    public int remainingCount = -1; // ตัวแปรนี้จะถูกเซฟ (ถ้า -1 แปลว่าเพิ่งเริ่มเกม ยังไม่เคยเซฟ)
+
     // เก็บมอนสเตอร์ทั้งหมดที่ถูกเสกจากจุดนี้
     private System.Collections.Generic.List<GameObject> spawnedMonsters = new System.Collections.Generic.List<GameObject>();
+
+    private void Awake()
+    {
+        // ถ้าโหลดเกมมาแล้วไม่มีข้อมูลเซฟ (ยังเป็น -1 อยู่) ให้โควต้าเท่ากับ spawnCount ตอนเริ่ม
+        if (remainingCount == -1)
+        {
+            remainingCount = spawnCount;
+        }
+    }
 
     private void OnEnable()
     {
@@ -41,9 +53,13 @@ public class MonsterSpawner : MonoBehaviour
     {
         if (isPTSDActive)
         {
+            // ถ้าโควต้าหมดแล้ว (โดนตีตายหมดแล้ว) ก็ไม่ต้องเสกให้เปลืองทรัพยากร
+            if (remainingCount <= 0) return;
+
             if (monsterPrefabToSpawn != null && spawnedMonsters.Count == 0)
             {
-                for (int i = 0; i < spawnCount; i++)
+                // เปลี่ยนจากเสกตาม spawnCount เป็นเสกตาม remainingCount (ยอดคงเหลือ)
+                for (int i = 0; i < remainingCount; i++)
                 {
                     Vector3 spawnPos = transform.position;
 
@@ -65,19 +81,34 @@ public class MonsterSpawner : MonoBehaviour
                     if (ai != null)
                     {
                         ai.InjectBehavior(spawnBehavior, linkedZone, linkedRoute);
+                        
+                        // สมัครรอฟังว่าถ้ามอนตัวนี้ตาย ให้มาเรียกฟังก์ชัน HandleMonsterDeath ของเรา
+                        ai.OnDeath += () => HandleMonsterDeath(monster);
                     }
                 }
             }
         }
         else
         {
-            // ลบมอนสเตอร์ทั้งหมดที่จุดนี้เสกมา
+            // ลบมอนสเตอร์ทั้งหมดที่จุดนี้เสกมา (ลบออกไปชั่วคราวเพราะสลับโลก ไม่ได้ลบโควต้า)
             foreach (var monster in spawnedMonsters)
             {
                 if (monster != null) Destroy(monster);
             }
             spawnedMonsters.Clear();
         }
+    }
+
+    private void HandleMonsterDeath(GameObject deadMonster)
+    {
+        if (remainingCount > 0)
+        {
+            remainingCount--; // หักยอดโควต้าลงไป 1 ทันที!
+            Debug.Log($"[MonsterSpawner] มอนสเตอร์ตาย! ยอดคงเหลือในห้องนี้: {remainingCount}/{spawnCount}");
+        }
+        
+        spawnedMonsters.Remove(deadMonster);
+        Destroy(deadMonster, 2f); // หน่วงเวลาทำลายศพทิ้ง 2 วินาที
     }
 
     private void OnDrawGizmos()

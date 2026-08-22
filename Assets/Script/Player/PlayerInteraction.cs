@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro; // เรียกใช้ระบบ TextMeshPro
 
 public class PlayerInteraction : MonoBehaviour
@@ -39,9 +39,12 @@ public class PlayerInteraction : MonoBehaviour
                 if (distance <= interactRange)
                 {
                     currentTargetItem = item;
-                    // แสดง UI และโชว์ชื่อไอเทม (ถ้าใน ItemData คุณพงศธรมีตัวแปรชื่อไอเทม)
-                    promptText.text = "Press [E] to pickup";
-                    promptText.gameObject.SetActive(true);
+                    // แสดง UI และโชว์ชื่อไอเทม (ถ้าลืมใส่ Text ใน Inspector จะได้ไม่พัง)
+                    if (promptText != null)
+                    {
+                        promptText.text = "Press [E] to pickup";
+                        promptText.gameObject.SetActive(true);
+                    }
                     return; // จบการทำงานฟังก์ชันนี้แค่นี้
                 }
             }
