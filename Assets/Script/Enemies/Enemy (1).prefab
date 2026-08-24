@@ -776,6 +776,7 @@ GameObject:
   - component: {fileID: 5618859205534562972}
   - component: {fileID: -2008810806356263695}
   - component: {fileID: 7583016837501458024}
+  - component: {fileID: 915087986364534058}
   m_Layer: 0
   m_Name: Enemy (1)
   m_TagString: Untagged
@@ -877,6 +878,9 @@ MonoBehaviour:
   attackDistance: 1.5
   attackDamage: 20
   attackCooldown: 2
+  maxHealth: 100
+  hitSound: {fileID: 0}
+  dieSound: {fileID: 0}
   patrolSpeed: 2
   chaseSpeed: 5
   chaseLeashDistance: 20
@@ -921,6 +925,20 @@ MonoBehaviour:
   decayRate: 20
   sneakMultiplier: 0.5
   awarenessSlider: {fileID: 697245481792976485}
+--- !u!114 &915087986364534058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7907362035102914217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 178929b683dbb1f42bc15ee19d57cbc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  monsterAI: {fileID: 5618859205534562972}
+  healthSlider: {fileID: 1862747224246431349}
 --- !u!1 &8342605365273140894
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public class PTSDMonsterAI : MonoBehaviour
+public class PTSDMonsterAI : MonoBehaviour, IDamageable
 {
     public enum PatrolBehaviorType { Stationary, RoamZone, FollowRoute }
 
@@ -23,6 +23,17 @@ public class PTSDMonsterAI : MonoBehaviour
     public float attackCooldown = 2f;
     public int maxHealth = 100;
     private int currentHealth;
+
+    // อ่านค่าได้อย่างเดียวให้คนอื่นดึงไปโชว์
+    public int MaxHealth => maxHealth;
+    public int CurrentHealth => currentHealth;
+
+    // 🌟 [SOLID: SRP] สร้าง Event ส่งสัญญาณออกไปเมื่อเลือดลด
+    public event System.Action<int, int> OnHealthChanged;
+
+    [Header("Audio Settings (AAA)")]
+    public AudioClip hitSound;
+    public AudioClip dieSound;
 
     [Header("Movement Settings")]
     public float patrolSpeed = 2f;
@@ -89,7 +100,9 @@ public class PTSDMonsterAI : MonoBehaviour
             currentState.ExitState(this);
 
         currentState = newState;
-        currentState.EnterState(this);
+        
+        if (currentState != null)
+            currentState.EnterState(this);
     }
 
     /// <summary>
@@ -137,12 +150,22 @@ public class PTSDMonsterAI : MonoBehaviour
         return spawnPosition; // ถ้ายืนนิ่งๆ ก็ยึดจุดเกิดเป็นบ้าน
     }
 
+    // อัปเดตให้ตรงกับ Interface IDamageable ของเพื่อน
+    public void TakeDamage(int damageAmount, float knockback)
+    {
+        TakeDamage(damageAmount);
+        // (ส่วนกระเด็น knockback ค่อยทำเพิ่มทีหลังถ้าต้องการ)
+    }
+
     public void TakeDamage(int damage)
     {
         if (currentHealth <= 0) return; // ตายไปแล้วไม่ต้องตีซ้ำ
 
         currentHealth -= damage;
         
+        // 🌟 [SOLID: SRP] ตะโกนบอกทุกสคริปต์ที่รอฟังอยู่ (เช่น UI) ว่าเลือดลดแล้วนะ
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
         if (currentHealth <= 0)
         {
             Die();
@@ -151,10 +174,14 @@ public class PTSDMonsterAI : MonoBehaviour
         {
             Debug.Log($"<color=red>{gameObject.name} โดนโจมตี {damage} ดาเมจ! ติดสตัน!</color>");
             ChangeState(new StateStun(1.0f)); 
+            
+            // 🎵 [AAA Audio Service] เล่นเสียงโดนตีแบบ 3D
+            if (hitSound != null)
+                ServiceLocator.Get<IAudioService>()?.PlaySFX(hitSound, transform.position);
         }
     }
 
-    private void Die()
+    public void Die()
     {
         Debug.Log($"<color=black>💀 {gameObject.name} ตายแล้ว!</color>");
         
@@ -164,6 +191,10 @@ public class PTSDMonsterAI : MonoBehaviour
         
         // ตะโกนบอก Spawner ว่าฉันตายแล้ว หักโควต้าด้วย!
         OnDeath?.Invoke();
+
+        // 🎵 [AAA Audio Service] เล่นเสียงตาย
+        if (dieSound != null)
+            ServiceLocator.Get<IAudioService>()?.PlaySFX(dieSound, transform.position);
 
         // นอนตาย (ซ่อนตัวชั่วคราว)
         gameObject.SetActive(false);

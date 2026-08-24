@@ -213,6 +213,12 @@ public class PlayerMovement : MonoBehaviour
             {
                 animator.SetFloat("AnimSpeed", 1f);
             }
+            
+            // 🐛 DEBUG LOG: เช็คว่าหลังฟันแล้ว โค้ดยังส่งค่าให้ Animator หรือเปล่า?
+            // (ถ้าตัวเลขยังขยับตามเมาส์ แปลว่าโค้ดทำงานปกติ 100% บัคอยู่ที่ Animator)
+            // (ถ้าตัวเลขหยุดนิ่ง แปลว่ามีโค้ดบางบรรทัดค้างหรือพัง)
+            // เปิดปิดการ Log ได้ด้วยการ comment บรรทัดล่างนี้ถ้าเทสเสร็จแล้ว
+            Debug.Log($"[Debug] isAiming={isAiming} | AimX={animator.GetFloat("AimX"):F2} | AimZ={animator.GetFloat("AimZ"):F2} | CurrentState={animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
         }
     }
 

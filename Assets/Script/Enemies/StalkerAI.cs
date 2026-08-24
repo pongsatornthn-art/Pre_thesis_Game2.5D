@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public class StalkerAI : MonoBehaviour
+public class StalkerAI : MonoBehaviour, IDamageable
 {
     [Header("Stats")]
     public float searchSpeed = 2.5f;
@@ -125,7 +125,15 @@ public class StalkerAI : MonoBehaviour
         Awareness.DecayAwareness(); // ถ้าไม่เห็นไม่ได้ยิน เกจลด
     }
 
-    public void TakeDamage(int damage)
+    // อัปเดตให้ตรงกับ Interface IDamageable ของเพื่อน
+    public void TakeDamage(int damageAmount, float knockback)
+    {
+        TakeDamage(damageAmount); // เรียกใช้ฟังก์ชันเดิม
+    }
+
+    public void Die() { } // บอสอมตะ ไม่ตาย
+
+    public void TakeDamage(int attackDamage)
     {
         if (isInvincible)
         {

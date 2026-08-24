@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -251,27 +251,30 @@ public class PlayerCombat : MonoBehaviour
         }
         else
         {
-            PerformStrikeDamage();
+            // ถ้าไม่มี animator ให้ถือว่าโจมตีไม่ได้ (บังคับใช้ Animation Event)
+            Debug.LogWarning("PlayerCombat: ไม่มี Animator! ระบบตีระยะประชิดต้องการ Animator เพื่อสร้าง Event");
         }
+    }
+
+    // ฟังก์ชันสำหรับส่งค่าพลังโจมตีปัจจุบัน ให้ CombatAnimationReceiver เอาไปใช้เปิด Hitbox
+    public int GetCurrentWeaponDamage()
+    {
+        ItemData weapon = GetEquippedWeapon();
+        return weapon != null ? weapon.damage : defaultDamage;
+    }
+
+    // ฟังก์ชันสำหรับส่งค่าผลักกระเด็น
+    public float GetCurrentWeaponKnockback()
+    {
+        ItemData weapon = GetEquippedWeapon();
+        return weapon != null ? weapon.knockback : 0f;
     }
 
     public void PerformStrikeDamage()
     {
-        ItemData weapon = GetEquippedWeapon();
-        int damage = weapon != null ? weapon.damage : defaultDamage;
-        float range = weapon != null ? weapon.attackRange : defaultRange;
-        float knockback = weapon != null ? weapon.knockback : 0f;
-
-        Collider[] hitEnemies = Physics.OverlapSphere(attackPoint.position, range);
-
-        foreach (Collider enemy in hitEnemies)
-        {
-            IDamageable damageable = enemy.GetComponent<IDamageable>();
-            if (damageable != null && enemy.gameObject != this.gameObject)
-            {
-                damageable.TakeDamage(damage, knockback);
-            }
-        }
+        // [REFACRTOR] ถูกลบทิ้งและย้ายไปใช้ MeleeHitbox + Animation Event แทนแล้ว
+        // ฟังก์ชันนี้เก็บไว้เฉยๆ กันสคริปต์อื่นพังถ้าเคยเรียกใช้
+        Debug.LogWarning("PerformStrikeDamage ถูกยกเลิก! กรุณาใช้ Animation Event (OnAttackActive) แทน");
     }
 
     private ItemData GetEquippedWeapon()
@@ -292,7 +295,16 @@ public class PlayerCombat : MonoBehaviour
     private void FaceMouseCursor()
     {
         Ray ray = mainCam.ScreenPointToRay(GetAimScreenPosition());
-        Vector3 lookDirection = ray.direction;
+        Vector3 targetPoint = ray.GetPoint(100f);
+
+        // หาจุดตัดบนพื้น (Y=0) สมมติว่าพื้นอยู่ที่ระดับเดียวกับผู้เล่น
+        Plane groundPlane = new Plane(Vector3.up, transform.position);
+        if (groundPlane.Raycast(ray, out float enter))
+        {
+            targetPoint = ray.GetPoint(enter);
+        }
+
+        Vector3 lookDirection = (targetPoint - transform.position).normalized;
         lookDirection.y = 0f;
 
         if (lookDirection.sqrMagnitude > 0.001f)
