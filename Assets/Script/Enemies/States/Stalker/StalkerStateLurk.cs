@@ -46,14 +46,28 @@ public class StalkerStateLurk : IStalkerState
     {
         if (ai.PlayerTransform == null) return;
         
-        // สุ่มจุดเดินรอบๆ ผู้เล่น โดยอิงจากค่า Lurk Radius ที่ตั้งไว้ใน Inspector
-        Vector2 randCircle = Random.insideUnitCircle.normalized * Random.Range(ai.lurkMinRadius, ai.lurkMaxRadius);
-        Vector3 targetPoint = ai.PlayerTransform.position + new Vector3(randCircle.x, 0, randCircle.y);
-
-        if (UnityEngine.AI.NavMesh.SamplePosition(targetPoint, out UnityEngine.AI.NavMeshHit hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+        // 🌟 สุ่มหาจุดสูงสุด 10 ครั้ง เพื่อหาจุดที่ "เดินไปถึงได้จริงๆ" (ไม่ออกนอกแมพ)
+        for (int i = 0; i < 10; i++)
         {
-            ai.Agent.SetDestination(hit.position);
+            Vector2 randCircle = Random.insideUnitCircle.normalized * Random.Range(ai.lurkMinRadius, ai.lurkMaxRadius);
+            Vector3 targetPoint = ai.PlayerTransform.position + new Vector3(randCircle.x, 0, randCircle.y);
+
+            if (UnityEngine.AI.NavMesh.SamplePosition(targetPoint, out UnityEngine.AI.NavMeshHit hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                // ตรวจสอบว่ามีเส้นทางเดินไปถึงจุดนั้นได้จริงๆ ใช่ไหม? (ไม่ติดกำแพง/ไม่อยู่นอกแมพ)
+                UnityEngine.AI.NavMeshPath path = new UnityEngine.AI.NavMeshPath();
+                ai.Agent.CalculatePath(hit.position, path);
+                
+                if (path.status == UnityEngine.AI.NavMeshPathStatus.PathComplete)
+                {
+                    ai.Agent.SetDestination(hit.position);
+                    return; // เจอจุดที่เดินได้แล้ว จบการทำงาน
+                }
+            }
         }
+        
+        // ถ้าสุ่ม 10 ครั้งแล้วไม่เจอที่เดินเลย (เช่น โดนต้อนเข้ามุม) ให้เดินไปหาผู้เล่นตรงๆ เลย
+        ai.Agent.SetDestination(ai.PlayerTransform.position);
     }
 
     public void ExitState(StalkerAI ai) { }

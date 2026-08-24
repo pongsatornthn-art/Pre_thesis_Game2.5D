@@ -22,6 +22,8 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
     public int attackDamage = 20; 
     public float attackCooldown = 2f;
     public int maxHealth = 100;
+    [Tooltip("โอกาสติดสตันเมื่อโดนตี (0-100)")]
+    [Range(0, 100)] public int stunChance = 20; 
     private int currentHealth;
 
     // อ่านค่าได้อย่างเดียวให้คนอื่นดึงไปโชว์
@@ -172,8 +174,17 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
         }
         else
         {
-            Debug.Log($"<color=red>{gameObject.name} โดนโจมตี {damage} ดาเมจ! ติดสตัน!</color>");
-            ChangeState(new StateStun(1.0f)); 
+            // 🌟 สุ่มโอกาสติดสตันเมื่อโดนโจมตี
+            int rand = UnityEngine.Random.Range(1, 101);
+            if (rand <= stunChance)
+            {
+                Debug.Log($"<color=red>{gameObject.name} โดนโจมตี {damage} ดาเมจ! ติดสตัน!</color>");
+                ChangeState(new StateStun(1.0f)); 
+            }
+            else
+            {
+                Debug.Log($"<color=orange>{gameObject.name} โดนโจมตี {damage} ดาเมจ! (แต่ไม่ติดสตัน! ตีสวน!)</color>");
+            }
             
             // 🎵 [AAA Audio Service] เล่นเสียงโดนตีแบบ 3D
             if (hitSound != null)

@@ -28,8 +28,10 @@ public class StateChase : IMonsterState
 
         ai.UpdateDetection();
         
-        // ถ้าคลาดสายตา (เกจเริ่มลดจาก 100) เปลี่ยนเป็นเดินค้นหา
-        if (!ai.Awareness.IsActive) 
+        // 🌟 แก้บักมอนสเตอร์โง่: 
+        // ถ้าคลาดสายตาแป๊บเดียว (เดินหลบหลังกล่อง) เกจจะไม่ลดฮวบ ให้มันวิ่งไล่กวดต่อ (จู๊คได้มันส์ขึ้น)
+        // จะเลิกวิ่งไล่ก็ต่อเมื่อเกจความสนใจลดลงต่ำกว่า 50% แล้วเท่านั้น
+        if (ai.Awareness.currentAwareness < 50f) 
         {
             ai.ChangeState(new StateSearch(ai.PlayerTransform.position));
             return;
