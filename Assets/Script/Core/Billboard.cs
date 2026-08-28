@@ -13,9 +13,14 @@ public class Billboard : MonoBehaviour
     {
         if (cam != null)
         {
-            // สั่งให้รูป 2D หันหน้าตั้งฉากกับกล้องเสมอ
-            transform.LookAt(transform.position + cam.transform.rotation * Vector3.forward,
-                             cam.transform.rotation * Vector3.up);
+            // ดึงค่าองศากล้องมา
+            Vector3 cameraForward = cam.transform.forward;
+
+            // 🌟 ล็อกแกน Y ให้เป็น 0 เสมอ (เพื่อไม่ให้รูปเงยหน้าหรือก้มหน้า)
+            cameraForward.y = 0;
+
+            // สั่งให้รูปหันไปตามทิศทางกล้อง (แต่ล็อกไม่ให้เงยหน้า)
+            transform.rotation = Quaternion.LookRotation(cameraForward);
         }
     }
 }
