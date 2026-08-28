@@ -75,7 +75,7 @@ public class PlayerCombat : MonoBehaviour
             animator.SetBool("HasGun", holdingGun);
         }
 
-        if (holdingGun)
+        if (holdingGun && newWeapon is RangedWeaponData gunData)
         {
             if (weaponAmmoMemory.ContainsKey(newWeapon))
             {
@@ -83,10 +83,10 @@ public class PlayerCombat : MonoBehaviour
             }
             else
             {
-                currentAmmoInMag = newWeapon.magazineSize;
+                currentAmmoInMag = gunData.magazineSize;
                 weaponAmmoMemory[newWeapon] = currentAmmoInMag;
             }
-            currentSpreadAngle = newWeapon.maxSpreadAngle;
+            currentSpreadAngle = gunData.maxSpreadAngle;
         }
     }
 
@@ -110,12 +110,12 @@ public class PlayerCombat : MonoBehaviour
                 FaceMouseCursor();
             }
 
-            HandleCrosshairFocus(weapon);
+            HandleCrosshairFocus(weapon as RangedWeaponData);
 
 
-            if (Input.GetKeyDown(KeyCode.R) && currentAmmoInMag < weapon.magazineSize)
+            if (Input.GetKeyDown(KeyCode.R) && weapon is RangedWeaponData gunData && currentAmmoInMag < gunData.magazineSize)
             {
-                StartCoroutine(ReloadSequence(weapon));
+                StartCoroutine(ReloadSequence(gunData));
                 return;
             }
         }
@@ -141,7 +141,7 @@ public class PlayerCombat : MonoBehaviour
                 {
                     isChargingMelee = false;
                     bool isHeavy = holdChargeTime >= heavyChargeThreshold;
-                    PerformMeleeAttack(weapon, isHeavy);
+                    PerformMeleeAttack(weapon as MeleeWeaponData, isHeavy);
                 }
             }
         }
@@ -152,7 +152,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 if (isAiming)
                 {
-                    PerformRangeAttack(weapon);
+                    PerformRangeAttack(weapon as RangedWeaponData);
                 }
                 else
                 {
@@ -162,7 +162,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    private void HandleCrosshairFocus(ItemData gun)
+    private void HandleCrosshairFocus(RangedWeaponData gun)
     {
         bool isMoving = rb.linearVelocity.magnitude > 0.1f;
 
@@ -178,7 +178,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    private void PerformRangeAttack(ItemData gun)
+    private void PerformRangeAttack(RangedWeaponData gun)
     {
         if (currentAmmoInMag <= 0)
         {
@@ -250,7 +250,7 @@ public class PlayerCombat : MonoBehaviour
         if (animator != null) animator.SetTrigger("Shoot");
     }
 
-    private IEnumerator ReloadSequence(ItemData gun)
+    private IEnumerator ReloadSequence(RangedWeaponData gun)
     {
         int ammoNeeded = gun.magazineSize - currentAmmoInMag;
         int ammoInInventory = Inventory.Instance.GetItemCount(gun.ammoType);
@@ -277,7 +277,7 @@ public class PlayerCombat : MonoBehaviour
 
     [HideInInspector] public bool isCurrentAttackHeavy = false;
 
-    private void PerformMeleeAttack(ItemData weapon, bool isHeavy)
+    private void PerformMeleeAttack(MeleeWeaponData weapon, bool isHeavy)
     {
         isCurrentAttackHeavy = isHeavy;
         float cooldown = weapon != null ? (isHeavy ? weapon.heavyAttackCooldown : weapon.lightAttackCooldown) : (isHeavy ? defaultCooldown * 2f : defaultCooldown);
@@ -312,7 +312,7 @@ public class PlayerCombat : MonoBehaviour
     // ฟังก์ชันสำหรับส่งค่าพลังโจมตีปัจจุบัน ให้ CombatAnimationReceiver เอาไปใช้เปิด Hitbox
     public int GetCurrentWeaponDamage()
     {
-        ItemData weapon = GetEquippedWeapon();
+        MeleeWeaponData weapon = GetEquippedWeapon() as MeleeWeaponData;
         if (weapon != null)
         {
             return isCurrentAttackHeavy ? weapon.heavyAttackDamage : weapon.damage;
@@ -324,7 +324,9 @@ public class PlayerCombat : MonoBehaviour
     public float GetCurrentWeaponKnockback()
     {
         ItemData weapon = GetEquippedWeapon();
-        return weapon != null ? weapon.knockback : 0f;
+        if (weapon is MeleeWeaponData meleeData) return meleeData.knockback;
+        if (weapon is RangedWeaponData rangedData) return rangedData.knockback;
+        return 0f;
     }
 
     // ฟังก์ชันสำหรับส่ง Prefab ควัน/แสงดาบ ให้ CombatAnimationReceiver
@@ -348,8 +350,8 @@ public class PlayerCombat : MonoBehaviour
 
     public void ReceiveDamageInterrupt()
     {
-        ItemData weapon = GetEquippedWeapon();
-        if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
+        RangedWeaponData weapon = GetEquippedWeapon() as RangedWeaponData;
+        if (weapon != null)
         {
             currentSpreadAngle = weapon.maxSpreadAngle;
         }

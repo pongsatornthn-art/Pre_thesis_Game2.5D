@@ -1,12 +1,14 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [CreateAssetMenu(fileName = "New Melee Weapon", menuName = "Inventory/Items/Melee Weapon")]
 public class MeleeWeaponData : ItemData
 {
     [Header("Combat Stats (Melee)")]
     public int damage = 10;
+    public int heavyAttackDamage = 20;
     public float attackRange = 2f;
-    public float attackCooldown = 0.5f;
+    public float lightAttackCooldown = 0.5f;
+    public float heavyAttackCooldown = 1.0f;
     public float staminaCost = 10f;
     public float knockback = 3f;
 
