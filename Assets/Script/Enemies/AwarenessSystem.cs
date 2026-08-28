@@ -87,4 +87,21 @@ public class AwarenessSystem : MonoBehaviour
     {
         currentAwareness = maxAwareness;
     }
+
+    /// <summary>
+    /// บังคับรีเซ็ตเกจให้เป็น 0% ทันที (เช่น ตอนที่ Stalker หนีไป)
+    /// </summary>
+    public void ForceZeroAwareness()
+    {
+        currentAwareness = 0f;
+    }
+
+    /// <summary>
+    /// เพิ่มค่าเกจโดยตรง (เช่น จากเสียงร้องของมินเนี่ยน)
+    /// </summary>
+    public void AddAwareness(float amount)
+    {
+        currentAwareness += amount;
+        currentAwareness = Mathf.Clamp(currentAwareness, 0f, maxAwareness);
+    }
 }

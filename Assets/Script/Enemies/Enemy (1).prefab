@@ -879,9 +879,12 @@ MonoBehaviour:
   attackDamage: 20
   attackCooldown: 2
   maxHealth: 100
-  stunChance: 4
+  hasSuperArmor: 0
+  superArmorDuration: 3
   hitSound: {fileID: 0}
   dieSound: {fileID: 0}
+  hitVFXPrefab: {fileID: 8562666531403948772, guid: e792e175ed40c374284017567d90f6d3, type: 3}
+  heavyHitVFXPrefab: {fileID: 5948675084870369029, guid: 859e7fdfa802f46429d469d8d3da4901, type: 3}
   patrolSpeed: 2
   chaseSpeed: 2
   chaseLeashDistance: 20

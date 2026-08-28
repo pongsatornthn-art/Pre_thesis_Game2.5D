@@ -10,11 +10,32 @@ public class StalkerAI : MonoBehaviour, IDamageable
     public bool isInvincible = true;
     public float killDistance = 2.0f;
 
+    [Header("Super Armor (Boss)")]
+    public bool hasSuperArmor = false;
+    private Coroutine superArmorCoroutine;
+
+    [Header("Audio")]
+    public AudioClip screamClip;
+    [Range(0f, 1f)] public float screamVolume = 1f;
+
     [Header("Director AI (การเดินซุ่มรอบๆ ผู้เล่น)")]
     [Tooltip("ระยะใกล้สุดที่บอสจะเดินวนรอบๆ ตัวผู้เล่น (เมตร)")]
     public float lurkMinRadius = 10f;
     [Tooltip("ระยะไกลสุดที่บอสจะเดินวนรอบๆ ตัวผู้เล่น (เมตร)")]
     public float lurkMaxRadius = 20f;
+    [Tooltip("รัศมีการได้ยินเสียงมินเนี่ยนร้องเรียกบอส (เมตร)")]
+    public float minionShoutHearRadius = 50f;
+    [Tooltip("ค่าความสงสัยขั้นต่ำที่จะเพิ่มให้บอส (เมื่อมินเนี่ยนอยู่ไกลขอบรัศมีสุดๆ)")]
+    public float minShoutSuspicion = 20f;
+    [Tooltip("ค่าความสงสัยขั้นสูงที่จะเพิ่มให้บอส (เมื่อมินเนี่ยนอยู่ใกล้บอสมาก)")]
+    public float maxShoutSuspicion = 100f;
+
+    [Header("Jumpscare Minigame")]
+    public float minigameDuration = 5f;
+    public float baseHpDrainRate = 25f;
+    public float drainReductionPerPress = 1.5f;
+    public KeyCode requiredInputButton = KeyCode.E;
+    public float postEscapeTeleportRadius = 15f;
 
     [Header("Sensors (Vision & Sound)")]
     public float sightRadius = 8f;
@@ -58,9 +79,25 @@ public class StalkerAI : MonoBehaviour, IDamageable
 
     private void HandleMinionShout(Vector3 minionPos)
     {
-        // บอสวิ่งไปที่เกิดเหตุทันที
-        Debug.Log("🦇 Stalker ได้ยินเสียง Minion ตะโกน! กำลังวิ่งไปตรวจสอบ!");
-        ChangeState(new StalkerStateAlert(minionPos));
+        // เช็คระยะห่างว่ามินเนี่ยนที่ร้อง อยู่ในรัศมีการได้ยินหรือไม่
+        float distance = Vector3.Distance(transform.position, minionPos);
+        if (distance <= minionShoutHearRadius)
+        {
+            float distanceFactor = 1f - (distance / minionShoutHearRadius); 
+            float suspicionLevel = Mathf.Lerp(minShoutSuspicion, maxShoutSuspicion, distanceFactor);
+            
+            Debug.Log($"🦇 Stalker ได้ยินเสียง! (ระยะ {distance:F1}m) ความสงสัย: {suspicionLevel:F0}% กำลังเดินไปสำรวจ...");
+            
+            // เพิ่ม AG สะสมไว้เผื่อหลอดเต็ม
+            Awareness.AddAwareness(suspicionLevel);
+            
+            // ไม่ว่าความสงสัยจะเท่าไหร่ ก็ให้หันหน้าเดินไปสำรวจจุดนั้นเสมอ (แต่จะเดินช้าหรือเร็วขึ้นอยู่กับค่า suspicion)
+            ChangeState(new StalkerStateAlert(minionPos, suspicionLevel));
+        }
+        else
+        {
+            Debug.Log($"🦇 Stalker ไม่ได้ยินเสียง Minion (ระยะ {distance:F1}m ไกลเกินรัศมี {minionShoutHearRadius}m)");
+        }
     }
 
     private void Update()
@@ -126,20 +163,40 @@ public class StalkerAI : MonoBehaviour, IDamageable
     }
 
     // อัปเดตให้ตรงกับ Interface IDamageable ของเพื่อน
-    public void TakeDamage(int damageAmount, float knockback)
+    public void TakeDamage(int damageAmount, float knockback, bool isHeavyAttack = false)
     {
-        TakeDamage(damageAmount); // เรียกใช้ฟังก์ชันเดิม
+        TakeDamage(damageAmount, isHeavyAttack); // เรียกใช้ฟังก์ชันเดิม
     }
 
     public void Die() { } // บอสอมตะ ไม่ตาย
 
-    public void TakeDamage(int attackDamage)
+    public void TakeDamage(int attackDamage, bool isHeavyAttack = false)
     {
         if (isInvincible)
         {
-            Debug.Log("<color=purple>🦇 Stalker อมตะ! กระสุนทำอะไรไม่ได้ ทำได้แค่ชะงัก (Stun)</color>");
-            ChangeState(new StalkerStateStun(stunDuration));
+            if (hasSuperArmor)
+            {
+                Debug.Log("<color=magenta>🦇 Stalker มี Super Armor อยู่! ยิงซ้ำไม่สะทกสะท้าน!</color>");
+            }
+            else
+            {
+                Debug.Log("<color=purple>🦇 Stalker อมตะ! กระสุนทำอะไรไม่ได้ ทำได้แค่ชะงัก (Stun)</color>");
+                ChangeState(new StalkerStateStun(stunDuration));
+                
+                // ให้ Super Armor 5 วินาทีหลังจากโดนยิง เพื่อไม่ให้ผู้เล่นยิงสแปมจนบอสเดินไม่ได้
+                if (superArmorCoroutine != null) StopCoroutine(superArmorCoroutine);
+                superArmorCoroutine = StartCoroutine(SuperArmorRoutine(5f));
+            }
         }
+    }
+
+    private System.Collections.IEnumerator SuperArmorRoutine(float duration)
+    {
+        hasSuperArmor = true;
+        ShowDebugText("SUPER ARMOR", Color.magenta);
+        yield return new WaitForSeconds(duration);
+        hasSuperArmor = false;
+        ShowDebugText("", Color.white);
     }
 
     public void ShowDebugText(string key, Color color)
@@ -171,8 +228,12 @@ public class StalkerAI : MonoBehaviour, IDamageable
         Gizmos.DrawRay(transform.position, leftRayDirection);
         Gizmos.DrawRay(transform.position, rightRayDirection);
 
-        // วาดวงกลมการได้ยินเสียง
+        // วาดวงกลมการได้ยินเสียงฝีเท้าผู้เล่น
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, soundSenseRadius);
+
+        // วาดวงกลมรัศมีการได้ยินเสียงมินเนี่ยนร้องเรียก (วงใหญ่สุด)
+        Gizmos.color = new Color(0.8f, 0f, 1f, 0.3f); // สีม่วงอ่อนๆ จะได้ไม่แย่งซีนวงอื่น
+        Gizmos.DrawWireSphere(transform.position, minionShoutHearRadius);
     }
 }

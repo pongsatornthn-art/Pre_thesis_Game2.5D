@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI; // สำคัญมาก: ต้องมีเพื่อเรียกใช้งาน Slider
 
 public class EnemyDummy : MonoBehaviour, IDamageable
@@ -22,7 +22,7 @@ public class EnemyDummy : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(int damage, float knockback)
+    public void TakeDamage(int damage, float knockback, bool isHeavyAttack = false)
     {
         currentHealth -= damage;
         Debug.Log($"<color=orange>{gameObject.name} โดนฟัน {damage} ดาเมจ! เลือดเหลือ {currentHealth}</color>");
@@ -35,9 +35,9 @@ public class EnemyDummy : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(int damage, bool isHeavyAttack = false)
     {
-        TakeDamage(damage, 0f);
+        TakeDamage(damage, 0f, isHeavyAttack);
     }
 
     private void UpdateHealthBar()

@@ -12,14 +12,16 @@ public class MeleeHitbox : MonoBehaviour
 
     private int currentDamage = 5;
     private float currentKnockback = 0f;
+    private bool currentIsHeavy = false;
 
     private List<Collider> hitEnemies = new List<Collider>();
 
     // รับค่าพลังโจมตีมาจากปืน/ดาบในช่องเก็บของ
-    public void SetupPayload(int damage, float knockback)
+    public void SetupPayload(int damage, float knockback, bool isHeavy = false)
     {
         currentDamage = damage;
         currentKnockback = knockback;
+        currentIsHeavy = isHeavy;
     }
 
     public void ResetHits()
@@ -51,7 +53,7 @@ public class MeleeHitbox : MonoBehaviour
             // ถ้าศัตรูอยู่ในองศาของพัด
             if (angleToTarget <= arcAngle / 2f)
             {
-                damageable.TakeDamage(currentDamage, currentKnockback);
+                damageable.TakeDamage(currentDamage, currentKnockback, currentIsHeavy);
                 hitEnemies.Add(other);
                 Debug.Log($"<color=orange>[MeleeHitbox] ฟันโดน {other.gameObject.name} ดาเมจ {currentDamage}</color>");
             }

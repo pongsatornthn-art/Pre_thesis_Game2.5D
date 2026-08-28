@@ -12,9 +12,16 @@ public class PlayerCombat : MonoBehaviour
     public BulletTracer bulletTracerPrefab;
 
     [Header("Unarmed Stats (สเตตัสมือเปล่า)")]
-    public int defaultDamage = 5;
+    public int defaultDamage = 20;
+    public int defaultHeavyDamage = 35;
     public float defaultRange = 1.5f;
-    public float defaultCooldown = 0.5f;
+    public float defaultCooldown = 0.4f;
+
+    [Header("Global Melee VFX")]
+    [Tooltip("ควัน/แสงรอยดาบ สำหรับท่าฟันเบา (ใช้กับทุกอาวุธประชิด)")]
+    public GameObject lightSlashVFX;
+    [Tooltip("ควัน/แสงรอยดาบ สำหรับท่าฟันหนัก (ใช้กับทุกอาวุธประชิด)")]
+    public GameObject heavySlashVFX;
 
     [Header("Gun States (สถานะปืน)")]
     public int currentAmmoInMag;
@@ -25,10 +32,23 @@ public class PlayerCombat : MonoBehaviour
     private Dictionary<ItemData, int> weaponAmmoMemory = new Dictionary<ItemData, int>();
     private float nextAttackTime = 0f;
 
+    // สำหรับระบบง้างฟัน (Charge Attack)
+    [HideInInspector] public bool isChargingMelee = false;
+    private float holdChargeTime = 0f;
+    
+    [Header("Combat Feel Settings")]
+    public float heavyChargeThreshold = 0.4f; // กดค้างขั้นต่ำเพื่อให้นับว่าเป็นการโจมตีหนัก
+    public float maxHeavyChargeTime = 1.5f; // ชาร์จครบเวลานี้ จะปล่อยฟันอัตโนมัติ
+    public float attackMovementPause = 0.4f; // เวลาที่ถูกหยุดเดินตอนกำลังฟันดาบ (เพื่อให้ท่ายืนตีชัดเจน)
+    public float heavyChargeSpeedMultiplier = 0.7f; // เดินช้าลง 30% ตอนง้าง
+
+    private PlayerMovement playerMovement;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         mainCam = Camera.main;
+        playerMovement = GetComponent<PlayerMovement>();
 
         if (Inventory.Instance != null)
         {
@@ -104,24 +124,39 @@ public class PlayerCombat : MonoBehaviour
             isAiming = false;
         }
 
-        if (Time.time >= nextAttackTime)
+        if (weapon == null || weapon.itemType == ItemType.MeleeWeapon || weapon.itemType == ItemType.General)
         {
-            if (Input.GetMouseButtonDown(0))
+            // ระบบง้างฟัน (Melee Charge) - ป้องกันการสแปมตีเบารัวๆ ด้วยการเช็คคูลดาวน์ก่อนเริ่มง้าง
+            if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
             {
-                if (weapon == null || weapon.itemType == ItemType.MeleeWeapon || weapon.itemType == ItemType.General)
+                isChargingMelee = true;
+                holdChargeTime = 0f;
+            }
+
+            if (isChargingMelee)
+            {
+                holdChargeTime += Time.deltaTime;
+
+                if (holdChargeTime >= maxHeavyChargeTime || Input.GetMouseButtonUp(0))
                 {
-                    PerformMeleeAttack(weapon);
+                    isChargingMelee = false;
+                    bool isHeavy = holdChargeTime >= heavyChargeThreshold;
+                    PerformMeleeAttack(weapon, isHeavy);
                 }
-                else if (weapon.itemType == ItemType.RangedWeapon)
+            }
+        }
+        else if (weapon.itemType == ItemType.RangedWeapon)
+        {
+            // ระบบยิงปืน (Ranged) ต้องกดเล็งคลิกขวาก่อน ถึงจะยิงได้
+            if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
+            {
+                if (isAiming)
                 {
-                    if (isAiming)
-                    {
-                        PerformRangeAttack(weapon);
-                    }
-                    else
-                    {
-                        Debug.Log("<color=red>ยิงไม่ได้! ต้องคลิกขวาเพื่อเปลี่ยนมุมมองเล็งก่อน!</color>");
-                    }
+                    PerformRangeAttack(weapon);
+                }
+                else
+                {
+                    Debug.Log("<color=red>ยิงไม่ได้! ต้องคลิกขวาเพื่อเปลี่ยนมุมมองเล็งก่อน!</color>");
                 }
             }
         }
@@ -240,14 +275,32 @@ public class PlayerCombat : MonoBehaviour
         isReloading = false;
     }
 
-    private void PerformMeleeAttack(ItemData weapon)
+    [HideInInspector] public bool isCurrentAttackHeavy = false;
+
+    private void PerformMeleeAttack(ItemData weapon, bool isHeavy)
     {
-        float cooldown = weapon != null ? weapon.lightAttackCooldown : defaultCooldown;
+        isCurrentAttackHeavy = isHeavy;
+        float cooldown = weapon != null ? (isHeavy ? weapon.heavyAttackCooldown : weapon.lightAttackCooldown) : (isHeavy ? defaultCooldown * 2f : defaultCooldown);
         nextAttackTime = Time.time + cooldown;
+
+        // สั่งหยุดเดินชั่วคราวตอนตี
+        if (playerMovement != null)
+        {
+            playerMovement.ApplyAttackPause(attackMovementPause);
+        }
 
         if (animator != null)
         {
-            animator.SetTrigger("Attack");
+            if (isHeavy)
+            {
+                Debug.Log("<color=magenta>💪 ชาร์จฟันหนัก (Heavy Attack)! ตรวจสอบว่าใน Animator มี Trigger ชื่อ HeavyAttack หรือยัง</color>");
+                animator.SetTrigger("HeavyAttack");
+            }
+            else
+            {
+                Debug.Log("<color=cyan>🔪 ฟันเบา (Light Attack)!</color>");
+                animator.SetTrigger("Attack");
+            }
         }
         else
         {
@@ -260,7 +313,11 @@ public class PlayerCombat : MonoBehaviour
     public int GetCurrentWeaponDamage()
     {
         ItemData weapon = GetEquippedWeapon();
-        return weapon != null ? weapon.damage : defaultDamage;
+        if (weapon != null)
+        {
+            return isCurrentAttackHeavy ? weapon.heavyAttackDamage : weapon.damage;
+        }
+        return isCurrentAttackHeavy ? defaultHeavyDamage : defaultDamage;
     }
 
     // ฟังก์ชันสำหรับส่งค่าผลักกระเด็น
@@ -268,6 +325,12 @@ public class PlayerCombat : MonoBehaviour
     {
         ItemData weapon = GetEquippedWeapon();
         return weapon != null ? weapon.knockback : 0f;
+    }
+
+    // ฟังก์ชันสำหรับส่ง Prefab ควัน/แสงดาบ ให้ CombatAnimationReceiver
+    public GameObject GetCurrentWeaponVFX()
+    {
+        return isCurrentAttackHeavy ? heavySlashVFX : lightSlashVFX;
     }
 
     public void PerformStrikeDamage()

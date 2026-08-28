@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Stats Settings (เลือด & สเตมิน่า)")]
     public int maxHealth = 100;
     private int currentHealth;
+    public int CurrentHealth => currentHealth;
 
     public float maxStamina = 100f;
     private float currentStamina;
@@ -38,13 +39,15 @@ public class PlayerMovement : MonoBehaviour
     private bool isDashing = false;
     private bool canDash = true;
     [HideInInspector] public bool isInvincible = false;
+    [HideInInspector] public bool isStunned = false;
+    private bool isAttackPaused = false; // สำหรับหยุดเดินตอนฟันดาบ
 
     [Header("References")]
     public Animator animator;
     public Transform aimAnchor;
     private Camera mainCam;
     private Rigidbody rb;
-    private PlayerCombat combatScript; // 🌟 เพิ่มตัวแปรรับสคริปต์ยิงปืน
+    private PlayerCombat combatScript;
 
     void Start()
     {
@@ -73,7 +76,7 @@ public class PlayerMovement : MonoBehaviour
         // 🌟 ถ้าเกมหยุด (เปิดหน้า Pause) ห้ามผู้เล่นขยับหรือหันหน้าตามเมาส์เด็ดขาด!
         if (Time.timeScale == 0f) return;
 
-        if (isDashing) return;
+        if (isDashing || isStunned || isAttackPaused) return;
 
         if (currentStamina < maxStamina)
         {
@@ -126,9 +129,22 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         if (isDashing) return;
+        
+        if (isStunned || isAttackPaused)
+        {
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            return;
+        }
 
         // คำนวณความเร็ว (ถ้าย่องอยู่ ให้คูณตัวลดความเร็ว)
         float currentMaxSpeed = isSneaking ? (baseSpeed * sneakSpeedMultiplier) : baseSpeed;
+        
+        // ถ้ากำลังชาร์จฟันดาบ ให้เดินช้าลง (ดึงค่าจาก PlayerCombat)
+        if (combatScript != null && combatScript.isChargingMelee)
+        {
+            currentMaxSpeed *= combatScript.heavyChargeSpeedMultiplier;
+        }
+
         Vector3 targetVelocity = moveInput * currentMaxSpeed;
 
         if (moveInput.magnitude > 0)
@@ -250,7 +266,11 @@ public class PlayerMovement : MonoBehaviour
             Debug.Log("แดชหลบได้! ผู้เล่นเป็นอมตะ ไม่โดนดาเมจ");
             return;
         }
+        TakeRawDamage(damage);
+    }
 
+    public void TakeRawDamage(int damage)
+    {
         currentHealth -= damage;
         Debug.Log($"<color=red>ผู้เล่นโดนโจมตี {damage} ดาเมจ! เลือดเหลือ {currentHealth}</color>");
 
@@ -263,6 +283,50 @@ public class PlayerMovement : MonoBehaviour
         {
             Die();
         }
+    }
+
+    public void ApplyStun(float duration)
+    {
+        if (!isInvincible && !isStunned)
+        {
+            StartCoroutine(StunRoutine(duration));
+        }
+    }
+
+    public void ApplyAttackPause(float duration)
+    {
+        StartCoroutine(AttackPauseRoutine(duration));
+    }
+
+    private IEnumerator AttackPauseRoutine(float duration)
+    {
+        isAttackPaused = true;
+        
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", 0f);
+        }
+
+        yield return new WaitForSeconds(duration);
+        isAttackPaused = false;
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+        Debug.Log($"<color=red>ผู้เล่นติดสตันเป็นเวลา {duration} วินาที!</color>");
+        
+        if (animator != null)
+        {
+            // ถ้ามีแอนิเมชัน Stun ค่อยไปตั้งค่า Trigger
+            // animator.SetTrigger("Hit"); 
+            animator.SetFloat("Speed", 0f);
+        }
+
+        yield return new WaitForSeconds(duration);
+        
+        isStunned = false;
+        Debug.Log("ผู้เล่นหายสตันแล้ว");
     }
 
     private void Die()

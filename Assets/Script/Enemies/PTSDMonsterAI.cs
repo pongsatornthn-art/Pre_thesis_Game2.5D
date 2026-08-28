@@ -22,9 +22,12 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
     public int attackDamage = 20; 
     public float attackCooldown = 2f;
     public int maxHealth = 100;
-    [Tooltip("โอกาสติดสตันเมื่อโดนตี (0-100)")]
-    [Range(0, 100)] public int stunChance = 20; 
     private int currentHealth;
+
+    [Header("Super Armor")]
+    public bool hasSuperArmor = false;
+    public float superArmorDuration = 3f; // ตั้งเวลาได้ว่ามันจะอยู่กี่วิ
+    private Coroutine superArmorCoroutine;
 
     // อ่านค่าได้อย่างเดียวให้คนอื่นดึงไปโชว์
     public int MaxHealth => maxHealth;
@@ -33,9 +36,13 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
     // 🌟 [SOLID: SRP] สร้าง Event ส่งสัญญาณออกไปเมื่อเลือดลด
     public event System.Action<int, int> OnHealthChanged;
 
-    [Header("Audio Settings (AAA)")]
+    [Header("Audio & VFX Settings (AAA)")]
     public AudioClip hitSound;
     public AudioClip dieSound;
+    [Tooltip("เอฟเฟกต์เลือดสาดตอนโดนตีเบา")]
+    public GameObject hitVFXPrefab;
+    [Tooltip("เอฟเฟกต์เลือดสาดอลังการตอนโดนตีหนัก")]
+    public GameObject heavyHitVFXPrefab;
 
     [Header("Movement Settings")]
     public float patrolSpeed = 2f;
@@ -153,13 +160,13 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
     }
 
     // อัปเดตให้ตรงกับ Interface IDamageable ของเพื่อน
-    public void TakeDamage(int damageAmount, float knockback)
+    public void TakeDamage(int damageAmount, float knockback, bool isHeavyAttack = false)
     {
-        TakeDamage(damageAmount);
+        TakeDamage(damageAmount, isHeavyAttack);
         // (ส่วนกระเด็น knockback ค่อยทำเพิ่มทีหลังถ้าต้องการ)
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(int damage, bool isHeavyAttack = false)
     {
         if (currentHealth <= 0) return; // ตายไปแล้วไม่ต้องตีซ้ำ
 
@@ -174,21 +181,77 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
         }
         else
         {
-            // 🌟 สุ่มโอกาสติดสตันเมื่อโดนโจมตี
-            int rand = UnityEngine.Random.Range(1, 101);
-            if (rand <= stunChance)
+            if (hasSuperArmor)
             {
-                Debug.Log($"<color=red>{gameObject.name} โดนโจมตี {damage} ดาเมจ! ติดสตัน!</color>");
-                ChangeState(new StateStun(1.0f)); 
+                Debug.Log($"<color=magenta>{gameObject.name} โดนตี {damage} ดาเมจ! แต่มี Super Armor! ไม่ชะงัก!</color>");
             }
             else
             {
-                Debug.Log($"<color=orange>{gameObject.name} โดนโจมตี {damage} ดาเมจ! (แต่ไม่ติดสตัน! ตีสวน!)</color>");
+                // ถ้าเป็นตีหนัก (Heavy Attack) ให้ติดสตัน 100% 
+                if (isHeavyAttack)
+                {
+                    Debug.Log($"<color=red>{gameObject.name} โดนตีหนัก {damage} ดาเมจ! ติดสตัน!</color>");
+                    ChangeState(new StateStun(2.5f)); 
+                    
+                    // เมื่อโดนตีหนักจนสตันแล้ว ให้ Super Armor ทำงานทันที
+                    if (superArmorCoroutine != null) StopCoroutine(superArmorCoroutine);
+                    superArmorCoroutine = StartCoroutine(SuperArmorRoutine(superArmorDuration));
+                }
+                else
+                {
+                    Debug.Log($"<color=orange>{gameObject.name} โดนตีเบา {damage} ดาเมจ! (ไม่ติดสตัน)</color>");
+                }
             }
-            
+
             // 🎵 [AAA Audio Service] เล่นเสียงโดนตีแบบ 3D
             if (hitSound != null)
                 ServiceLocator.Get<IAudioService>()?.PlaySFX(hitSound, transform.position);
+                
+            // 💥 [VFX] เกิดเอฟเฟกต์ตอนโดนตี (แยกตีหนัก/ตีเบา)
+            GameObject vfxToSpawn = isHeavyAttack && heavyHitVFXPrefab != null ? heavyHitVFXPrefab : hitVFXPrefab;
+            
+            if (vfxToSpawn != null)
+            {
+                // สุ่มตำแหน่งรอบๆ ตัวมอนสเตอร์ (บน ล่าง ซ้าย ขวา)
+                Vector3 randomOffset = Random.insideUnitSphere * 0.5f;
+                randomOffset.z = 0; // ล็อคแกน Z ไว้ให้อยู่ระนาบเดียวกับสไปรท์ จะได้ไม่จมไปหลังแผ่น Billboard
+                
+                // หาจุดกึ่งกลางที่แท้จริงของตัวมอนสเตอร์จาก Collider
+                Vector3 centerPos = transform.position;
+                Collider col = GetComponent<Collider>();
+                if (col != null) centerPos = col.bounds.center;
+                
+                // คำนวณพิกัดพร้อมสุ่มระยะ
+                Vector3 vfxPos = centerPos + randomOffset;
+                
+                // ดึงตำแหน่งมาใกล้กล้องนิดหน่อย (0.3 หน่วย) เพื่อป้องกันแผ่นมอนสเตอร์บังภาพ (Sorting Issue)
+                vfxPos -= Camera.main.transform.forward * 0.3f;
+                
+                Instantiate(vfxToSpawn, vfxPos, Quaternion.identity);
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator SuperArmorRoutine(float duration)
+    {
+        hasSuperArmor = true;
+        // ถ้ายืนสตันอยู่ ให้ข้อความบนหัวโชว์ว่าติดสตันพร้อมกับมีเกราะ
+        if (currentState != null && currentState.GetType() == typeof(StateStun))
+        {
+            ShowDebugText("STUNNED & ARMORED", Color.cyan);
+        }
+        else
+        {
+            ShowDebugText("SUPER ARMOR!", Color.magenta);
+        }
+
+        yield return new WaitForSeconds(duration);
+        hasSuperArmor = false;
+        
+        // ถ้าหายจาก Super Armor แล้วไม่ใช่ตอนสตัน ค่อยล้างข้อความ
+        if (currentState == null || currentState.GetType() != typeof(StateStun))
+        {
+            ShowDebugText("", Color.white);
         }
     }
 

@@ -20,7 +20,7 @@ public class StalkerStateLurk : IStalkerState
 
         ai.UpdateDetection();
 
-        if (ai.Awareness.IsActive) { ai.ChangeState(new StalkerStateChase()); return; }
+        if (ai.Awareness.IsActive) { ai.ChangeState(new StalkerStateScream()); return; }
         
         // เดินลาดตระเวนรอบๆ ผู้เล่นในเงามืด
         if (!ai.Agent.pathPending && ai.Agent.remainingDistance <= ai.Agent.stoppingDistance)

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public abstract class Entity : MonoBehaviour, IDamageable
 {
@@ -11,7 +11,7 @@ public abstract class Entity : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
     }
 
-    public virtual void TakeDamage(int damageAmount)
+    public virtual void TakeDamage(int damageAmount, bool isHeavyAttack = false)
     {
         currentHealth -= damageAmount;
         Debug.Log($"{gameObject.name} โดนโจมตี {damageAmount} ดาเมจ! เลือดเหลือ {currentHealth}");
@@ -25,7 +25,7 @@ public abstract class Entity : MonoBehaviour, IDamageable
     // บังคับให้คลาสลูกต้องเขียนฟังก์ชันตายของตัวเอง
     public abstract void Die();
 
-    public void TakeDamage(int damageAmount, float knockback)
+    public void TakeDamage(int damageAmount, float knockback, bool isHeavyAttack = false)
     {
         throw new System.NotImplementedException();
     }

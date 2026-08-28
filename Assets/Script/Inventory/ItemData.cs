@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Scripting;
 
 public enum ItemType { General, MeleeWeapon, RangedWeapon, Ammo, Totem, Consumable }
@@ -26,8 +26,10 @@ public class ItemData : ScriptableObject
 
     [Header("Combat Stats (Melee & General)")]
     public int damage = 10;
+    public int heavyAttackDamage = 20;
     public float attackRange = 2f;
     public float lightAttackCooldown = 0.5f;
+    public float heavyAttackCooldown = 1.0f;
     public float attackCooldown = 0.5f;
     public float staminaCost = 10f;
     public float knockback = 3f;
