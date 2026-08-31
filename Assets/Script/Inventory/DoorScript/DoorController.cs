@@ -18,6 +18,10 @@ public class DoorController : MonoBehaviour
     // 🌟 ช่องใส่ Text ขวาบน
     public TextMeshProUGUI notificationText;
 
+    // 🌟 เพิ่มช่องใส่ Box Collider ตัวทึบ (ตัวกันเดินทะลุ)
+    [Header("Physics")]
+    public BoxCollider solidCollider;
+
     private bool isPlayerNear = false;
     private Animator animator;
     private Coroutine notificationCoroutine; // ตัวเก็บค่าเวลานับถอยหลัง
@@ -87,6 +91,13 @@ public class DoorController : MonoBehaviour
     {
         isOpen = !isOpen;
         if (animator != null) animator.SetBool("IsOpen", isOpen);
+
+        // 🌟 ปิด/เปิด กล่องฟิสิกส์ทึบ ตามสถานะประตู
+        // ถ้า isOpen เป็น true (เปิด) -> enabled จะเป็น false (เดินทะลุได้)
+        if (solidCollider != null)
+        {
+            solidCollider.enabled = !isOpen;
+        }
     }
 
     // 🌟 ระบบโชว์ข้อความ 2.5 วินาที แล้วลบทิ้ง
