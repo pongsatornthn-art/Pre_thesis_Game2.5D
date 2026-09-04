@@ -17,19 +17,11 @@ public class InventoryItem
     public void AddAmount(int value) => amount += value;
 }
 
-/// <summary>
-/// ระบบกระเป๋าของผู้เล่น (ตัวข้อมูล ไม่ผูกกับสคริปต์ตัวละครหรือ UI ตัวใดโดยเฉพาะ)
-/// เกมใหม่สามารถ subscribe OnInventoryChanged / OnEquipChanged แทนการแก้โค้ดไฟล์นี้
-/// </summary>
 public class Inventory : MonoBehaviour
 {
     public static Inventory Instance { get; private set; }
 
-    /// <summary>เรียกทุกครั้งที่กระเป๋ามีการเปลี่ยนแปลง (เพิ่ม/ลบ/สลับของ)</summary>
     public event Action OnInventoryChanged;
-
-    /// <summary>เรียกทุกครั้งที่ของที่ "สวมใส่/ถืออยู่" เปลี่ยน (null = ถอดออก)
-    /// ให้สคริปต์ตัวละคร/อนิเมชันของเกมใหม่มา subscribe ตรงนี้แทนการอ้างอิง PlayerController ตรงๆ</summary>
     public event Action<ItemData> OnEquipChanged;
 
     public int space = 30;
@@ -50,7 +42,6 @@ public class Inventory : MonoBehaviour
     }
 
     // ---------------- จัดการไอเทม ----------------
-
     public bool AddItem(ItemData item, int amount = 1)
     {
         InventoryItem existingItem = items.Find(i =>
@@ -132,7 +123,6 @@ public class Inventory : MonoBehaviour
         (index >= 0 && index < items.Count) ? items[index] : null;
 
     // ---------------- สวมใส่ / ถืออาวุธ ----------------
-
     public void EquipItem(ItemData itemToEquip)
     {
         currentEquippedItem = itemToEquip;
@@ -144,22 +134,39 @@ public class Inventory : MonoBehaviour
         currentEquippedItem = null;
         OnEquipChanged?.Invoke(null);
     }
+
     public void SwapItems(int fromIndex, int toIndex)
     {
-        // เติมช่องว่าง (null) ให้เต็มกัน Error 
         while (items.Count <= Mathf.Max(fromIndex, toIndex))
         {
             items.Add(null);
         }
 
-        // สลับข้อมูลใน List
         var temp = items[fromIndex];
         items[fromIndex] = items[toIndex];
         items[toIndex] = temp;
 
         Debug.Log($"<color=cyan>สลับไอเทมจากช่อง {fromIndex} ไปช่อง {toIndex} เรียบร้อย!</color>");
-
-        // ⭐ บรรทัดนี้สำคัญมาก! เป็นการตะโกนบอกไฟล์ InventoryUI ว่า "เห้ย! ของสลับแล้ว วาดรูปใหม่เดี๋ยวนี้!"
         OnInventoryChanged?.Invoke();
+    }
+
+    // 🌟 เพิ่มใหม่: ระบบโอนย้ายข้ามหน้าต่าง (กระเป๋า <-> กล่อง) 
+    public void TransferItemCross(InventorySlotUI fromSlot, InventorySlotUI toSlot)
+    {
+        List<InventoryItem> fromList = fromSlot.isStorageSlot ? fromSlot.currentStorage.items : this.items;
+        List<InventoryItem> toList = toSlot.isStorageSlot ? toSlot.currentStorage.items : this.items;
+
+        while (fromList.Count <= fromSlot.slotIndex) fromList.Add(null);
+        while (toList.Count <= toSlot.slotIndex) toList.Add(null);
+
+        var temp = fromList[fromSlot.slotIndex];
+        fromList[fromSlot.slotIndex] = toList[toSlot.slotIndex];
+        toList[toSlot.slotIndex] = temp;
+
+        Debug.Log("<color=yellow>ย้ายไอเทมข้ามกระเป๋า/กล่อง เรียบร้อย!</color>");
+
+        OnInventoryChanged?.Invoke();
+        if (fromSlot.isStorageSlot) fromSlot.currentStorage.RefreshUI();
+        if (toSlot.isStorageSlot) toSlot.currentStorage.RefreshUI();
     }
 }

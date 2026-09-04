@@ -10,6 +10,11 @@ public class InventorySlotUI : MonoBehaviour, IDropHandler, IInventorySlotUI
     public ItemData item;
     public int slotIndex;
 
+    // 🌟 ระบบกล่อง
+    [Header("Storage System")]
+    public bool isStorageSlot = false;
+    public StorageBox currentStorage;
+
     public void AddItem(ItemData newItem, int amount, bool isHotbar)
     {
         item = newItem;
@@ -27,7 +32,6 @@ public class InventorySlotUI : MonoBehaviour, IDropHandler, IInventorySlotUI
 
         if (amountText != null)
         {
-            // 🌟 แก้ตรงบรรทัดนี้ครับ เปลี่ยนจาก (amount > 1) เป็น (amount >= 1)
             if (amount >= 1)
             {
                 amountText.text = amount.ToString();
@@ -47,31 +51,49 @@ public class InventorySlotUI : MonoBehaviour, IDropHandler, IInventorySlotUI
         if (icon != null)
         {
             icon.sprite = null;
-            icon.color = new Color(1, 1, 1, 0); // ทำให้รูปไอเทมโปร่งใส
+            icon.color = new Color(1, 1, 1, 0);
         }
 
         if (amountText != null)
         {
-            // ซ่อนเลข 99 (หรือตัวเลขใดๆ) ทิ้งไปเลยเมื่อช่องนี้ว่างเปล่า
             amountText.text = "";
             amountText.gameObject.SetActive(false);
         }
     }
-    // ฟังก์ชันนี้จะทำงานเมื่อมีการ "ปล่อยเมาส์" ใส่ช่องนี้
+
+    // 🌟 อัปเดตระบบ OnDrop
     public void OnDrop(PointerEventData eventData)
     {
-        // เช็กว่าของที่กำลังโดนลากมาคืออะไร
         GameObject droppedObject = eventData.pointerDrag;
 
         if (droppedObject != null)
         {
             ItemDrag draggedItem = droppedObject.GetComponent<ItemDrag>();
+            InventorySlotUI fromSlot = draggedItem?.mySlot as InventorySlotUI;
 
-            // ถ้าสิ่งที่ลากมาคือไอเทม และไม่ได้ปล่อยกลับลงไปที่ช่องเดิมของตัวเอง
-            if (draggedItem != null && draggedItem.mySlot != this)
+            if (fromSlot == null && draggedItem != null)
             {
-                // สั่งระบบกระเป๋าหลักให้สลับของระหว่าง 2 ช่องนี้!
-                Inventory.Instance.SwapItems(draggedItem.mySlot.slotIndex, slotIndex);
+                // เผื่อว่า mySlot ของคุณพงศธรไม่ได้เก็บค่าเป็น InventorySlotUI โดยตรง
+                fromSlot = draggedItem.mySlot.GetComponent<InventorySlotUI>();
+            }
+
+            if (fromSlot != null && fromSlot != this)
+            {
+                if (!fromSlot.isStorageSlot && !this.isStorageSlot)
+                {
+                    // กระเป๋า <-> กระเป๋า
+                    Inventory.Instance.SwapItems(fromSlot.slotIndex, slotIndex);
+                }
+                else if (fromSlot.isStorageSlot && this.isStorageSlot && currentStorage != null)
+                {
+                    // กล่อง <-> กล่อง
+                    currentStorage.SwapItems(fromSlot.slotIndex, slotIndex);
+                }
+                else
+                {
+                    // กระเป๋า <-> กล่อง 
+                    Inventory.Instance.TransferItemCross(fromSlot, this);
+                }
             }
         }
     }
