@@ -11,10 +11,10 @@ public class MonsterSpawner : MonoBehaviour
 
     [Header("Behavior Setup (นิสัยมอนสเตอร์จุดนี้)")]
     public PTSDMonsterAI.PatrolBehaviorType spawnBehavior;
-    
+
     [Tooltip("ลากกล่อง PatrolZone ในฉากมาใส่ (ลากตัวมันเองใส่ก็ได้ถ้าแปะสคริปต์ไว้ด้วยกัน)")]
     public PatrolZone linkedZone;
-    
+
     [Tooltip("ลากกล่อง PatrolRoute ในฉากมาใส่")]
     public PatrolRoute linkedRoute;
 
@@ -41,14 +41,17 @@ public class MonsterSpawner : MonoBehaviour
 
     private void OnEnable()
     {
+        // 🌟 เกาะ Event วิทยุที่เป็นแบบ True/False แล้ว
         PTSDManager.OnPTSDStateChanged += HandlePTSDStateChange;
     }
 
     private void OnDisable()
     {
+        // 🌟 ยกเลิกการเกาะ Event
         PTSDManager.OnPTSDStateChanged -= HandlePTSDStateChange;
     }
 
+    // 🌟 เปลี่ยนให้รับค่า bool (isActive) แทนค่า float
     private void HandlePTSDStateChange(bool isPTSDActive)
     {
         if (isPTSDActive)
@@ -76,12 +79,12 @@ public class MonsterSpawner : MonoBehaviour
 
                     GameObject monster = Instantiate(monsterPrefabToSpawn, spawnPos, transform.rotation);
                     spawnedMonsters.Add(monster);
-                    
+
                     var ai = monster.GetComponent<PTSDMonsterAI>();
                     if (ai != null)
                     {
                         ai.InjectBehavior(spawnBehavior, linkedZone, linkedRoute);
-                        
+
                         // สมัครรอฟังว่าถ้ามอนตัวนี้ตาย ให้มาเรียกฟังก์ชัน HandleMonsterDeath ของเรา
                         ai.OnDeath += () => HandleMonsterDeath(monster);
                     }
@@ -106,7 +109,7 @@ public class MonsterSpawner : MonoBehaviour
             remainingCount--; // หักยอดโควต้าลงไป 1 ทันที!
             Debug.Log($"[MonsterSpawner] มอนสเตอร์ตาย! ยอดคงเหลือในห้องนี้: {remainingCount}/{spawnCount}");
         }
-        
+
         spawnedMonsters.Remove(deadMonster);
         Destroy(deadMonster, 2f); // หน่วงเวลาทำลายศพทิ้ง 2 วินาที
     }

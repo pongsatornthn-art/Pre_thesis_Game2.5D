@@ -21,6 +21,14 @@ public class StorageBoxUI : MonoBehaviour
         uiPanel.SetActive(false);
     }
 
+    void Update()
+    {
+        if (uiPanel.activeSelf && Input.GetKeyDown(KeyCode.I))
+        {
+            CloseBox();
+        }
+    }
+
     public void OpenBox(StorageBox box)
     {
         if (currentBox != null) currentBox.OnStorageChanged -= UpdateUI;
