@@ -21,6 +21,11 @@ public class PTSDCameraShake : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        HandleCameraShake(false);
+    }
+
     private void OnEnable()
     {
         PTSDManager.OnPTSDStateChanged += HandleCameraShake;

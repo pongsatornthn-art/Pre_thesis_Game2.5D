@@ -20,6 +20,9 @@ public class PTSDMinigameCharger : MonoBehaviour
     [Tooltip("ลาก Image หลอดสีเขียว (ตั้งค่าเป็น Filled 360) มาใส่")]
     public Image fillGaugeImage;
 
+    [Tooltip("ลากออบเจกต์ข้อความ Hold [SPACE] (PromptText) มาใส่ที่นี่")]
+    public GameObject promptTextObj;
+
     [Header("Events (สำหรับส่งไปบอกระบบอื่น)")]
     [Tooltip("ใส่ Event สั่งเปิดหน้าต่างมินิเกมของจริง หรือตัดเข้าฉากมินิเกม")]
     public UnityEvent OnChargeComplete;
@@ -33,11 +36,9 @@ public class PTSDMinigameCharger : MonoBehaviour
     {
         if (PTSDManager.Instance == null || !PTSDManager.Instance.isPTSDActive)
         {
-            if (chargeUIPanel != null && chargeUIPanel.activeSelf)
-            {
-                chargeUIPanel.SetActive(false);
-                ResetCharge();
-            }
+            if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
+
+            ResetCharge();
             return;
         }
 
@@ -46,6 +47,9 @@ public class PTSDMinigameCharger : MonoBehaviour
         if (chargeUIPanel != null && !chargeUIPanel.activeSelf)
         {
             chargeUIPanel.SetActive(true);
+
+            // 🌟 2. บังคับเปิดตาให้ข้อความทุกครั้งที่ UI ชาร์จโผล่ขึ้นมา
+            if (promptTextObj != null) promptTextObj.SetActive(true);
         }
 
         HandleCharging();
