@@ -40,9 +40,9 @@ public class PlayerAnimationController : MonoBehaviour
         float moveY = Input.GetAxisRaw("Vertical");
         bool isMoving = (moveX != 0 || moveY != 0); // เช็กว่ามีการกดปุ่มเดินไหม
 
-        // 3. เช็กสถานะเล็งและยิง
-        bool isAiming = (playerCombat != null) && playerCombat.isAiming;
-        bool isShooting = Input.GetMouseButton(0) && isAiming && isHoldingGun;
+        // 3. เช็กว่ากำลังยิงอยู่ไหม
+        // 🌟 [Alien Shooter Update] ยิงได้เลยไม่ต้องคลิกขวาค้างก่อนแล้ว เลยตัด isAiming ออกจากเงื่อนไขยิง
+        bool isShooting = Input.GetMouseButton(0) && isHoldingGun;
 
         // ------------------------------------------------------------------
         // 🌟 จุดที่เพิ่มเข้ามาเพื่อแก้แอนิเมชันค้าง (ส่งค่าให้ Blend Tree ทำงาน)
@@ -52,8 +52,9 @@ public class PlayerAnimationController : MonoBehaviour
             // ส่งค่า Speed (ถ้า Blend Tree ใช้ Speed คูณความเร็วแอนิเมชัน ถ้าเป็น 0 มันจะค้าง)
             animator.SetFloat("Speed", isMoving ? 1f : 0f);
 
-            // ถ้าไม่ได้เล็งปืนอยู่ ให้หันหน้าตามปุ่ม W A S D ที่กด (ส่งค่า AimX, AimZ)
-            if (!isAiming && isMoving)
+            // ถ้าถือปืนอยู่ ปล่อยให้ PlayerMovement เป็นคนคุม AimX/AimZ (หันตามเมาส์ตลอด) ไม่ต้องมาแย่งกัน
+            // ไม่ถือปืน (มือเปล่า/ดาบ) ค่อยหันหน้าตามปุ่ม W A S D ที่กด
+            if (!isHoldingGun && isMoving)
             {
                 // แปลงค่าให้สมูทขึ้นนิดหน่อย ป้องกันแอนิเมชันกระตุก
                 Vector2 moveDir = new Vector2(moveX, moveY).normalized;
@@ -70,10 +71,8 @@ public class PlayerAnimationController : MonoBehaviour
             {
                 ChangeAnimation("Shoot_Tree");
             }
-            else if (isAiming)
-            {
-                ChangeAnimation("Aim_Idle");
-            }
+            // 🌟 [Alien Shooter Update] ตัดท่า "Aim_Idle" (ท่าเล็ง FPS เก่า หันหลังให้กล้อง) ออก
+            // คลิกขวาไม่เปลี่ยนท่าอีกแล้ว ใช้ท่าปกติที่หันตามเมาส์ 8 ทิศแทน
             else if (isMoving)
             {
                 ChangeAnimation("Gun_Movement");

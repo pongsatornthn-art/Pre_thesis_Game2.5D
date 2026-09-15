@@ -27,7 +27,19 @@ public class PlayerCombat : MonoBehaviour
     public int currentAmmoInMag;
     public float currentSpreadAngle;
     private bool isReloading = false;
+    // 🌟 [Alien Shooter Update] isAiming ตอนนี้ไม่ใช่ "โหมดเล็ง FPS" อีกต่อไป
+    // แค่บอกว่า "กำลังกดคลิกขวาค้าง" เพื่อทำให้ปืนนิ่งขึ้น (แคบกรวยกระสุน + เดินช้าลง) เท่านั้น
+    // ถือปืนคือยิงได้เลยโดยไม่ต้องกดคลิกขวาก่อน
     public bool isAiming = false;
+
+    [Header("Alien Shooter Aim Settings")]
+    [Tooltip("ตอนกดคลิกขวาค้าง (นิ่งขึ้น) กรวยกระสุนจะแคบลงเหลือกี่เท่าของค่าปกติ")]
+    [Range(0f, 1f)] public float steadySpreadMultiplier = 0.35f;
+    [Tooltip("ตอนกดคลิกขวาค้าง (นิ่งขึ้น) ความเร็วเดินจะเหลือกี่เท่า")]
+    [Range(0f, 1f)] public float steadyAimSpeedMultiplier = 0.5f;
+
+    /// <summary>ตัวละครถือปืนอยู่ไหม (ให้ PlayerMovement ใช้ตัดสินใจเรื่องหันหน้า/ความเร็ว)</summary>
+    public bool HasRangedWeaponEquipped => GetEquippedWeapon()?.itemType == ItemType.RangedWeapon;
 
     private Dictionary<ItemData, int> weaponAmmoMemory = new Dictionary<ItemData, int>();
     private float nextAttackTime = 0f;
@@ -98,17 +110,20 @@ public class PlayerCombat : MonoBehaviour
 
         if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
         {
+            // 🌟 คลิกขวาค้าง = "นิ่งขึ้น" (แคบกรวย + เดินช้า) ไม่ใช่กดเพื่อให้ยิงได้อีกต่อไป
             isAiming = Input.GetMouseButton(1);
 
             if (animator != null)
             {
-                animator.SetBool("IsAiming", isAiming);
+                // 🌟 [Alien Shooter Update] ห้ามส่ง true เด็ดขาด!
+                // ใน Player_Anim.controller มี transition ผูกกับ IsAiming ที่ลากตัวละครเข้า state "Aim_Idle"
+                // ซึ่งเป็นท่าเล็ง FPS เก่า (หันหลังให้กล้อง) ทำให้สไปรท์หันหน้าขึ้นค้างตอนกดคลิกขวา
+                // ตอนนี้คลิกขวา = แค่ "นิ่งขึ้น" ไม่ต้องเปลี่ยนท่า ให้ใช้ blend tree 8 ทิศตามเมาส์เหมือนเดิม
+                animator.SetBool("IsAiming", false);
             }
 
-            if (isAiming)
-            {
-                FaceMouseCursor();
-            }
+            // 🌟 ถือปืนคือหันตามเมาส์ตลอดเวลา ไม่ต้องกดคลิกขวาก่อน
+            FaceMouseCursor();
 
             HandleCrosshairFocus(weapon as RangedWeaponData);
 
@@ -147,35 +162,25 @@ public class PlayerCombat : MonoBehaviour
         }
         else if (weapon.itemType == ItemType.RangedWeapon)
         {
-            // ระบบยิงปืน (Ranged) ต้องกดเล็งคลิกขวาก่อน ถึงจะยิงได้
+            // 🌟 ระบบยิงปืนแบบ Alien Shooter: ถือปืนคือยิงได้เลย ไม่ต้องกดคลิกขวาก่อน
             if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
             {
-                if (isAiming)
-                {
-                    PerformRangeAttack(weapon as RangedWeaponData);
-                }
-                else
-                {
-                    Debug.Log("<color=red>ยิงไม่ได้! ต้องคลิกขวาเพื่อเปลี่ยนมุมมองเล็งก่อน!</color>");
-                }
+                PerformRangeAttack(weapon as RangedWeaponData);
             }
         }
     }
 
     private void HandleCrosshairFocus(RangedWeaponData gun)
     {
+        // 🌟 กระสุนสุ่มกระจายในกรวยตามปกติ (ยิ่งเดินยิ่งกว้าง ยืนนิ่งยิ่งแคบ)
+        // ถ้ากดคลิกขวาค้าง (นิ่งขึ้น) กรวยจะแคบลงอีกชั้น ไม่ว่าจะเดินอยู่หรือไม่ก็ตาม
         bool isMoving = rb.linearVelocity.magnitude > 0.1f;
+        float targetSpread = isMoving ? gun.maxSpreadAngle : 0f;
 
-        if (isMoving)
-        {
-            currentSpreadAngle = gun.maxSpreadAngle;
-        }
-        else
-        {
-            float shrinkRate = gun.maxSpreadAngle / gun.focusTime;
-            currentSpreadAngle -= shrinkRate * Time.deltaTime;
-            currentSpreadAngle = Mathf.Max(0f, currentSpreadAngle);
-        }
+        if (isAiming) targetSpread *= steadySpreadMultiplier;
+
+        float moveRate = gun.maxSpreadAngle / gun.focusTime;
+        currentSpreadAngle = Mathf.MoveTowards(currentSpreadAngle, targetSpread, moveRate * Time.deltaTime);
     }
 
     private void PerformRangeAttack(RangedWeaponData gun)
@@ -386,10 +391,7 @@ public class PlayerCombat : MonoBehaviour
 
     private Vector3 GetAimScreenPosition()
     {
-        if (isAiming)
-        {
-            return new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
-        }
+        // 🌟 ไม่มีกล้อง FPS ซูมกลางจอแล้ว ยิงตามตำแหน่งเมาส์บนจอเสมอ
         return Input.mousePosition;
     }
 }

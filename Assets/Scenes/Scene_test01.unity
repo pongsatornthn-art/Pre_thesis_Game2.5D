@@ -6558,7 +6558,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vCamNormal: {fileID: 1354282949}
-  vCamAiming: {fileID: 464801270}
+  vCamAiming: {fileID: 0}
   playerCombat: {fileID: 1848288844}
   playerTransform: {fileID: 1848288838}
   normalMouseWeight: 0.2
@@ -15171,7 +15171,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!65 &1147007179
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15283,7 +15283,7 @@ Transform:
   m_GameObject: {fileID: 1147007178}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.85, y: 0.608, z: 1.05}
+  m_LocalPosition: {x: -36.55, y: 0.608, z: 6.01}
   m_LocalScale: {x: 0.02, y: 0.02, z: 0.02}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -23543,6 +23543,8 @@ MonoBehaviour:
   currentAmmoInMag: 0
   currentSpreadAngle: 0
   isAiming: 0
+  steadySpreadMultiplier: 0.35
+  steadyAimSpeedMultiplier: 0.5
   isChargingMelee: 0
   heavyChargeThreshold: 0.4
   maxHeavyChargeTime: 1.5

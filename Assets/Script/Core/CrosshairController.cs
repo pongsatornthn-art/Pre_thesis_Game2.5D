@@ -45,16 +45,9 @@ public class CrosshairController : MonoBehaviour
         // 4. ถ้าเป้าเล็งเปิดใช้งานอยู่ ให้ทำงาน 2 อย่างนี้
         if (shouldShowCrosshair)
         {
-            // 🌟 (อัปเดตใหม่) เช็กสถานะ: ถ้ากำลังคลิกขวาเล็งอยู่ ให้เป้าล็อคกลางจอ!
-            if (playerCombat != null && playerCombat.isAiming)
-            {
-                crosshairRect.position = new Vector2(Screen.width / 2f, Screen.height / 2f);
-            }
-            else
-            {
-                // ถ้าไม่ได้เล็งข้ามไหล่ ให้เป้าขยับตามเมาส์ปกติ
-                crosshairRect.position = Input.mousePosition;
-            }
+            // 🌟 [Alien Shooter Update] ไม่มีโหมดเล็ง FPS แล้ว เป้าจึงตามเมาส์ตลอดเวลา
+            // (ของเดิมจะล็อกเป้าไปกลางจอตอนกดคลิกขวา ซึ่งตอนนี้คลิกขวาแปลว่า "นิ่งขึ้น" ไม่ใช่ซูมกล้อง)
+            crosshairRect.position = Input.mousePosition;
 
             // 🎯 คำนวณความบานของเป้า ตามสถานะการเดิน/ยืนนิ่ง
             if (playerCombat != null)

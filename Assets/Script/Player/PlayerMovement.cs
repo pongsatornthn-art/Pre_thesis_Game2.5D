@@ -145,6 +145,12 @@ public class PlayerMovement : MonoBehaviour
             currentMaxSpeed *= combatScript.heavyChargeSpeedMultiplier;
         }
 
+        // 🌟 [Alien Shooter Update] ถือปืน + กดคลิกขวาค้าง (นิ่งขึ้น) = เดินช้าลง
+        if (combatScript != null && combatScript.isAiming && combatScript.HasRangedWeaponEquipped)
+        {
+            currentMaxSpeed *= combatScript.steadyAimSpeedMultiplier;
+        }
+
         Vector3 targetVelocity = moveInput * currentMaxSpeed;
 
         if (moveInput.magnitude > 0)
@@ -163,26 +169,16 @@ public class PlayerMovement : MonoBehaviour
     {
         if (mainCam == null) return;
 
+        // 🌟 [Alien Shooter Update] ไม่มีโหมดกล้อง FPS แล้ว เลยหันหน้าตามเมาส์บนพื้นเสมอ
+        // (ไม่ว่าจะถือปืน ดาบ หรือมือเปล่า) ต่างกันแค่ "แบบไหน" หันตอนถือปืน (raw ลื่น) กับตอนไม่ถือ (snap 8 ทิศ)
         Vector3 aimDirection = Vector3.zero;
-        bool isAiming = combatScript != null && combatScript.isAiming; // 🌟 เช็กว่ากำลังกดคลิกขวาเล็งอยู่ไหม
+        Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
+        Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
 
-        // 🌟 2. แยกเงื่อนไขการหันหน้าไม่ให้ทะเลาะกัน
-        if (isAiming)
+        if (groundPlane.Raycast(ray, out float rayDistance))
         {
-            // ถ้ากำลังเล็งปืน ให้หันหน้าตามทิศที่กล้องมอง
-            aimDirection = mainCam.transform.forward;
-        }
-        else
-        {
-            // ถ้าเดินถือขวานมือเปล่า ให้หันหน้าตามเมาส์ปกติ
-            Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
-            Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
-
-            if (groundPlane.Raycast(ray, out float rayDistance))
-            {
-                Vector3 mousePoint = ray.GetPoint(rayDistance);
-                aimDirection = (mousePoint - transform.position).normalized;
-            }
+            Vector3 mousePoint = ray.GetPoint(rayDistance);
+            aimDirection = (mousePoint - transform.position).normalized;
         }
 
         aimDirection.y = 0f;
@@ -193,6 +189,9 @@ public class PlayerMovement : MonoBehaviour
             aimAnchor.forward = aimDirection;
         }
 
+        // 🌟 ถือปืนอยู่ = หันแบบลื่น (raw) เอาไว้เล็งละเอียด / ถือดาบหรือมือเปล่า = หันแบบ snap 8 ทิศ (ฟีลหนักแน่น)
+        bool useRawAim = combatScript != null && combatScript.HasRangedWeaponEquipped;
+
         if (animator != null)
         {
             float angle = Mathf.Atan2(aimDirection.x, aimDirection.z) * Mathf.Rad2Deg;
@@ -200,8 +199,7 @@ public class PlayerMovement : MonoBehaviour
             float snappedAimX = Mathf.Sin(snappedAngle * Mathf.Deg2Rad);
             float snappedAimZ = Mathf.Cos(snappedAngle * Mathf.Deg2Rad);
 
-            // ถ้ากำลังเล็งเป้าปืน ไม่ต้องให้ตัวละครหันแบบกระตุก 8 ทิศ
-            if (isAiming)
+            if (useRawAim)
             {
                 animator.SetFloat("AimX", aimDirection.x);
                 animator.SetFloat("AimZ", aimDirection.z);
@@ -234,7 +232,7 @@ public class PlayerMovement : MonoBehaviour
             // (ถ้าตัวเลขยังขยับตามเมาส์ แปลว่าโค้ดทำงานปกติ 100% บัคอยู่ที่ Animator)
             // (ถ้าตัวเลขหยุดนิ่ง แปลว่ามีโค้ดบางบรรทัดค้างหรือพัง)
             // เปิดปิดการ Log ได้ด้วยการ comment บรรทัดล่างนี้ถ้าเทสเสร็จแล้ว
-            Debug.Log($"[Debug] isAiming={isAiming} | AimX={animator.GetFloat("AimX"):F2} | AimZ={animator.GetFloat("AimZ"):F2} | CurrentState={animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
+            Debug.Log($"[Debug] useRawAim={useRawAim} | AimX={animator.GetFloat("AimX"):F2} | AimZ={animator.GetFloat("AimZ"):F2} | CurrentState={animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
         }
     }
 
