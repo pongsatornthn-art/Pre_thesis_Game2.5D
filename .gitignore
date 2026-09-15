@@ -33,3 +33,7 @@ sysinfo.txt
 *.apk
 *.unitypackage
 *.app
+# เอกสารที่คุยงานกับ AI — เก็บไว้ในเครื่องพอ ไม่ต้องอัปขึ้น git
+HANDOFF.md
+PROJECT_CONTEXT.md
+PLAYER_SYSTEMS.md
