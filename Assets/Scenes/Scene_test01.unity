@@ -93,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 150167ce512c5d746b8f4f1872bbb305, type: 2}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -1689,8 +1689,10 @@ PlayableDirector:
     m_References:
     - 92b480d76febb644c879342d6852fd7f: {fileID: 793365913}
     - 3d91db8e9aa989047b49535463fe619b: {fileID: 1354282951}
+    - acd87f4c9186f1b4389e2b4382ce423f: {fileID: 1354282951}
     - cc96b95f690fc8347adf6da805b89c4b: {fileID: 999348483}
     - 7a1c8929d3d48954d8d7f4601b72b936: {fileID: 1059475661}
+    - 0584caeda121baf40a0eaa08c2de93c0: {fileID: 1354282951}
 --- !u!4 &132713281
 Transform:
   m_ObjectHideFlags: 0
