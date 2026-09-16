@@ -54,7 +54,14 @@ public class PlayerCombat : MonoBehaviour
     public float attackMovementPause = 0.4f; // เวลาที่ถูกหยุดเดินตอนกำลังฟันดาบ (เพื่อให้ท่ายืนตีชัดเจน)
     public float heavyChargeSpeedMultiplier = 0.7f; // เดินช้าลง 30% ตอนง้าง
 
+    [Header("Melee Swing Timing (จังหวะฟัน — คุมด้วยโค้ด ไม่ใช้ Animation Event แล้ว)")]
+    [Tooltip("หน่วงก่อนเปิด hitbox (วินาที) — เหมือนจังหวะง้างดาบ")]
+    public float meleeWindupTime = 0.08f;
+    [Tooltip("hitbox เปิดค้างกี่วินาที (ยิ่งนานยิ่งฟันโดนง่าย)")]
+    public float meleeActiveTime = 0.18f;
+
     private PlayerMovement playerMovement;
+    private CombatAnimationReceiver meleeReceiver;
 
     void Start()
     {
@@ -81,10 +88,23 @@ public class PlayerCombat : MonoBehaviour
         isReloading = false;
         isAiming = false;
 
+        // 🌟 [แก้บั๊กแอนิเมชันกระพริบ] ล้างสถานะค้างของอาวุธชิ้นเก่าให้หมดก่อนเปลี่ยนอาวุธ
+        // ปัญหาเดิม: กดค้างจะฟันอยู่ แล้วสลับไปปืน -> โค้ดที่ปล่อยค่าอยู่ในสาขาที่ถูกข้าม
+        // ทำให้ isChargingMelee ค้าง true (เดินช้าถาวร) และ trigger ค้างในคิว
+        // แล้วไปเด้งทีหลังตอนยิงปืน = ตัวละครกระพริบเข้าท่าฟัน (Test_Attack) เสี้ยววิ
+        isChargingMelee = false;
+        holdChargeTime = 0f;
+        isCurrentAttackHeavy = false;
+
         bool holdingGun = (newWeapon != null && newWeapon.itemType == ItemType.RangedWeapon);
         if (animator != null)
         {
             animator.SetBool("HasGun", holdingGun);
+
+            // ล้าง trigger ที่อาจค้างอยู่ในคิว ไม่ให้ข้ามมาเด้งกับอาวุธชิ้นใหม่
+            animator.ResetTrigger("Attack");
+            animator.ResetTrigger("HeavyAttack");
+            animator.ResetTrigger("Shoot");
         }
 
         if (holdingGun && newWeapon is RangedWeaponData gunData)
@@ -170,8 +190,28 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    // กันไฟล์ไอเทมที่ตั้งค่าผิด (itemType = ปืน แต่ไฟล์ไม่ได้สร้างจาก RangedWeaponData)
+    // ไม่ให้สาด NullReferenceException ทุกเฟรมจนเกมพัง — เตือนครั้งเดียวพอ
+    private ItemData warnedBadGun;
+    private bool IsGunDataValid(RangedWeaponData gun)
+    {
+        if (gun != null) return true;
+
+        ItemData eq = GetEquippedWeapon();
+        if (eq != null && warnedBadGun != eq)
+        {
+            warnedBadGun = eq;
+            Debug.LogError($"[PlayerCombat] ไอเทม \"{eq.itemName}\" ตั้ง Item Type เป็น RangedWeapon " +
+                           $"แต่ไฟล์ asset ไม่ได้สร้างจาก RangedWeaponData -> ใช้ยิงไม่ได้\n" +
+                           $"วิธีแก้: สร้างไอเทมใหม่ผ่าน Create > Inventory > Items > Ranged Weapon แล้วใส่ค่าให้เหมือนเดิม");
+        }
+        return false;
+    }
+
     private void HandleCrosshairFocus(RangedWeaponData gun)
     {
+        if (!IsGunDataValid(gun)) return;
+
         // 🌟 กระสุนสุ่มกระจายในกรวยตามปกติ (ยิ่งเดินยิ่งกว้าง ยืนนิ่งยิ่งแคบ)
         // ถ้ากดคลิกขวาค้าง (นิ่งขึ้น) กรวยจะแคบลงอีกชั้น ไม่ว่าจะเดินอยู่หรือไม่ก็ตาม
         bool isMoving = rb.linearVelocity.magnitude > 0.1f;
@@ -185,6 +225,8 @@ public class PlayerCombat : MonoBehaviour
 
     private void PerformRangeAttack(RangedWeaponData gun)
     {
+        if (!IsGunDataValid(gun)) return;
+
         if (currentAmmoInMag <= 0)
         {
             Debug.Log("<color=yellow>แชะ! กระสุนหมด (เล่นเสียงปืนเปล่า)</color>");
@@ -294,24 +336,38 @@ public class PlayerCombat : MonoBehaviour
             playerMovement.ApplyAttackPause(attackMovementPause);
         }
 
-        if (animator != null)
+        // 🌟 [ทาง B] ไม่สั่งเปลี่ยนท่าแอนิเมชันตอนฟันแล้ว
+        // เหตุผล: state "Test_Attack" / "Heavy_Attack" ใน Animator เป็น "คลิปเดี่ยว" ที่วาดท่าหันหลังไว้
+        // ไม่สนใจ AimX/AimZ เลย -> กดฟันทีไรตัวละครหันหลังทุกที (และเด้งไปกวนตอนยิงปืนด้วย)
+        // ตอนนี้ปล่อยให้ตัวละครคงท่าเดิม (blend tree 8 ทิศ หันตามเมาส์) แล้วสื่อการฟันด้วย VFX รอยดาบแทน
+        Debug.Log(isHeavy ? "<color=magenta>💪 ฟันหนัก (Heavy)</color>" : "<color=cyan>🔪 ฟันเบา (Light)</color>");
+
+        // เดิม hitbox เปิด/ปิดด้วย Animation Event ที่ฝังในคลิปท่าฟัน
+        // พอไม่เล่นคลิปนั้นแล้ว ต้องเปิด/ปิดเองด้วยโค้ด ไม่งั้นฟันไม่โดนอะไรเลย
+        StartCoroutine(MeleeSwingRoutine());
+    }
+
+    /// <summary>
+    /// จังหวะฟัน 1 ครั้ง: ง้าง -> เปิด hitbox (+เสก VFX รอยดาบ) -> ปิด hitbox
+    /// แทนที่ Animation Event เดิมที่ฝังอยู่ในคลิปท่าฟัน (ซึ่งเลิกเล่นแล้วตามทาง B)
+    /// </summary>
+    private IEnumerator MeleeSwingRoutine()
+    {
+        if (meleeReceiver == null) meleeReceiver = GetComponentInChildren<CombatAnimationReceiver>();
+
+        if (meleeReceiver == null)
         {
-            if (isHeavy)
-            {
-                Debug.Log("<color=magenta>💪 ชาร์จฟันหนัก (Heavy Attack)! ตรวจสอบว่าใน Animator มี Trigger ชื่อ HeavyAttack หรือยัง</color>");
-                animator.SetTrigger("HeavyAttack");
-            }
-            else
-            {
-                Debug.Log("<color=cyan>🔪 ฟันเบา (Light Attack)!</color>");
-                animator.SetTrigger("Attack");
-            }
+            Debug.LogWarning("PlayerCombat: หา CombatAnimationReceiver ไม่เจอ (ต้องอยู่บนก้อนลูกที่มี Animator) — ฟันแล้วจะไม่เกิดดาเมจ");
+            yield break;
         }
-        else
-        {
-            // ถ้าไม่มี animator ให้ถือว่าโจมตีไม่ได้ (บังคับใช้ Animation Event)
-            Debug.LogWarning("PlayerCombat: ไม่มี Animator! ระบบตีระยะประชิดต้องการ Animator เพื่อสร้าง Event");
-        }
+
+        if (meleeWindupTime > 0f) yield return new WaitForSeconds(meleeWindupTime);
+
+        meleeReceiver.OnAttackActive();   // เปิด hitbox + ส่งค่าดาเมจ + เสก VFX รอยดาบ 8 ทิศ
+
+        yield return new WaitForSeconds(meleeActiveTime);
+
+        meleeReceiver.OnAttackDeactive(); // ปิด hitbox
     }
 
     // ฟังก์ชันสำหรับส่งค่าพลังโจมตีปัจจุบัน ให้ CombatAnimationReceiver เอาไปใช้เปิด Hitbox
