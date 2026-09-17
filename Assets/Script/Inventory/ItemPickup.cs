@@ -10,15 +10,22 @@ public class ItemPickup : MonoBehaviour
     // เพื่อให้ PlayerInteraction มาสั่งทำงานได้
     public void Pickup()
     {
-        if (Inventory.Instance != null && item != null)
+        if (item == null)
         {
-            Inventory.Instance.AddItem(item, amount);
-            Debug.Log($"<color=green>เก็บ {item.name} สำเร็จ!</color>");
+            Debug.LogWarning("เก็บไม่ได้! ยังไม่ได้ใส่ข้อมูลไอเทมในช่อง Item");
+            return;
+        }
+
+        // 🌟 ให้ไอเทมเป็นคนตัดสินใจเองว่าจะเข้าคลังไหน (กระเป๋า / ของสำคัญ / สมุดเอกสาร)
+        // ไม่ต้องมาเช็คชนิดตรงนี้ เพิ่มไอเทมชนิดใหม่ในอนาคตไม่ต้องกลับมาแก้ไฟล์นี้
+        if (item.Collect(amount))
+        {
+            Debug.Log($"<color=green>เก็บ {item.itemName} สำเร็จ!</color>");
             Destroy(gameObject);
         }
         else
         {
-            Debug.LogWarning("เก็บไม่ได้! หากระเป๋าไม่เจอ หรือยังไม่ได้ใส่ข้อมูล");
+            Debug.LogWarning($"เก็บ {item.itemName} ไม่ได้ (กระเป๋าเต็ม หรือยังไม่มีคลังปลายทางในซีน)");
         }
     }
 }

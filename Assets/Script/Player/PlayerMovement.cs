@@ -283,6 +283,18 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>ฟื้นเลือด (ใช้ยา/ผ้าพันแผล) — เลือดไม่เกินค่าสูงสุด</summary>
+    public void Heal(int amount)
+    {
+        if (amount <= 0 || currentHealth <= 0) return;
+
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+
+        if (healthSlider != null) healthSlider.value = currentHealth;
+
+        Debug.Log($"<color=green>ฟื้นเลือด {amount} · เลือดตอนนี้ {currentHealth}/{maxHealth}</color>");
+    }
+
     public void ApplyStun(float duration)
     {
         if (!isInvincible && !isStunned)

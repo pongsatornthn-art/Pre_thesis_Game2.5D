@@ -51,40 +51,19 @@ public class DoorController : MonoBehaviour
 
     private void TryUnlockDoor()
     {
-        if (Inventory.Instance == null) return;
+        // 🌟 กุญแจย้ายไปอยู่ "คลังของสำคัญ" แยกจากกระเป๋าแล้ว (ไม่กินช่อง ทิ้งไม่ได้)
+        // Consume() จะเช็คให้ว่ามีกุญแจตรงรหัสไหม และหักออกให้เองถ้ากุญแจตั้ง consumeOnUse ไว้
+        IKeyItemHolder keys = ServiceLocator.Get<IKeyItemHolder>();
 
-        bool hasKey = false;
-        ItemData keyToUse = null;
-
-        foreach (var slot in Inventory.Instance.items)
-        {
-            if (slot != null && slot.itemData != null && slot.itemData is KeyItemData keyData)
-            {
-                if (keyData.targetDoorID == requiredDoorID)
-                {
-                    hasKey = true;
-                    keyToUse = keyData;
-                    break;
-                }
-            }
-        }
-
-        if (hasKey)
+        if (keys != null && keys.Consume(requiredDoorID))
         {
             isUnlocked = true;
             ToggleDoor();
+            return;
+        }
 
-            KeyItemData key = keyToUse as KeyItemData;
-            if (key.consumeOnUse)
-            {
-                Inventory.Instance.RemoveItem(keyToUse, 1);
-            }
-        }
-        else
-        {
-            // 🌟 ถ้าไขไม่ได้ ให้สั่งโชว์ข้อความ!
-            ShowNotification($"The door is locked! need <color=yellow>{keyNameForPlayer}</color>");
-        }
+        // ไม่มีกุญแจ (หรือยังไม่มี KeyItemHolder ในซีน)
+        ShowNotification($"The door is locked! need <color=yellow>{keyNameForPlayer}</color>");
     }
 
     private void ToggleDoor()

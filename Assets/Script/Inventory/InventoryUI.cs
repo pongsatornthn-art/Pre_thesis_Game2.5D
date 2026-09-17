@@ -23,6 +23,11 @@ public class InventoryUI : MonoBehaviour
     [Header("Hotbar (ต้องลากอ้างอิงจาก object เดียวกับ HotbarController)")]
     public HotbarController hotbarController;
 
+    [Header("Input")]
+    [Tooltip("ให้ไฟล์นี้ดักปุ่ม I / ESC เองไหม\n" +
+             "ปิดไว้ถ้าใช้ระบบสมุด (JournalController) เป็นคนคุมปุ่มแทน ไม่งั้นจะชนกัน (กดทีสลับ 2 ครั้ง)")]
+    public bool handleOwnInput = true;
+
     /// <summary>true = กำลังเปิดกระเป๋า, false = ปิด — ให้ระบบอื่น (กล่อง/คราฟต์/ฯลฯ) subscribe แทนการ hardcode</summary>
     public static event Action<bool> OnInventoryToggled;
 
@@ -88,14 +93,18 @@ public class InventoryUI : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.I))
+        // ปิดสวิตช์นี้เมื่อใช้ระบบสมุด (JournalController) เป็นคนคุมปุ่มแทน
+        if (handleOwnInput)
         {
-            ToggleInventory();
-        }
+            if (Input.GetKeyDown(KeyCode.I))
+            {
+                ToggleInventory();
+            }
 
-        if (inventoryPanel != null && inventoryPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
-        {
-            ToggleInventory();
+            if (inventoryPanel != null && inventoryPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                ToggleInventory();
+            }
         }
 
         bool uiOpen = (inventoryPanel != null && inventoryPanel.activeSelf) ||
