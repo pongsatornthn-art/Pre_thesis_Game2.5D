@@ -33,8 +33,7 @@ sysinfo.txt
 *.apk
 *.unitypackage
 *.app
-# เอกสารที่คุยงานกับ AI — เก็บไว้ในเครื่องพอ ไม่ต้องอัปขึ้น git
-HANDOFF.md
-PROJECT_CONTEXT.md
-PLAYER_SYSTEMS.md
-INVENTORY_PLAN.md
+# เอกสาร .md ทั้งหมด — เก็บไว้ในเครื่องพอ ไม่ต้องอัปขึ้น git
+# (CLAUDE.md, ARCHITECTURE_MAP.md, HANDOFF.md, PROJECT_CONTEXT.md,
+#  PLAYER_SYSTEMS.md, INVENTORY_PLAN.md, devlog.md, level_design_guide.md ฯลฯ)
+*.md
