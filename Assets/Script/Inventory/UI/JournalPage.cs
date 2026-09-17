@@ -19,7 +19,10 @@ public abstract class JournalPage : MonoBehaviour
     [Tooltip("ปุ่มลัดที่กดแล้วเปิดหน้านี้ (I = กระเป๋า, K = ของสำคัญ, N = เอกสาร)")]
     [SerializeField] private KeyCode shortcutKey = KeyCode.None;
 
-    [Tooltip("ก้อน UI ของหน้านี้ (จะถูกเปิด/ปิดเวลาสลับแท็บ)")]
+    [Tooltip("ตัวคุม UI ของหน้านี้ (ถ้ามี จะใช้ fade + scale แทนการ SetActive)")]
+    [SerializeField] private UIPanelController pagePanel;
+
+    [Tooltip("ก้อน UI ของหน้านี้ (จะถูกเปิด/ปิดเวลาสลับแท็บ — กรณีไม่มี UIPanelController)")]
     [SerializeField] private GameObject content;
 
     [Tooltip("ปุ่มแท็บของหน้านี้ (เว้นว่างได้ถ้าไม่มีแท็บ) — จะผูก onClick ให้อัตโนมัติ")]
@@ -35,7 +38,9 @@ public abstract class JournalPage : MonoBehaviour
     /// <summary>เปิดหน้านี้ (JournalController เป็นคนเรียก)</summary>
     public virtual void Show()
     {
-        if (content != null) content.SetActive(true);
+        if (pagePanel != null) pagePanel.Show();
+        else if (content != null) content.SetActive(true);
+
         if (tabActiveHighlight != null) tabActiveHighlight.SetActive(true);
         Refresh();
     }
@@ -43,7 +48,18 @@ public abstract class JournalPage : MonoBehaviour
     /// <summary>ปิดหน้านี้</summary>
     public virtual void Hide()
     {
-        if (content != null) content.SetActive(false);
+        if (pagePanel != null) pagePanel.Hide();
+        else if (content != null) content.SetActive(false);
+
+        if (tabActiveHighlight != null) tabActiveHighlight.SetActive(false);
+    }
+
+    /// <summary>ปิดหน้านี้ทันที (ใช้ตอนเริ่มเกม)</summary>
+    public virtual void HideImmediate()
+    {
+        if (pagePanel != null) pagePanel.HideImmediate();
+        else if (content != null) content.SetActive(false);
+
         if (tabActiveHighlight != null) tabActiveHighlight.SetActive(false);
     }
 

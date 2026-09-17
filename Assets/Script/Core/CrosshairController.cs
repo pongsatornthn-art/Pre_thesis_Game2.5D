@@ -30,8 +30,10 @@ public class CrosshairController : MonoBehaviour
             hasGunEquipped = Inventory.Instance.currentEquippedItem.itemType == ItemType.RangedWeapon;
         }
 
-        // 3. เงื่อนไขการโชว์เป้าเล็ง: ต้องถือปืนอยู่ และ ไม่ได้เปิดหน้าต่าง UI กระเป๋า
-        bool shouldShowCrosshair = hasGunEquipped && !isInventoryOpen;
+        // 3. เงื่อนไขการโชว์เป้าเล็ง: ต้องถือปืนอยู่ และ ไม่ได้เปิดหน้าต่าง UI ใดๆ
+        //    ⚠️ ต้องเช็คสมุด (JournalController) ด้วย ไม่งั้นบรรทัด Cursor.visible ข้างล่าง
+        //    จะซ่อนเมาส์ทุกเฟรมตอนเปิดหน้า K/N แล้วกดอะไรในสมุดไม่ได้เลย
+        bool shouldShowCrosshair = hasGunEquipped && !isInventoryOpen && !JournalController.IsAnyOpen;
 
         // เปิด/ปิด การแสดงผลของเป้าเล็ง
         if (crosshairRect.gameObject.activeSelf != shouldShowCrosshair)

@@ -39,7 +39,16 @@ public class JournalEntryButton : MonoBehaviour
             icon.enabled = iconSprite != null;
         }
 
-        if (label != null) label.text = text;
+        if (label != null)
+        {
+            label.text = text;
+            ILocalizationService loc = ServiceLocator.Get<ILocalizationService>();
+            if (loc != null)
+            {
+                TMP_FontAsset font = loc.GetFont(FontCategory.Default);
+                if (font != null) label.font = font;
+            }
+        }
         if (unreadDot != null) unreadDot.SetActive(showUnreadDot);
 
         SetSelected(false);

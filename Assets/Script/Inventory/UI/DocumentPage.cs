@@ -24,17 +24,22 @@ public class DocumentPage : JournalPage
 
     private readonly List<JournalEntryButton> spawned = new List<JournalEntryButton>();
     private IDocumentLog log;
+    private ILocalizationService locService;
     private DocumentData selected;
 
     private void OnEnable()
     {
         log = ServiceLocator.Get<IDocumentLog>();
         if (log != null) log.OnChanged += Refresh;
+
+        locService = ServiceLocator.Get<ILocalizationService>();
+        if (locService != null) locService.OnLanguageChanged += Refresh;
     }
 
     private void OnDisable()
     {
         if (log != null) log.OnChanged -= Refresh;
+        if (locService != null) locService.OnLanguageChanged -= Refresh;
     }
 
     public override void Refresh()
@@ -71,7 +76,7 @@ public class DocumentPage : JournalPage
         bool unread = log != null && !log.HasRead(doc.documentId);
 
         JournalEntryButton entry = Instantiate(entryPrefab, listContainer);
-        entry.Setup(doc.icon, doc.title, unread, () => ShowDocument(doc));
+        entry.Setup(doc.icon, doc.Title, unread, () => ShowDocument(doc));
         spawned.Add(entry);
     }
 
@@ -82,8 +87,19 @@ public class DocumentPage : JournalPage
         if (readerPanel != null) readerPanel.SetActive(doc != null);
         if (doc == null) return;
 
-        if (readerTitle != null) readerTitle.text = doc.title;
-        if (readerBody != null) readerBody.text = doc.body;
+        if (locService == null) locService = ServiceLocator.Get<ILocalizationService>();
+
+        if (readerTitle != null)
+        {
+            readerTitle.text = doc.Title;
+            if (locService != null) readerTitle.font = locService.GetFont(FontCategory.Header);
+        }
+
+        if (readerBody != null)
+        {
+            readerBody.text = doc.Body;
+            if (locService != null) readerBody.font = locService.GetFont(FontCategory.Default);
+        }
 
         if (readerImage != null)
         {

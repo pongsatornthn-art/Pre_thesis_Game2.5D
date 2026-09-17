@@ -25,6 +25,7 @@ public class KeyItemPage : JournalPage
 
     private readonly List<JournalEntryButton> spawned = new List<JournalEntryButton>();
     private IKeyItemHolder holder;
+    private ILocalizationService locService;
     private KeyItemData selected;
 
     private void OnEnable()
@@ -32,11 +33,15 @@ public class KeyItemPage : JournalPage
         // เกาะ event ไว้ เผื่อเก็บกุญแจใหม่ระหว่างเปิดสมุดค้างไว้
         holder = ServiceLocator.Get<IKeyItemHolder>();
         if (holder != null) holder.OnChanged += Refresh;
+
+        locService = ServiceLocator.Get<ILocalizationService>();
+        if (locService != null) locService.OnLanguageChanged += Refresh;
     }
 
     private void OnDisable()
     {
         if (holder != null) holder.OnChanged -= Refresh;
+        if (locService != null) locService.OnLanguageChanged -= Refresh;
     }
 
     public override void Refresh()
@@ -98,8 +103,16 @@ public class KeyItemPage : JournalPage
             detailIcon.sprite = key.icon;
             detailIcon.enabled = key.icon != null;
         }
-        if (detailName != null) detailName.text = key.itemName;
-        if (detailDescription != null) detailDescription.text = key.description;
+        if (detailName != null)
+        {
+            detailName.text = key.itemName;
+            if (locService != null) detailName.font = locService.GetFont(FontCategory.Header);
+        }
+        if (detailDescription != null)
+        {
+            detailDescription.text = key.description;
+            if (locService != null) detailDescription.font = locService.GetFont(FontCategory.Default);
+        }
 
         // ไฮไลท์ช่องที่เลือก
         for (int i = 0; i < spawned.Count; i++)

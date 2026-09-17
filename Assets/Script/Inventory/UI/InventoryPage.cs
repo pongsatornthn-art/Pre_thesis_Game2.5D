@@ -28,6 +28,14 @@ public class InventoryPage : JournalPage
             inventoryUI.inventoryPanel.SetActive(false);
     }
 
+    public override void HideImmediate()
+    {
+        base.HideImmediate();
+
+        if (inventoryUI != null && inventoryUI.inventoryPanel != null)
+            inventoryUI.inventoryPanel.SetActive(false);
+    }
+
     public override void Refresh()
     {
         // ไม่ต้องทำอะไร — InventoryUI เดิมวาดช่องใหม่เองอยู่แล้วผ่าน event OnInventoryChanged

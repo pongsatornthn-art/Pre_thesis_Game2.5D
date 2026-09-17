@@ -1,4 +1,4 @@
-﻿Key;Thai;English
+Key;Thai;English
 MINION_SUSPICIOUS;สงสัย (จ้องมอง...);Suspicious (Staring...)
 MINION_CHASE;วิ่งไล่ล่า!!;Chasing!!
 MINION_SEARCH;ค้นหาเป้าหมาย...;Searching for target...
@@ -16,3 +16,9 @@ UI_BACK;ย้อนกลับ;Back
 UI_LANGUAGE;ภาษา;Language
 UI_SENSITIVITY;ความไวเมาส์;Mouse Sensitivity
 UI_VOLUME;ระดับเสียง;Master Volume
+JOURNAL_TAB_BAG;กระเป๋า;Bag
+JOURNAL_TAB_KEYITEM;ของสำคัญ;Key Items
+JOURNAL_TAB_NOTE;บันทึก;Notes
+JOURNAL_EMPTY;ยังไม่มีรายการ;Nothing here yet
+DOC_UNTITLED_TITLE;เอกสารไม่มีชื่อ;Untitled Document
+DOC_UNTITLED_BODY;ไม่มีเนื้อหา;No content

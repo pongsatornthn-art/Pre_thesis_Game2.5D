@@ -34,6 +34,9 @@ public class PauseManager : MonoBehaviour
         // กด ESC สลับเปิด/ปิด Pause
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // สมุดเปิดอยู่ = ปล่อยให้สมุดจัดการ Esc เอง (ไม่งั้นเมนู Pause จะแวบขึ้นมา 1 เฟรม)
+            if (JournalController.IsAnyOpen) return;
+
             if (IsPaused)
                 ResumeGame();
             else

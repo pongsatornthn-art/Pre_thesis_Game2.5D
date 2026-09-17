@@ -7,11 +7,19 @@ using UnityEngine;
 /// ตัวนี้ **ไม่รู้จัก** ว่ามีหน้าอะไรบ้าง รู้แค่ว่ามี JournalPage หลายอัน
 /// ปุ่มลัดของแต่ละหน้าไปตั้งเอาที่ตัวหน้าเอง (ช่อง Shortcut Key)
 /// → เพิ่มหน้าใหม่ = สร้างคลาส + ลากใส่ Pages เท่านั้น ไม่ต้องแตะไฟล์นี้
+///
+/// เชื่อมต่อกับบริการกลาง:
+/// - AudioService: เล่นเสียงเปิด/ปิด/เปลี่ยนหน้า
+/// - UIPanelController: ทำแอนิเมชัน Fade + Scale ตอนเปิด/ปิด
+/// - PauseManager: หยุดเกมตอนเปิดสมุด และไม่ตีกันเรื่องปุ่ม Esc หรือเมาส์
 /// </summary>
 public class JournalController : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("ก้อนสมุดทั้งเล่ม (เปิด/ปิดทั้งก้อน)")]
+    [Tooltip("ตัวคุมพาเนลสมุดทั้งเล่ม (มี Fade + Scale) — ต้องมี CanvasGroup")]
+    [SerializeField] private UIPanelController bookPanel;
+
+    [Tooltip("ก้อนสมุดทั้งเล่ม (สำรองกรณีไม่ได้ใช้ UIPanelController)")]
     [SerializeField] private GameObject bookRoot;
 
     [Tooltip("ลากทุกหน้าใส่ที่นี่ — กระเป๋า / ของสำคัญ / เอกสาร")]
@@ -24,8 +32,8 @@ public class JournalController : MonoBehaviour
     [Tooltip("หน้าที่เปิดเป็นค่าเริ่มต้นถ้าเรียกเปิดโดยไม่ระบุหน้า (เว้นว่าง = หน้าแรกใน Pages)")]
     [SerializeField] private string defaultPageId = "";
 
-    [Tooltip("หยุดเวลาในเกมตอนเปิดสมุดไหม (ระวังชนกับระบบ Pause)")]
-    [SerializeField] private bool pauseGameWhenOpen = false;
+    [Tooltip("หยุดเวลาในเกมตอนเปิดสมุดไหม (แนะนำเปิดไว้ ไม่งั้นเปิดอ่านโน้ตอยู่ผีเดินมากัดได้)")]
+    [SerializeField] private bool pauseGameWhenOpen = true;
 
     /// <summary>สมุดเปิดอยู่ไหม — ให้ระบบอื่นเช็คได้ (เช่น กันยิงปืนตอนเปิดสมุด)</summary>
     public static bool IsAnyOpen { get; private set; }
@@ -33,7 +41,7 @@ public class JournalController : MonoBehaviour
     /// <summary>ยิงตอนเปิด/ปิดสมุด (true = เปิด) ให้ระบบอื่นมา subscribe</summary>
     public static event Action<bool> OnJournalToggled;
 
-    public bool IsOpen => bookRoot != null && bookRoot.activeSelf;
+    public bool IsOpen => bookPanel != null ? bookPanel.IsVisible : (bookRoot != null && bookRoot.activeSelf);
     public string CurrentPageId { get; private set; }
 
     private void Start()
@@ -60,6 +68,13 @@ public class JournalController : MonoBehaviour
 
     private void Update()
     {
+        // 1. ถ้าเกมติด Pause อยู่ และสมุดไม่ได้เปิดอยู่ -> ไม่อนุญาตให้เปิดสมุด
+        if (!IsOpen && PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+        {
+            return;
+        }
+
+        // 2. ดักปุ่มลัดของแต่ละหน้า (I, K, N)
         if (pages != null)
         {
             foreach (JournalPage page in pages)
@@ -75,17 +90,10 @@ public class JournalController : MonoBehaviour
             }
         }
 
+        // 3. ดักปุ่ม Esc เพื่อปิดสมุด
+        //    PauseManager.Update() เช็ค JournalController.IsAnyOpen แล้วปล่อยผ่านให้เรา
+        //    จึงไม่ต้องตามเช็ด ResumeGame() ทีหลังอีก
         if (IsOpen && Input.GetKeyDown(closeKey)) Close();
-    }
-
-    private void LateUpdate()
-    {
-        // คุมเมาส์ใน LateUpdate เพื่อให้ทำงานทีหลังสคริปต์อื่นที่แย่งตั้งค่าเมาส์
-        // (เช่น CrosshairController ที่ซ่อนเมาส์ตอนถือปืน)
-        if (!IsOpen) return;
-
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
     }
 
     /// <summary>เปิดสมุดไปที่หน้าที่ระบุ</summary>
@@ -96,8 +104,13 @@ public class JournalController : MonoBehaviour
         JournalPage target = FindPage(pageId) ?? FindPage(defaultPageId) ?? pages[0];
         if (target == null) return;
 
-        if (bookRoot != null) bookRoot.SetActive(true);
+        bool wasAlreadyOpen = IsOpen;
 
+        // เปิดพาเนลหลัก
+        if (bookPanel != null) bookPanel.Show();
+        else if (bookRoot != null) bookRoot.SetActive(true);
+
+        // สลับหน้าข้างใน
         foreach (JournalPage page in pages)
         {
             if (page == null) continue;
@@ -107,12 +120,29 @@ public class JournalController : MonoBehaviour
 
         CurrentPageId = target.PageId;
 
-        if (!IsAnyOpen)
+        // คุมเมาส์และเสียง
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        ServiceLocator.Get<IAudioService>()?.PlayMenuSound(MenuSoundType.Click);
+
+        if (!wasAlreadyOpen)
         {
             IsAnyOpen = true;
             ApplyPauseState(true);
             OnJournalToggled?.Invoke(true);
         }
+    }
+
+    /// <summary>หยุด/คืนเวลาเกมตอนเปิดปิดสมุด — ไม่ยุ่งถ้าเกมติดหน้า Pause อยู่</summary>
+    private void ApplyPauseState(bool isOpening)
+    {
+        if (!pauseGameWhenOpen) return;
+
+        // เกมติดหน้าจอ Pause อยู่ = ปล่อยให้ PauseManager คุมเวลาเอง อย่าไปแย่ง
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return;
+
+        Time.timeScale = isOpening ? 0f : 1f;
     }
 
     /// <summary>เปิดสมุดหน้าเริ่มต้น</summary>
@@ -123,13 +153,6 @@ public class JournalController : MonoBehaviour
     {
         if (!IsOpen) return;
 
-        CloseInstant();
-        OnJournalToggled?.Invoke(false);
-    }
-
-    /// <summary>ปิดแบบไม่ยิง event (ใช้ตอนเริ่มเกม)</summary>
-    private void CloseInstant()
-    {
         if (pages != null)
         {
             foreach (JournalPage page in pages)
@@ -138,19 +161,38 @@ public class JournalController : MonoBehaviour
             }
         }
 
-        if (bookRoot != null) bookRoot.SetActive(false);
+        if (bookPanel != null) bookPanel.Hide();
+        else if (bookRoot != null) bookRoot.SetActive(false);
 
         CurrentPageId = null;
         IsAnyOpen = false;
         ApplyPauseState(false);
 
         Cursor.lockState = CursorLockMode.Confined;
+
+        ServiceLocator.Get<IAudioService>()?.PlayMenuSound(MenuSoundType.Back);
+        OnJournalToggled?.Invoke(false);
     }
 
-    private void ApplyPauseState(bool isOpen)
+    /// <summary>ปิดแบบทันทีไม่ยิง event (ใช้ตอนเริ่มเกม)</summary>
+    private void CloseInstant()
     {
-        if (!pauseGameWhenOpen) return;
-        Time.timeScale = isOpen ? 0f : 1f;
+        if (pages != null)
+        {
+            foreach (JournalPage page in pages)
+            {
+                if (page != null) page.HideImmediate();
+            }
+        }
+
+        if (bookPanel != null) bookPanel.HideImmediate();
+        else if (bookRoot != null) bookRoot.SetActive(false);
+
+        CurrentPageId = null;
+        IsAnyOpen = false;
+        ApplyPauseState(false);
+
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     private JournalPage FindPage(string pageId)
