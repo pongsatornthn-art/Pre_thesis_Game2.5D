@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class CrosshairController : MonoBehaviour
@@ -6,13 +6,36 @@ public class CrosshairController : MonoBehaviour
     [Header("References")]
     public RectTransform crosshairRect;
     public PlayerCombat playerCombat;
+    [Tooltip("คอมโพเนนต์คุมการยิง (ถ้าเว้นว่างจะค้นหาจาก PlayerCombat ให้อัตโนมัติ)")]
+    public Combat.Gun.GunfireController gunfire;
+    [Tooltip("รูปภาพสไปรท์เป้าเล็งสำหรับเปลี่ยนสี")]
+    public Image crosshairImage;
 
     [Header("Crosshair Settings")]
     public float baseSize = 40f;
     public float sizeMultiplier = 8f;
     public float lerpSpeed = 15f;
 
+    [Header("Focus State (ข้อ 12: สีบอกสถานะโฟกัส)")]
+    [Tooltip("สีเป้าเล็งปกติ (ไม่ได้โฟกัสศัตรู)")]
+    public Color normalColor = Color.white;
+    [Tooltip("สีเป้าเล็งเมื่อโฟกัส (หยุดเดิน + เล็งโดนศัตรู)")]
+    public Color focusColor = Color.yellow;
+
     private Vector2 targetSize;
+
+    void Start()
+    {
+        if (crosshairImage == null && crosshairRect != null)
+        {
+            crosshairImage = crosshairRect.GetComponent<Image>();
+            if (crosshairImage == null) crosshairImage = crosshairRect.GetComponentInChildren<Image>();
+        }
+        if (gunfire == null && playerCombat != null)
+        {
+            gunfire = playerCombat.GetComponent<Combat.Gun.GunfireController>();
+        }
+    }
 
     void Update()
     {
@@ -60,6 +83,15 @@ public class CrosshairController : MonoBehaviour
 
                 // ค่อยๆ ย่อขยายขนาดให้สมูท
                 crosshairRect.sizeDelta = Vector2.Lerp(crosshairRect.sizeDelta, targetSize, Time.deltaTime * lerpSpeed);
+            }
+
+            // 🌟 [ข้อ 12] เปลี่ยนสีเป้าเล็งตามสถานะกำลังโฟกัสศัตรู
+            // เมื่อผู้เล่นหยุดเดิน + เมาส์เล็งอยู่บนศัตรู เป้าจะเปลี่ยนเป็นสีโฟกัส (เช่น สีเหลือง)
+            if (crosshairImage != null)
+            {
+                bool isFocusing = gunfire != null && gunfire.IsFocusing;
+                Color targetColor = isFocusing ? focusColor : normalColor;
+                crosshairImage.color = Color.Lerp(crosshairImage.color, targetColor, Time.deltaTime * lerpSpeed);
             }
         }
     }

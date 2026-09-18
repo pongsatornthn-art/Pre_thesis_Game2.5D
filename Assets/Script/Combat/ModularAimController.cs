@@ -18,6 +18,8 @@ public class ModularAimController : MonoBehaviour
     [Tooltip("WeaponSpriteRig ของปืน (เว้นว่าง = หาในลูก)")]
     public WeaponSpriteRig spriteRig;
     public Camera mainCam;
+    [Tooltip("ตัวคำนวณจุดเล็งระนาบแนวนอนกลาง (เว้นว่าง = หาใน parent/self)")]
+    public AimResolver aimResolver;
 
     [Header("Aim Feel")]
     [Tooltip("ความเร็วหมุนตามเมาส์ (มาก = ติดมือ, น้อย = หน่วงนุ่ม)")]
@@ -45,6 +47,7 @@ public class ModularAimController : MonoBehaviour
         if (aimOrigin == null) aimOrigin = gunPivot;
         if (spriteRig == null) spriteRig = GetComponentInChildren<WeaponSpriteRig>();
         if (mainCam == null) mainCam = Camera.main;
+        if (aimResolver == null) aimResolver = GetComponentInParent<AimResolver>();
 
         // จำตำแหน่ง local ตั้งต้นของ pivot ไว้ แล้วบวก hand offset เข้าไปทีหลัง
         homeLocalPos = gunPivot.localPosition;
@@ -65,9 +68,21 @@ public class ModularAimController : MonoBehaviour
         }
         if (aimOrigin == null) aimOrigin = gunPivot;
 
-        // 1) องศาจากตัวละคร -> เมาส์ บนจอ
-        Vector3 originScreen = mainCam.WorldToScreenPoint(aimOrigin.position);
-        Vector2 d = new Vector2(Input.mousePosition.x - originScreen.x, Input.mousePosition.y - originScreen.y);
+        // 1) องศาจากตัวละคร -> จุดเล็ง บนจอ (ใช้ AimResolver ถ้ามี เพื่อทิศทางตรงกับกระสุน 100%)
+        Vector2 d;
+        if (aimResolver != null)
+        {
+            Vector3 aimPoint = aimResolver.GetAimPoint(aimOrigin.position.y);
+            Vector3 targetScreen = mainCam.WorldToScreenPoint(aimPoint);
+            Vector3 originScreen = mainCam.WorldToScreenPoint(aimOrigin.position);
+            d = new Vector2(targetScreen.x - originScreen.x, targetScreen.y - originScreen.y);
+        }
+        else
+        {
+            Vector3 originScreen = mainCam.WorldToScreenPoint(aimOrigin.position);
+            d = new Vector2(Input.mousePosition.x - originScreen.x, Input.mousePosition.y - originScreen.y);
+        }
+
         if (d.sqrMagnitude >= 0.001f)
         {
             screenAimAngle = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;

@@ -270,6 +270,10 @@ public class PlayerMovement : MonoBehaviour
     public void TakeRawDamage(int damage)
     {
         currentHealth -= damage;
+
+        // [เพิ่มโดย Claude 2026-09-19] กระจายข่าวว่าผู้เล่นโดนตี ให้ระบบอื่นมาฟังเองได้
+        // ตอนนี้ระบบกรวยกระสุนใช้บรรทัดนี้เพื่อเด้งกรวยบานสุดตอนเสียหลัก (GDD: Interrupt Condition)
+        GameEventBus.Publish(new PlayerDamagedEvent(damage, transform.position));
         Debug.Log($"<color=red>ผู้เล่นโดนโจมตี {damage} ดาเมจ! เลือดเหลือ {currentHealth}</color>");
 
         if (healthSlider != null)

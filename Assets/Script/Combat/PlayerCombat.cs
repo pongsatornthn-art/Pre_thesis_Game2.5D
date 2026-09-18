@@ -10,6 +10,7 @@ public class PlayerCombat : MonoBehaviour
     private Rigidbody rb;
     private Camera mainCam;
     public BulletTracer bulletTracerPrefab;
+    [SerializeField] private Combat.Gun.GunfireController gunfire;
 
     [Header("Unarmed Stats (สเตตัสมือเปล่า)")]
     public int defaultDamage = 20;
@@ -68,6 +69,7 @@ public class PlayerCombat : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         mainCam = Camera.main;
         playerMovement = GetComponent<PlayerMovement>();
+        if (gunfire == null) gunfire = GetComponent<Combat.Gun.GunfireController>();
 
         if (Inventory.Instance != null)
         {
@@ -210,17 +212,7 @@ public class PlayerCombat : MonoBehaviour
 
     private void HandleCrosshairFocus(RangedWeaponData gun)
     {
-        if (!IsGunDataValid(gun)) return;
-
-        // 🌟 กระสุนสุ่มกระจายในกรวยตามปกติ (ยิ่งเดินยิ่งกว้าง ยืนนิ่งยิ่งแคบ)
-        // ถ้ากดคลิกขวาค้าง (นิ่งขึ้น) กรวยจะแคบลงอีกชั้น ไม่ว่าจะเดินอยู่หรือไม่ก็ตาม
-        bool isMoving = rb.linearVelocity.magnitude > 0.1f;
-        float targetSpread = isMoving ? gun.maxSpreadAngle : 0f;
-
-        if (isAiming) targetSpread *= steadySpreadMultiplier;
-
-        float moveRate = gun.maxSpreadAngle / gun.focusTime;
-        currentSpreadAngle = Mathf.MoveTowards(currentSpreadAngle, targetSpread, moveRate * Time.deltaTime);
+        currentSpreadAngle = gunfire != null ? gunfire.CurrentSpread : 0f;
     }
 
     private void PerformRangeAttack(RangedWeaponData gun)
@@ -229,72 +221,14 @@ public class PlayerCombat : MonoBehaviour
 
         if (currentAmmoInMag <= 0)
         {
-            Debug.Log("<color=yellow>แชะ! กระสุนหมด (เล่นเสียงปืนเปล่า)</color>");
+            if (gunfire != null) gunfire.PlayEmptyClick(gun);
             return;
         }
 
         nextAttackTime = Time.time + gun.lightAttackCooldown;
         currentAmmoInMag--;
-
         weaponAmmoMemory[gun] = currentAmmoInMag;
-        currentSpreadAngle = Mathf.Min(gun.maxSpreadAngle, currentSpreadAngle + gun.recoilSpread);
-
-        Ray ray = mainCam.ScreenPointToRay(GetAimScreenPosition());
-        Vector3 targetPoint = ray.GetPoint(100f);
-
-        // 🌟 อัปเดต 1: ใส่ QueryTriggerInteraction.Ignore เพื่อสั่งให้กล้องเมิน Trigger ล่องหน 🌟
-        RaycastHit[] cameraHits = Physics.RaycastAll(ray, 100f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
-        float closestDistance = Mathf.Infinity;
-
-        foreach (RaycastHit camHit in cameraHits)
-        {
-            if (camHit.collider.gameObject != this.gameObject && camHit.collider.transform.root != this.transform)
-            {
-                if (camHit.distance < closestDistance)
-                {
-                    closestDistance = camHit.distance;
-                    targetPoint = camHit.point;
-                }
-            }
-        }
-
-        Vector3 aimDirection = (targetPoint - attackPoint.position).normalized;
-        aimDirection.y = 0f;
-        if (aimDirection.sqrMagnitude > 0.001f) aimDirection.Normalize();
-
-        float randomSpread = Random.Range(-currentSpreadAngle, currentSpreadAngle);
-        Vector3 shootDirection = Quaternion.Euler(0, randomSpread, 0) * aimDirection;
-
-        Vector3 hitPoint;
-
-        // 🌟 อัปเดต 2: ใส่ QueryTriggerInteraction.Ignore ตอนยิงกระสุนด้วย 🌟
-        if (Physics.Raycast(attackPoint.position, shootDirection, out RaycastHit hit, gun.attackRange, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-        {
-            hitPoint = hit.point;
-
-            IDamageable damageable = hit.collider.GetComponent<IDamageable>();
-            if (damageable != null && hit.collider.gameObject != this.gameObject)
-            {
-                damageable.TakeDamage(gun.damage, gun.knockback);
-                Debug.Log($"<color=orange>ยิงโดนเป้าหมาย! ดาเมจ {gun.damage}</color>");
-            }
-        }
-        else
-        {
-            hitPoint = attackPoint.position + (shootDirection * gun.attackRange);
-        }
-
-        if (bulletTracerPrefab != null)
-        {
-            BulletTracer tracer = Instantiate(bulletTracerPrefab);
-            tracer.Setup(attackPoint.position, hitPoint);
-        }
-
-        // เล่นแสงแฟลชที่ปลายปืน (ถ้ามี)
-        MuzzleFlashEffect flash = attackPoint.GetComponentInChildren<MuzzleFlashEffect>();
-        if (flash != null) flash.PlayFlash();
-
-        if (animator != null) animator.SetTrigger("Shoot");
+        if (gunfire != null) gunfire.Fire(gun);
     }
 
     private IEnumerator ReloadSequence(RangedWeaponData gun)
@@ -310,6 +244,7 @@ public class PlayerCombat : MonoBehaviour
 
         isReloading = true;
         if (animator != null) animator.SetTrigger("Reload");
+        if (gunfire != null) gunfire.PlayReloadSound(gun);
 
         yield return new WaitForSeconds(gun.reloadTime);
 

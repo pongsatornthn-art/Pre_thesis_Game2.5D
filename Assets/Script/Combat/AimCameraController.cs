@@ -1,10 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class AimCameraController : MonoBehaviour
 {
-    [Header("กล้อง Cinemachine")]
-    public GameObject vCamNormal;
-    public GameObject vCamAiming;
 
     [Header("References")]
     public PlayerCombat playerCombat; 
@@ -21,20 +18,6 @@ public class AimCameraController : MonoBehaviour
 
     void Update()
     {
-
-        if (playerCombat != null && vCamNormal != null && vCamAiming != null)
-        {
-            if (playerCombat.isAiming)
-            {
-                vCamAiming.SetActive(true);
-                vCamNormal.SetActive(false);
-            }
-            else
-            {
-                vCamAiming.SetActive(false);
-                vCamNormal.SetActive(true);
-            }
-        }
 
         HandleMouseTracking();
     }

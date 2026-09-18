@@ -48,6 +48,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
     public AwarenessSystem Awareness { get; private set; }
     private IStalkerState currentState;
 
+    /// <summary>
+    /// [เพิ่มโดย Claude 2026-09-19] เปิดให้ระบบอื่นอ่านสถานะปัจจุบันได้ (อ่านอย่างเดียว เปลี่ยนค่าไม่ได้)
+    /// จำเป็นสำหรับ StalkerHearing ที่ต้องเช็คก่อนว่ากำลังจับผู้เล่น/โดนสตันอยู่ไหม
+    /// จะได้ไม่ถูกเสียงปืนดึงออกจากสถานะนั้นกลางคัน
+    /// </summary>
+    public IStalkerState CurrentState => currentState;
+
     [Header("Debug UI (ข้อความลอยบนหัว)")]
     public TMPro.TMP_Text debugStateText;
 
