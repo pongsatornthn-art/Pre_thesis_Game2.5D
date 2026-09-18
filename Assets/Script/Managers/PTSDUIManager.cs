@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class PTSDUIManager : MonoBehaviour
@@ -8,27 +8,29 @@ public class PTSDUIManager : MonoBehaviour
 
     private void OnEnable()
     {
-        PTSDManager.OnPTSDStateChanged += HandlePTSDStateChange;
+        PTSDManager.OnPTSDStateChanged += HandleStressLevelChange;
     }
 
     private void OnDisable()
     {
-        PTSDManager.OnPTSDStateChanged -= HandlePTSDStateChange;
+        PTSDManager.OnPTSDStateChanged -= HandleStressLevelChange;
     }
 
-    private void HandlePTSDStateChange(bool isActive)
+    private void HandleStressLevelChange(bool isPTSDActive)
     {
         if (ptsdOverlayImage != null)
         {
-            ptsdOverlayImage.gameObject.SetActive(isActive);
+            ptsdOverlayImage.gameObject.SetActive(isPTSDActive);
+
             Color c = ptsdOverlayImage.color;
-            c.a = isActive ? 1f : 0f;
+            // ถ้าติดสถานะ ให้มืดเต็มที่ (alpha = 1), ไม่ติดสถานะ = โปร่งใส (alpha = 0)
+            c.a = isPTSDActive ? 1f : 0f;
             ptsdOverlayImage.color = c;
         }
 
         if (warningText != null)
         {
-            warningText.SetActive(isActive);
+            warningText.SetActive(isPTSDActive);
         }
     }
 }

@@ -3,27 +3,22 @@ using Unity.Cinemachine;
 
 public class PTSDCameraShake : MonoBehaviour
 {
-    [Header("Cinemachine")]
-    public CinemachineCamera vCam;
+    public CinemachineCamera virtualCamera;
+
+    [Header("Shake Settings")]
+    [Tooltip("ความกว้างของการสั่น (ไม่ควรเกิน 3 เพื่อไม่ให้กล้องหลุดผู้เล่น)")]
+    public float maxAmplitude = 2.5f;
+    [Tooltip("ความถี่/ความรัวของการสั่น (ยิ่งเยอะ ยิ่งสั่นระริก)")]
+    public float maxFrequency = 10f;
+
     private CinemachineBasicMultiChannelPerlin noiseProfile;
-
-    [Header("Shake Settings (ปรับให้น้อยจะได้ไม่น่ารำคาญ)")]
-    public float maxAmplitude = 0.5f;
-    public float maxFrequency = 1.5f;
-
-    private void Awake()
-    {
-        if (vCam == null) vCam = GetComponent<CinemachineCamera>();
-
-        if (vCam != null)
-        {
-            noiseProfile = vCam.GetComponent<CinemachineBasicMultiChannelPerlin>();
-        }
-    }
 
     private void Start()
     {
-        HandleCameraShake(false);
+        if (virtualCamera != null)
+        {
+            noiseProfile = virtualCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
+        }
     }
 
     private void OnEnable()
@@ -35,11 +30,21 @@ public class PTSDCameraShake : MonoBehaviour
     {
         PTSDManager.OnPTSDStateChanged -= HandleCameraShake;
     }
-    private void HandleCameraShake(bool isActive)
-    {
-        if (noiseProfile == null) return;
 
-        noiseProfile.AmplitudeGain = isActive ? maxAmplitude : 0f;
-        noiseProfile.FrequencyGain = isActive ? maxFrequency : 0f;
+    private void HandleCameraShake(bool isPTSDActive)
+    {
+        if (noiseProfile != null)
+        {
+            if (isPTSDActive)
+            {
+                noiseProfile.AmplitudeGain = maxAmplitude;
+                noiseProfile.FrequencyGain = maxFrequency;
+            }
+            else
+            {
+                noiseProfile.AmplitudeGain = 0f;
+                noiseProfile.FrequencyGain = 0f;
+            }
+        }
     }
 }

@@ -179,7 +179,8 @@ public class PTSDMinigameController : MonoBehaviour
         {
             OnMinigameSuccess?.Invoke();
             Debug.Log("รอดแล้ว! อาการ PTSD สงบลง");
-            if (PTSDManager.Instance != null) PTSDManager.Instance.SetPTSDState(false);
+            // 🌟 แก้ตรงนี้ให้เป็นคำสั่ง ExitPTSD ที่ถูกต้อง
+            if (PTSDManager.Instance != null) PTSDManager.Instance.ExitPTSD();
         }
         else
         {

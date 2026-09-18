@@ -4,13 +4,17 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 
+public enum PTSDMode { None, Survival_TypeA, Narrative_TypeB }
+
 public class PTSDManager : MonoBehaviour
 {
     public static PTSDManager Instance { get; private set; }
+
+    // 🌟 เปลี่ยนมาส่งค่าเป็น true (เปิด) / false (ปิด)
     public static event Action<bool> OnPTSDStateChanged;
 
-    [Header("PTSD Settings")]
-    public bool isPTSDActive = false;
+    [Header("PTSD State")]
+    public PTSDMode currentMode = PTSDMode.None;
 
     [Header("Dual Reality Environments")]
     public GameObject realWorldEnv;
@@ -26,9 +30,7 @@ public class PTSDManager : MonoBehaviour
     public UnityEvent OnExitPTSD;
 
     [Header("Post-Processing Transition (บีบขอบจอมืด)")]
-    [Tooltip("ลากออบเจกต์ PTSD_TransitionVolume มาใส่ตรงนี้")]
     public Volume transitionVolume;
-    [Tooltip("ความเร็วในการบีบจอ/ขยายจอ")]
     public float transitionSpeed = 3f;
 
     private void Awake()
@@ -48,21 +50,55 @@ public class PTSDManager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.O)) SetPTSDState(true);
-        if (Input.GetKeyDown(KeyCode.P)) SetPTSDState(false);
+        if (Input.GetKeyDown(KeyCode.O)) TriggerPTSDSurvival();
+        if (Input.GetKeyDown(KeyCode.LeftBracket)) TriggerPTSDNarrative();
+        if (Input.GetKeyDown(KeyCode.P)) ExitPTSD();
     }
 
-    public void SetPTSDState(bool state)
+    // ==========================================
+    // 🔴 เปิดโหมด Type A (เอาชีวิตรอด)
+    // ==========================================
+    public void TriggerPTSDSurvival()
     {
-        if (isPTSDActive == state) return;
+        if (currentMode != PTSDMode.None) return;
 
-        isPTSDActive = state;
-        StartCoroutine(TransitionRoutine(state));
+        currentMode = PTSDMode.Survival_TypeA;
+        OnPTSDStateChanged?.Invoke(true); // แจ้งระบบอื่นว่า "เปิด"
+
+        StartCoroutine(TransitionRoutine(true));
+        Debug.Log("เข้าสู่สภาวะ PTSD Type A: ผีโผล่แล้ว!");
+    }
+
+    // ==========================================
+    // 🧩 เปิดโหมด Type B (แก้ปริศนา)
+    // ==========================================
+    public void TriggerPTSDNarrative()
+    {
+        if (currentMode != PTSDMode.None) return;
+
+        currentMode = PTSDMode.Narrative_TypeB;
+        OnPTSDStateChanged?.Invoke(true); // แจ้งระบบอื่นว่า "เปิด"
+
+        StartCoroutine(TransitionRoutine(true));
+        Debug.Log("เข้าสู่สภาวะ PTSD Type B: ล็อคการซ่อนตัว!");
+    }
+
+    // ==========================================
+    // 🟢 ปิดโหมด PTSD
+    // ==========================================
+    public void ExitPTSD()
+    {
+        if (currentMode == PTSDMode.None) return;
+
+        currentMode = PTSDMode.None;
+        OnPTSDStateChanged?.Invoke(false); // แจ้งระบบอื่นว่า "ปิด"
+
+        StartCoroutine(TransitionRoutine(false));
+        Debug.Log("กลับสู่โลกความจริง");
     }
 
     private IEnumerator TransitionRoutine(bool isEnteringPTSD)
     {
-
         if (transitionVolume != null)
         {
             while (transitionVolume.weight < 1f)
@@ -97,8 +133,6 @@ public class PTSDManager : MonoBehaviour
             ToggleEffects(false);
             OnExitPTSD?.Invoke();
         }
-
-        OnPTSDStateChanged?.Invoke(isPTSDActive);
 
         yield return new WaitForSeconds(0.5f);
 
