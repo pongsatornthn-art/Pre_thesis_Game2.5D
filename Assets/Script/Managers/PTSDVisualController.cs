@@ -1,40 +1,26 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using System.Collections;
 
 public class PTSDVisualController : MonoBehaviour
 {
     [Header("Post-Processing Core")]
     public Volume ptsdVolume;
-    public float fadeSpeed = 1.5f;
+    public float fadeSpeed = 2f;
 
-    [Header("Pulse Settings (ชีพจรขอบจอ)")]
-    [Tooltip("ความเร็วพื้นฐานการเต้นของขอบจอ")]
-    public float basePulseSpeed = 4f;
-    [Tooltip("ความแรงของการหด/ขยาย (ยิ่งมาก ขอบจอยิ่งกระเพื่อมแรง)")]
-    public float pulseMagnitude = 0.15f;
+    [Header("Pulse Effect (ขอบดำวูบวาบ)")]
+    public bool enablePulse = true;
+    [Tooltip("ความเร็วในการเต้นของขอบจอ")]
+    public float pulseSpeed = 6f;
+    [Tooltip("ความลึกของการหดตัว (0.2 = ขอบดำหดลง 20% แล้วกลับมาเต็ม)")]
+    public float pulseAmount = 0.3f;
 
     [Header("Audio")]
     public AudioSource ptsdAudio;
     public float maxAudioVolume = 1f;
 
     private Coroutine visualCoroutine;
-    private float currentStressWeight = 0f;
-
-    private Vignette vignette;
-    private float initialVignetteIntensity;
-
-    private void Start()
-    {
-        if (ptsdVolume != null && ptsdVolume.profile != null)
-        {
-            if (ptsdVolume.profile.TryGet(out vignette))
-            {
-                initialVignetteIntensity = vignette.intensity.value;
-            }
-        }
-    }
+    private bool isPTSDActive = false;
 
     private void OnEnable()
     {
@@ -48,9 +34,8 @@ public class PTSDVisualController : MonoBehaviour
 
     private void HandleStressVisuals(bool isActive)
     {
+        isPTSDActive = isActive;
         if (visualCoroutine != null) StopCoroutine(visualCoroutine);
-
-        float targetWeight = isActive ? 1f : 0f;
 
         if (isActive && ptsdAudio != null && !ptsdAudio.isPlaying)
         {
@@ -58,43 +43,36 @@ public class PTSDVisualController : MonoBehaviour
             ptsdAudio.Play();
         }
 
-        visualCoroutine = StartCoroutine(FadePTSDVolume(targetWeight));
+        visualCoroutine = StartCoroutine(FadeAndPulseRoutine(isActive ? 1f : 0f));
     }
 
-    private IEnumerator FadePTSDVolume(float targetWeight)
+    private IEnumerator FadeAndPulseRoutine(float targetWeight)
     {
-        while (!Mathf.Approximately(currentStressWeight, targetWeight))
-        {
-            currentStressWeight = Mathf.MoveTowards(currentStressWeight, targetWeight, fadeSpeed * Time.deltaTime);
+        float currentBaseWeight = ptsdVolume != null ? ptsdVolume.weight : 0f;
 
-            if (ptsdAudio != null)
-            {
-                ptsdAudio.volume = currentStressWeight * maxAudioVolume;
-            }
+        // 1. ช่วงเฟดภาพเข้า / เฟดภาพออก
+        while (!Mathf.Approximately(currentBaseWeight, targetWeight))
+        {
+            currentBaseWeight = Mathf.MoveTowards(currentBaseWeight, targetWeight, fadeSpeed * Time.deltaTime);
+
+            if (ptsdVolume != null) ptsdVolume.weight = currentBaseWeight;
+            if (ptsdAudio != null) ptsdAudio.volume = currentBaseWeight * maxAudioVolume;
 
             yield return null;
         }
 
-        if (currentStressWeight == 0f && ptsdAudio != null)
+        // 2. ช่วงจอมืดเต็มที่ -> เริ่มทำการวูบวาบ (Pulse)
+        if (isPTSDActive && enablePulse && ptsdVolume != null)
         {
-            ptsdAudio.Stop();
-        }
-    }
-
-    private void Update()
-    {
-        if (ptsdVolume != null)
-        {
-            ptsdVolume.weight = currentStressWeight;
-
-            if (vignette != null && currentStressWeight > 0f)
+            while (isPTSDActive)
             {
-                float currentPulseSpeed = basePulseSpeed * (1f + currentStressWeight);
-
-                float pulse = Mathf.Sin(Time.time * currentPulseSpeed) * (pulseMagnitude * currentStressWeight);
-
-                vignette.intensity.value = Mathf.Clamp(initialVignetteIntensity + pulse, 0f, 1f);
+                // สร้างคลื่นความถี่ขึ้นลงตามเวลา
+                float wave = (Mathf.Sin(Time.time * pulseSpeed) + 1f) / 2f;
+                ptsdVolume.weight = 1f - (wave * pulseAmount);
+                yield return null;
             }
         }
+
+        if (!isPTSDActive && ptsdAudio != null) ptsdAudio.Stop();
     }
 }
