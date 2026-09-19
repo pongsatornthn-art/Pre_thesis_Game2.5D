@@ -87,7 +87,7 @@ public class KeyItemPage : JournalPage
         if (entryPrefab == null || listContainer == null) return;
 
         JournalEntryButton entry = Instantiate(entryPrefab, listContainer);
-        entry.Setup(key.icon, key.itemName, false, () => ShowDetail(key));
+        entry.Setup(key.icon, key.DisplayName, false, () => ShowDetail(key));
         spawned.Add(entry);
     }
 
@@ -105,12 +105,12 @@ public class KeyItemPage : JournalPage
         }
         if (detailName != null)
         {
-            detailName.text = key.itemName;
+            detailName.text = key.DisplayName;
             if (locService != null) detailName.font = locService.GetFont(FontCategory.Header);
         }
         if (detailDescription != null)
         {
-            detailDescription.text = key.description;
+            detailDescription.text = key.DisplayDescription;
             if (locService != null) detailDescription.font = locService.GetFont(FontCategory.Default);
         }
 

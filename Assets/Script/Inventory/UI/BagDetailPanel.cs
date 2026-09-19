@@ -47,15 +47,16 @@ public class BagDetailPanel : MonoBehaviour
 
         if (locService == null) locService = ServiceLocator.Get<ILocalizationService>();
 
+        // ใช้ DisplayName/DisplayDescription เพื่อให้แปลภาษาได้ถ้าไอเทมนั้นใส่ key ไว้
         if (nameText != null)
         {
-            nameText.text = item.itemName;
+            nameText.text = item.DisplayName;
             if (locService != null) nameText.font = locService.GetFont(FontCategory.Header);
         }
 
         if (descriptionText != null)
         {
-            descriptionText.text = item.description;
+            descriptionText.text = item.DisplayDescription;
             if (locService != null) descriptionText.font = locService.GetFont(FontCategory.Default);
         }
     }
