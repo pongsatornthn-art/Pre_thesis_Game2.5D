@@ -10,8 +10,11 @@ namespace Combat.Gun
     public class GunFeedback : MonoBehaviour
     {
         [Header("Muzzle Flash")]
-        [Tooltip("จุดกำเนิดแสงแฟลชปากกระบอกปืน")]
+        [Tooltip("แสงวาบปากกระบอกปืน (Light) — เว้นว่าง = หาในลูกของผู้เล่น")]
         [SerializeField] private MuzzleFlashEffect muzzleFlash;
+
+        [Tooltip("สไปรท์เปลวไฟปากกระบอกปืน — เว้นว่าง = หาในลูกของผู้เล่น")]
+        [SerializeField] private MuzzleFlashSprite muzzleFlashSprite;
 
         private IAudioService audioService;
 
@@ -23,6 +26,12 @@ namespace Combat.Gun
             if (muzzleFlash == null)
             {
                 muzzleFlash = GetComponentInChildren<MuzzleFlashEffect>();
+            }
+
+            if (muzzleFlashSprite == null)
+            {
+                // true = หาแม้ก้อนนั้นถูกปิดอยู่ (สไปรท์แฟลชซ่อนตัวเองไว้ตอนเริ่มเกม)
+                muzzleFlashSprite = GetComponentInChildren<MuzzleFlashSprite>(true);
             }
         }
 
@@ -48,11 +57,10 @@ namespace Combat.Gun
                 GetAudio()?.PlaySFX(gun.fireSfx, muzzlePos);
             }
 
-            // 2. แสดงแสงแฟลชที่ปลายกระบอกปืน
-            if (muzzleFlash != null)
-            {
-                muzzleFlash.PlayFlash();
-            }
+            // 2. แสงวาบ + สไปรท์เปลวไฟที่ปลายกระบอกปืน (ทำงานคู่กัน)
+            //    แสง = ทำให้ห้อง 3D สว่างวาบ · สไปรท์ = รูปเปลวไฟพิกเซลที่ตามองเห็น
+            if (muzzleFlash != null) muzzleFlash.PlayFlash();
+            if (muzzleFlashSprite != null) muzzleFlashSprite.Play();
 
             // 3. จอสั่นเบาๆ (จะทำงานร่วมกับ GunCameraShake ในเฟส 2)
             GunCameraShake shake = GunCameraShake.Instance;

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e708e1fef73094f479bd508340eada45, type: 3}
   m_Name: Pistol_New
   m_EditorClassIdentifier: 
-  itemName: New Item
+  itemName: "\u0E1B\u0E37\u0E19\u0E1E\u0E01"
   icon: {fileID: 21300000, guid: e9fce311e3e046c43a01d5dd348ea074, type: 3}
-  description: 
+  description: "\u0E1B\u0E37\u0E19\u0E1E\u0E01\u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E1B\u0E37\u0E19\u0E43\u0E2B\u0E0D\u0E48\u0E41\u0E15\u0E48\u0E40\u0E1B\u0E47\u0E19\u0E1B\u0E37\u0E19\u0E40\u0E25\u0E47\u0E01\u0E17\u0E35\u0E48\u0E1E\u0E01\u0E44\u0E14\u0E49"
   descriptionImage: {fileID: 0}
   isStackable: 1
   maxStack: 99
@@ -26,9 +26,22 @@ MonoBehaviour:
   lightAttackCooldown: 0.5
   knockback: 1
   weaponAnimatorOverride: {fileID: 0}
-  ammoType: {fileID: 0}
+  ammoType: {fileID: 11400000, guid: 0ef6bb9d126582c4784f4fd9a1d2c3f2, type: 2}
   magazineSize: 12
   reloadTime: 1.5
   focusTime: 1.5
   maxSpreadAngle: 15
   recoilSpread: 5
+  projectilePrefab: {fileID: 7612313742499106071, guid: b24db6294164d2c4e8d3f839aa078212, type: 3}
+  projectileSpeed: 25
+  projectileRadius: 0.08
+  minSpreadAngle: 0
+  steadySpreadMultiplier: 0.35
+  steadyFocusSpeedMultiplier: 2
+  aimAssistRadius: 0.6
+  fireSfx: {fileID: 0}
+  emptySfx: {fileID: 0}
+  reloadSfx: {fileID: 0}
+  shotLoudness: 1
+  impactWallPrefab: {fileID: 0}
+  impactFleshPrefab: {fileID: 0}

@@ -65,9 +65,17 @@ namespace Combat.Gun
                 for (int i = 0; i < hits.Length; i++)
                 {
                     RaycastHit h = hits[i];
-                    // ข้าม collider ของผู้ยิงและกระสุนด้วยกันเอง
+                    // ข้าม collider ของผู้ยิง
                     if (owner != null && (h.collider.gameObject == owner || (ownerRoot != null && h.collider.transform.root == ownerRoot))) continue;
-                    if (h.collider.GetComponent<ProjectileBase>() != null) continue;
+
+                    // ⚠️ ข้าม collider ของตัวกระสุนเอง รวมถึง**ลูกหลานทุกชิ้น**
+                    // (เช่นโมเดล 3D ที่ลากมาจาก asset pack แล้วมี Collider ติดมาด้วย)
+                    // ของเดิมเช็คแค่ GetComponent บนก้อนที่ชน ซึ่งจับไม่ได้ถ้า Collider อยู่ที่ลูก
+                    // ผลคือกระสุนชนตัวเองในเฟรมแรกแล้วหายทันที เห็นแค่แสงวาบที่ตัวผู้เล่น
+                    if (h.collider.transform == transform || h.collider.transform.IsChildOf(transform)) continue;
+
+                    // ข้ามกระสุนนัดอื่นที่บินอยู่
+                    if (h.collider.GetComponentInParent<ProjectileBase>() != null) continue;
 
                     OnImpact(h);
                     Despawn();

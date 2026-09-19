@@ -23,6 +23,10 @@ public class PlayerAnimationController : MonoBehaviour
 
     void Update()
     {
+        // [เพิ่มโดย Claude 2026-09-19] เกมหยุดอยู่ = หยุดอัปเดตท่าทางด้วย
+        // ไม่งั้นตอนเปิดเมนู Pause แล้วกด WASD ค้างไว้ สไปรท์จะยังหันหน้าเปลี่ยนทิศอยู่
+        if (Time.timeScale == 0f) return;
+
         CheckAnimationState();
     }
 

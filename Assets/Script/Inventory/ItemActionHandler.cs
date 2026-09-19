@@ -87,9 +87,23 @@ public class ItemActionHandler : MonoBehaviour
         dropped.amount = 1;
     }
 
+    /// <summary>
+    /// หาไอเทมที่ปุ่ม E/G จะทำงานด้วย
+    ///
+    /// - เปิดหน้ากระเป๋าในสมุดอยู่ + เลือกช่องไว้ → ทำกับ "ของในช่องที่เลือก"
+    /// - นอกนั้น → ทำกับ "ของที่ถืออยู่ในมือ" (hotbar) เหมือนเดิม
+    ///
+    /// เหตุผล: ตอนเปิดสมุด สายตาผู้เล่นอยู่ที่ช่องที่ไฮไลท์
+    /// ถ้า E ไปใช้ของที่ถือในมือแทนจะงงมาก (แนวเดียวกับ Resident Evil / Silent Hill)
+    /// </summary>
     private ItemData GetEquipped()
     {
         if (Inventory.Instance == null) return null;
+
+        // เปิดหน้ากระเป๋าอยู่ = ยึดช่องที่ไฮไลท์เสมอ
+        // ถ้าไฮไลท์ช่องว่างอยู่ก็ให้เป็น null ไปเลย (ไม่ตกไปใช้ของในมือ ซึ่งจะงงมาก)
+        if (BagSelection.IsBagPageOpen) return BagSelection.SelectedItem;
+
         return Inventory.Instance.currentEquippedItem;
     }
 }

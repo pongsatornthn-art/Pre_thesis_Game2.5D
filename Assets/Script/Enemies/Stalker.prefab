@@ -250,6 +250,7 @@ GameObject:
   - component: {fileID: 1277336595789675484}
   - component: {fileID: 1430760666788589207}
   - component: {fileID: 111272486584480744}
+  - component: {fileID: -6807049826068130789}
   m_Layer: 0
   m_Name: Stalker
   m_TagString: Untagged
@@ -382,6 +383,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &-6807049826068130789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5872246458293487887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f30376ddd417ee4b9343f4312b129b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stalker: {fileID: 0}
 --- !u!1 &8312709196746604537
 GameObject:
   m_ObjectHideFlags: 0

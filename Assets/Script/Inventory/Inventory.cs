@@ -53,7 +53,12 @@ public class Inventory : MonoBehaviour
         }
         else
         {
-            int emptyIndex = items.FindIndex(i => i == null);
+            // [แก้โดย Claude 2026-09-19] เดิมเช็คแค่ i == null ทำให้เก็บของไม่ได้เลยทั้งเกม
+            // สาเหตุ: Unity เก็บ List<InventoryItem> ที่เป็นคลาสธรรมดาไว้ไม่ได้ในสภาพ null
+            // พอมันซีเรียลไลซ์รอบใหม่ (เช่นตอนกางดู Inspector ระหว่างเล่น) ช่องว่างที่เป็น null
+            // จะกลายเป็น object เปล่า ๆ ที่ไม่ null → หาช่องว่างไม่เจอ → ขึ้น "กระเป๋าเต็ม!" ทั้งที่ว่าง 15 ช่อง
+            // ช่องว่างจริง ๆ คือ "ไม่มี itemData" ต้องเช็คแบบนี้ (เมธอดอื่นในไฟล์นี้ก็เช็คแบบนี้อยู่แล้ว)
+            int emptyIndex = items.FindIndex(i => i == null || i.itemData == null);
             if (emptyIndex == -1)
             {
                 Debug.Log("กระเป๋าเต็ม!");

@@ -126,6 +126,12 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
+        // [เพิ่มโดย Claude 2026-09-19] เกมหยุดอยู่ (เมนู Pause / เปิดสมุด) = ห้ามทำอะไรทั้งนั้น
+        // บั๊กเดิม: FaceMouseCursor() ข้างล่างยังทำงานตอนหยุดเกม สไปรท์เลยหันตามเมาส์ต่อ
+        // และคลิกซ้ายยังยิงได้ด้วย เพราะ Time.time ไม่เดินตอน timeScale = 0 คูลดาวน์เลยผ่านตลอด
+        // (ใช้รูปแบบเดียวกับที่ PlayerMovement.Update() ป้องกันไว้อยู่แล้ว)
+        if (Time.timeScale == 0f) return;
+
         if (isReloading) return;
 
         ItemData weapon = GetEquippedWeapon();

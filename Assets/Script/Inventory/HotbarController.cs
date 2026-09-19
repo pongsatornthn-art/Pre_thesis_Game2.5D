@@ -33,6 +33,11 @@ public class HotbarController : MonoBehaviour
 
     void Update()
     {
+        // [เพิ่มโดย Claude 2026-09-19] เปิดสมุดอยู่ = ห้ามรับปุ่มเลข/ลูกกลิ้ง
+        // ไม่งั้นกดเลข 1-6 เพื่อเลือกช่องในกระเป๋า จะไปสลับอาวุธในมือด้วยพร้อมกัน
+        // และหมุนลูกกลิ้งดูสมุดก็จะเปลี่ยนอาวุธมั่วไปหมด
+        if (JournalController.IsAnyOpen || Time.timeScale == 0f) return;
+
         if (Input.GetKeyDown(KeyCode.Alpha1)) SelectSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SelectSlot(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SelectSlot(2);
