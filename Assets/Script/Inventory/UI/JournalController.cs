@@ -104,6 +104,11 @@ public class JournalController : MonoBehaviour
         JournalPage target = FindPage(pageId) ?? FindPage(defaultPageId) ?? pages[0];
         if (target == null) return;
 
+        // อยู่หน้านี้อยู่แล้ว = ไม่ต้องทำอะไรเลย
+        // ไม่งั้นกดแท็บเดิมซ้ำ ๆ หน้าจะเด้งแอนิเมชันใหม่ทุกครั้ง เสียงคลิกดังรัว
+        // และหน้ากุญแจ/เอกสารจะลบช่องรายการทิ้งแล้วสร้างใหม่ทั้งหมดทุกครั้งที่กด (เปลืองและกระพริบ)
+        if (IsOpen && CurrentPageId == target.PageId) return;
+
         bool wasAlreadyOpen = IsOpen;
 
         // เปิดพาเนลหลัก

@@ -64,7 +64,10 @@ namespace Combat.Gun
 
         private void Awake()
         {
-            aimDetector = new EnemyAimDetector(enemyLayerMask, transform.root);
+            // ส่ง transform ของผู้เล่นตรง ๆ ไม่ใช่ transform.root
+            // ถ้าใช้ root แล้ววันหนึ่งเอา Player ไปใส่โฟลเดอร์จัดระเบียบในซีน
+            // root จะกลายเป็นตัวโฟลเดอร์ → ของทุกชิ้นในโฟลเดอร์เดียวกันจะถูกมองว่าเป็น "ตัวผู้ยิง" แล้วโดนข้ามหมด
+            aimDetector = new EnemyAimDetector(enemyLayerMask, transform);
             if (aimResolver == null) aimResolver = GetComponent<AimResolver>();
             if (feedback == null) feedback = GetComponent<GunFeedback>();
             if (animator == null) animator = GetComponentInChildren<Animator>();

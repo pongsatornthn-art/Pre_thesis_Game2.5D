@@ -46,8 +46,10 @@ namespace Combat.Gun
                     Collider col = hits[i].collider;
                     if (col == null) continue;
 
-                    // ข้ามตัวผู้เล่นเอง แล้วไปดูตัวถัดไป (ไม่ใช่เลิกตรวจทั้งหมด)
-                    if (ownerRoot != null && col.transform.root == ownerRoot) continue;
+                    // ข้ามตัวผู้เล่นเอง (รวมลูกหลานทุกชิ้น) แล้วไปดูตัวถัดไป ไม่ใช่เลิกตรวจทั้งหมด
+                    // เทียบด้วย IsChildOf ไม่ใช่ transform.root เพราะถ้าเอา Player ไปใส่โฟลเดอร์ในซีน
+                    // root จะกลายเป็นโฟลเดอร์ แล้วของทุกชิ้นในโฟลเดอร์นั้นจะถูกข้ามตามไปด้วย
+                    if (ownerRoot != null && (col.transform == ownerRoot || col.transform.IsChildOf(ownerRoot))) continue;
 
                     bool isEnemy = enemyLayerMask.value != 0
                         ? ((1 << col.gameObject.layer) & enemyLayerMask.value) != 0

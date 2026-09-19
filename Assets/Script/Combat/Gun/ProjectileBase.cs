@@ -28,7 +28,9 @@ namespace Combat.Gun
             direction = flatDir.sqrMagnitude > 0.0001f ? flatDir.normalized : Vector3.forward;
             gun = gunData;
             owner = ownerObj;
-            ownerRoot = ownerObj != null ? ownerObj.transform.root : null;
+            // เก็บ transform ของผู้ยิงตรง ๆ ไม่ใช่ transform.root
+            // (ถ้าใช้ root แล้วเอา Player ไปใส่โฟลเดอร์ในซีน กระสุนจะทะลุทุกอย่างที่อยู่โฟลเดอร์เดียวกัน)
+            ownerRoot = ownerObj != null ? ownerObj.transform : null;
             speed = gunData != null ? gunData.projectileSpeed : 25f;
             radius = gunData != null ? gunData.projectileRadius : 0.08f;
             maxRange = gunData != null ? gunData.attackRange : 50f;
@@ -66,7 +68,8 @@ namespace Combat.Gun
                 {
                     RaycastHit h = hits[i];
                     // ข้าม collider ของผู้ยิง
-                    if (owner != null && (h.collider.gameObject == owner || (ownerRoot != null && h.collider.transform.root == ownerRoot))) continue;
+                    if (owner != null && (h.collider.gameObject == owner ||
+                        (ownerRoot != null && (h.collider.transform == ownerRoot || h.collider.transform.IsChildOf(ownerRoot))))) continue;
 
                     // ⚠️ ข้าม collider ของตัวกระสุนเอง รวมถึง**ลูกหลานทุกชิ้น**
                     // (เช่นโมเดล 3D ที่ลากมาจาก asset pack แล้วมี Collider ติดมาด้วย)
