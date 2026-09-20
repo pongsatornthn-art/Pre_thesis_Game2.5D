@@ -99,7 +99,6 @@ namespace Combat.Gun
 
             if (currentGun == null) { IsFocusing = false; return; }
 
-            // รวบรวมบริบทสถานะของผู้เล่นเพื่อส่งให้สูตรคำนวณกรวยกระสุน
             bool isMoving = rb != null && rb.linearVelocity.magnitude > 0.1f;
             bool isSteady = playerCombat != null && playerCombat.isAiming;
             Vector3 muzzlePos = muzzle != null ? muzzle.position : transform.position;
@@ -109,14 +108,15 @@ namespace Combat.Gun
             SpreadContext ctx = new SpreadContext
             {
                 isMoving = isMoving,
-                isDashing = false, // หมายเหตุ: PlayerMovement ไม่มี public bool isDashing จึงส่ง false
+                isDashing = false, //
                 isSteady = isSteady,
                 isAimingAtEnemy = isAimingAtEnemy
             };
 
-            // ตาม GDD: เป้าจะหุบได้ต้อง "หยุดเดิน" และ "เมาส์เล็งอยู่บนศัตรู" ทั้งสองอย่าง
             IsFocusing = !isMoving && isAimingAtEnemy;
             spread.Tick(Time.deltaTime, ctx, currentGun.ToSpreadSettings());
+
+            if (animator != null) animator.SetBool("IsAiming", isSteady);
         }
 
         /// <summary>ทำการยิงกระสุน 1 นัด (ผู้เรียกต้องเช็คและหักกระสุนในแมกกาซีนมาก่อนแล้ว)</summary>

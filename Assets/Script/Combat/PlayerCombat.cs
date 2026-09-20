@@ -143,11 +143,7 @@ public class PlayerCombat : MonoBehaviour
 
             if (animator != null)
             {
-                // 🌟 [Alien Shooter Update] ห้ามส่ง true เด็ดขาด!
-                // ใน Player_Anim.controller มี transition ผูกกับ IsAiming ที่ลากตัวละครเข้า state "Aim_Idle"
-                // ซึ่งเป็นท่าเล็ง FPS เก่า (หันหลังให้กล้อง) ทำให้สไปรท์หันหน้าขึ้นค้างตอนกดคลิกขวา
-                // ตอนนี้คลิกขวา = แค่ "นิ่งขึ้น" ไม่ต้องเปลี่ยนท่า ให้ใช้ blend tree 8 ทิศตามเมาส์เหมือนเดิม
-                animator.SetBool("IsAiming", false);
+                animator.SetBool("IsAiming", isAiming);
             }
 
             // 🌟 ถือปืนคือหันตามเมาส์ตลอดเวลา ไม่ต้องกดคลิกขวาก่อน
