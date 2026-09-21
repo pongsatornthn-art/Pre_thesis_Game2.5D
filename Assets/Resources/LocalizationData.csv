@@ -24,3 +24,12 @@ DOC_UNTITLED_TITLE;เอกสารไม่มีชื่อ;Untitled Docume
 DOC_UNTITLED_BODY;ไม่มีเนื้อหา;No content
 PLAYER_NAME;โรวัน;ROWAN
 JOURNAL_PAGE_TITLE_BAG;กระเป๋า;INVENTORY
+JOURNAL_TAB_QUEST;เควส;Quests
+QUEST_EMPTY;ไม่มีเควสที่ทำอยู่;No active quest
+QUEST_COMPLETED_HEADER;เควสที่ทำเสร็จแล้ว;Completed Quests
+QUEST_SAMPLE_TITLE;สำรวจชั้นสอง;Explore the 2nd Floor
+QUEST_SAMPLE_DESC;ตรวจดูความผิดปกติบริเวณทางเดิน;Investigate the disturbance in the hallway
+QUEST_SAMPLE_OBJ1;ตรวจสอบรอยเท้าบนพื้น;Inspect the footprints on the floor
+QUEST_SAMPLE_OBJ2;หาทางเปิดประตูห้องนอน;Find a way to unlock the bedroom door
+DIALOGUE_SAMPLE_01;เมื่อกี้อะไรวะ...;What was that just now...
+DIALOGUE_SAMPLE_02;ประตูห้องนอนล็อกอยู่ ต้องหากุญแจ;The bedroom door is locked. Need to find a key.
