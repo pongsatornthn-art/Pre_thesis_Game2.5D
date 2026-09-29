@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5225386459236512616}
-  - component: {fileID: 366194486913405856}
   m_Layer: 0
   m_Name: BW_Office_Front_R
   m_TagString: Untagged
@@ -33,28 +32,6 @@ Transform:
   - {fileID: 1620431724635245677}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!64 &366194486913405856
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7041408818083348528}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -6388303094731894754, guid: 54227ed63e807dc47a5f6be0ee669179, type: 3}
 --- !u!1 &9055281055863756810
 GameObject:
   m_ObjectHideFlags: 0
