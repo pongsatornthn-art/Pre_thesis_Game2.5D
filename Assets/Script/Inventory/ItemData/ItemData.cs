@@ -8,6 +8,27 @@ public enum ItemType { General, MeleeWeapon, RangedWeapon, Ammo, Totem, Consumab
 [CreateAssetMenu(fileName = "New General Item", menuName = "Inventory/Items/General Item")]
 public class ItemData : ScriptableObject
 {
+    [Tooltip("รหัสถาวรของไอเทม — ระบบสุ่มให้เอง ห้ามแก้ · ระบบเซฟกระเป๋าใช้ตัวนี้ (เปลี่ยนชื่อไฟล์ได้ เซฟเก่าไม่พัง)")]
+    [SerializeField] private string itemId;
+
+    /// <summary>รหัสถาวร — ยังไม่เคยสุ่ม (asset เก่า) ให้ใช้ชื่อไฟล์แทนไปก่อน</summary>
+    public string ItemId => string.IsNullOrEmpty(itemId) ? name : itemId;
+
+#if UNITY_EDITOR
+    // สุ่มรหัสครั้งแรกที่เปิดดูใน Inspector · ItemCatalog "เติมอัตโนมัติ" จะสุ่มให้ทุกชิ้นพร้อมแก้รหัสซ้ำ (Ctrl+D ก๊อปรหัสมาด้วย)
+    protected virtual void OnValidate()
+    {
+        if (string.IsNullOrEmpty(itemId)) EnsureItemId(forceNew: true);
+    }
+
+    internal void EnsureItemId(bool forceNew)
+    {
+        if (!forceNew && !string.IsNullOrEmpty(itemId)) return;
+        itemId = System.Guid.NewGuid().ToString("N");
+        UnityEditor.EditorUtility.SetDirty(this);
+    }
+#endif
+
     [Header("General Info (ข้อมูลพื้นฐาน)")]
     public string itemName = "New Item";
     public Sprite icon;

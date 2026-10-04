@@ -48,7 +48,7 @@ public class StoryTriggerZone : MonoBehaviour
         if (onlyOnce && hasTriggered) return;
         if (sequence == null) return;
 
-        IStoryFlags flags = ServiceLocator.Get<IStoryFlags>();
+        IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
 
         // ตรวจสอบเงื่อนไขว่ามีธงที่จำเป็นครบหรือไม่
         if (requiredFlag != null && (flags == null || !flags.Has(requiredFlag)))
@@ -69,13 +69,13 @@ public class StoryTriggerZone : MonoBehaviour
             {
                 Player = other.gameObject,
                 Flags = flags,
-                Quests = ServiceLocator.Get<IQuestService>(),
+                Quests = ServiceLocator.GetOptional<IQuestService>(),
                 Runner = this
             };
             if (!customCondition.IsMet(ctx)) return;
         }
 
-        StoryDirector director = StoryDirector.Instance ?? ServiceLocator.Get<StoryDirector>();
+        StoryDirector director = StoryDirector.Instance ?? ServiceLocator.GetOptional<StoryDirector>();
         if (director == null)
         {
             director = FindFirstObjectByType<StoryDirector>();

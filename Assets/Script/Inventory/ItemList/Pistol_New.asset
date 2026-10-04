@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e708e1fef73094f479bd508340eada45, type: 3}
   m_Name: Pistol_New
   m_EditorClassIdentifier: 
+  itemId: 88e47a07f1d4438d8634b6645bc07515
   itemName: "\u0E1B\u0E37\u0E19\u0E1E\u0E01"
   icon: {fileID: 21300000, guid: e9fce311e3e046c43a01d5dd348ea074, type: 3}
   description: "\u0E1B\u0E37\u0E19\u0E1E\u0E01\u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E1B\u0E37\u0E19\u0E43\u0E2B\u0E0D\u0E48\u0E41\u0E15\u0E48\u0E40\u0E1B\u0E47\u0E19\u0E1B\u0E37\u0E19\u0E40\u0E25\u0E47\u0E01\u0E17\u0E35\u0E48\u0E1E\u0E01\u0E44\u0E14\u0E49"
@@ -21,6 +22,8 @@ MonoBehaviour:
   itemType: 2
   price: 50
   equippedSprite: {fileID: 0}
+  itemNameKey: 
+  descriptionKey: 
   damage: 10
   attackRange: 20
   lightAttackCooldown: 0.5

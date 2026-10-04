@@ -9,8 +9,11 @@ using UnityEngine;
 ///
 /// ชื่อคลาสยังเป็น StoryFlagService เพื่อไม่ให้ของที่แปะไว้แล้วหลุด (สเปก: QUEST_SAVE_SPEC.md หัวข้อ 2)
 /// </summary>
-public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISaveable
+public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISaveable, ISaveRestoreOrder
 {
+    // ความจำกลางต้องโหลดก่อนทุกอย่าง — เควสและของในซีนคำนวณจากค่าตรงนี้
+    public int RestoreOrder => -100;
+
     // ใช้ HashSet<string> ตอนรันไทม์เพื่อประสิทธิภาพ O(1) ในการตรวจสอบ Has
     private readonly HashSet<string> activeFlags = new HashSet<string>();
     private readonly Dictionary<string, int> counters = new Dictionary<string, int>();

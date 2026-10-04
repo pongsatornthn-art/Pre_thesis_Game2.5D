@@ -19,7 +19,7 @@ public class GiveQuestAction : IStoryAction
             ctx.Quests.StartQuest(quest);
 
             // เล่นเสียงแจ้งเตือนผ่านบริการกลาง IAudioService ตามข้อตกลง
-            IAudioService audio = ServiceLocator.Get<IAudioService>();
+            IAudioService audio = ServiceLocator.GetOptional<IAudioService>();
             audio?.PlayMenuSound(MenuSoundType.Click);
         }
         yield break;

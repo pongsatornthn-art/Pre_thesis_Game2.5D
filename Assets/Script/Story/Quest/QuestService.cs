@@ -16,8 +16,11 @@ using UnityEngine;
 ///
 /// สเปก: docs/QUEST_SAVE_SPEC.md
 /// </summary>
-public class QuestService : MonoBehaviour, IQuestService, ISaveable
+public class QuestService : MonoBehaviour, IQuestService, ISaveable, ISaveRestoreOrder, ISaveRestoreListener
 {
+    // โหลดหลังความจำกลาง (-100) แต่ก่อนของในซีน
+    public int RestoreOrder => -50;
+
     [Header("สารบัญเควสทั้งหมด (ใช้หาเควสที่เริ่มเอง + หาเควสตอนโหลดเซฟ)")]
     [Tooltip("เว้นว่าง = หา Resources/QuestCatalog เอง")]
     [SerializeField] private QuestCatalog catalog;
@@ -42,6 +45,7 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable
     private IStoryFlags flags;
     private IStoryCounters counters;
     private IKeyItemHolder keyItems;
+    private IDocumentLog documents;
     private Inventory subscribedInventory;
     private GameObject cachedPlayer;
 
@@ -83,15 +87,17 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable
     private void Start()
     {
         // ฟังทุกแหล่งที่ทำให้เป้าหมายเปลี่ยนได้ — ทุกแหล่งไปจบที่ HandleWorldChanged ที่เดียว
-        flags = ServiceLocator.Get<IStoryFlags>();
-        counters = ServiceLocator.Get<IStoryCounters>();
-        keyItems = ServiceLocator.Get<IKeyItemHolder>();
+        flags = ServiceLocator.GetOptional<IStoryFlags>();
+        counters = ServiceLocator.GetOptional<IStoryCounters>();
+        keyItems = ServiceLocator.GetOptional<IKeyItemHolder>();
+        documents = ServiceLocator.GetOptional<IDocumentLog>();
         subscribedInventory = Inventory.Instance;
 
         if (flags != null) flags.OnChanged += HandleWorldChanged;
         // StoryFlagService เป็นทั้งธงและตัวนับ (event ตัวเดียวกัน) — ห้ามสมัครซ้ำไม่งั้นคำนวณ 2 รอบ
         if (counters != null && !ReferenceEquals(counters, flags)) counters.OnChanged += HandleWorldChanged;
         if (keyItems != null) keyItems.OnChanged += HandleWorldChanged;
+        if (documents != null) documents.OnChanged += HandleWorldChanged;
         if (subscribedInventory != null) subscribedInventory.OnInventoryChanged += HandleWorldChanged;
 
         if (flags == null)
@@ -99,7 +105,9 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable
             Debug.LogWarning("[QuestService] ไม่พบ IStoryFlags (StoryFlagService) — เป้าหมายแบบธง/ตัวนับจะไม่มีวันสำเร็จ");
         }
 
-        Evaluate(silent: false);
+        // กำลังโหลดเซฟ → ไม่ต้องคำนวณตอนนี้ (จะคำนวณแบบเงียบใน OnRestoreCompleted)
+        // ไม่งั้นเควสที่เริ่มเองจะยิงป้าย "เควสใหม่" ก่อนเซฟถูกใส่คืน
+        if (!SaveRestoreScope.IsBusy) Evaluate(silent: false);
     }
 
     private void OnDestroy()
@@ -107,11 +115,20 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable
         if (flags != null) flags.OnChanged -= HandleWorldChanged;
         if (counters != null && !ReferenceEquals(counters, flags)) counters.OnChanged -= HandleWorldChanged;
         if (keyItems != null) keyItems.OnChanged -= HandleWorldChanged;
+        if (documents != null) documents.OnChanged -= HandleWorldChanged;
         if (subscribedInventory != null) subscribedInventory.OnInventoryChanged -= HandleWorldChanged;
         ServiceLocator.Unregister<IQuestService>();
     }
 
-    private void HandleWorldChanged() => Evaluate(silent: false);
+    private void HandleWorldChanged()
+    {
+        // ระหว่างโหลดเซฟ ธง/ตัวนับ/กระเป๋าถูกใส่คืนทีละชิ้น — ห้ามคำนวณกลางทาง (จะยิงป้ายแจ้งเตือนผิดๆ)
+        if (SaveRestoreScope.IsBusy) return;
+        Evaluate(silent: false);
+    }
+
+    /// <summary>SaveManager เรียกหลังใส่ความจำคืนครบทุกชิ้น</summary>
+    public void OnRestoreCompleted() => Evaluate(silent: true);
 
     #endregion
 
@@ -332,8 +349,8 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable
         return new StoryContext
         {
             Player = cachedPlayer,
-            Flags = flags ?? ServiceLocator.Get<IStoryFlags>(),
-            Counters = counters ?? ServiceLocator.Get<IStoryCounters>(),
+            Flags = flags ?? ServiceLocator.GetOptional<IStoryFlags>(),
+            Counters = counters ?? ServiceLocator.GetOptional<IStoryCounters>(),
             Quests = this,
             Runner = this
         };
@@ -410,7 +427,10 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable
 
         // คำนวณใหม่แบบเงียบ เผื่อธงที่โหลดมาทำให้ข้อไหนครบแล้ว — ไม่งั้นเควสจะค้างในสมุดทั้งที่ทำเสร็จ
         changedThisEvaluation = true;   // สมุดถูกแทนทั้งเล่ม ต้องวาดใหม่แน่นอน
-        Evaluate(silent: true);
+
+        // ถ้าโหลดผ่าน SaveManager จะคำนวณทีเดียวใน OnRestoreCompleted หลังทุกชิ้นใส่คืนครบ
+        // ถ้าถูกเรียกตรงๆ (เทส) คำนวณเลยแบบเงียบ — ไม่งั้นเควสที่ธงครบแล้วจะค้างในสมุด
+        if (!SaveRestoreScope.IsRestoring) Evaluate(silent: true);
     }
 
     #endregion

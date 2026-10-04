@@ -36,7 +36,7 @@ public class DoorController : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && Input.GetKeyDown(KeyCode.E))
+        if (isPlayerNear && InteractInput.Pressed) // [แก้โดย Claude 2026-10-04] E → ปุ่มโต้ตอบกลาง (F)
         {
             if (isUnlocked)
             {

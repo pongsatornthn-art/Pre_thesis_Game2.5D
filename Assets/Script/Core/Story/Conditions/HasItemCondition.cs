@@ -27,14 +27,14 @@ public class HasItemCondition : IStoryCondition
         // 1. ตรวจสอบกุญแจสำคัญด้วย doorId
         if (!string.IsNullOrEmpty(keyItemId))
         {
-            IKeyItemHolder holder = ServiceLocator.Get<IKeyItemHolder>();
+            IKeyItemHolder holder = ServiceLocator.GetOptional<IKeyItemHolder>();
             if (holder != null && holder.Has(keyItemId)) return true;
         }
 
         // 2. ตรวจสอบของสำคัญด้วย KeyItemData Asset
         if (keyItemData != null)
         {
-            IKeyItemHolder holder = ServiceLocator.Get<IKeyItemHolder>();
+            IKeyItemHolder holder = ServiceLocator.GetOptional<IKeyItemHolder>();
             if (holder != null && holder.All != null)
             {
                 for (int i = 0; i < holder.All.Count; i++)

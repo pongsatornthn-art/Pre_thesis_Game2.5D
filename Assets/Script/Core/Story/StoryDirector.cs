@@ -14,7 +14,7 @@ public class StoryDirector : MonoBehaviour
 {
     public static StoryDirector Instance { get; private set; }
 
-    private readonly Queue<StorySequence> sequenceQueue = new Queue<StorySequence>();
+    private readonly Queue<(StorySequence seq, int startIndex)> sequenceQueue = new Queue<(StorySequence, int)>();
     private Coroutine queueRoutine;
 
     // จำไว้ว่ากำลังล็อกผู้เล่นคนไหนอยู่ เพื่อปลดล็อกให้ได้แม้ coroutine ถูกหยุดกลางคัน
@@ -22,6 +22,10 @@ public class StoryDirector : MonoBehaviour
     private PlayerMovement lockedMovement;
 
     public bool IsPlaying { get; private set; }
+
+    /// <summary>ฉากที่กำลังเล่น + คำสั่งที่กำลังทำ — PtsdCheckpoint ใช้จำว่าตายแล้วต้องเล่นต่อจากตรงไหน</summary>
+    public StorySequence CurrentSequence { get; private set; }
+    public int CurrentActionIndex { get; private set; } = -1;
 
     private void Awake()
     {
@@ -43,6 +47,8 @@ public class StoryDirector : MonoBehaviour
         sequenceQueue.Clear();
         IsPlaying = false;
         queueRoutine = null;
+        CurrentSequence = null;
+        CurrentActionIndex = -1;
     }
 
     private void ReleasePlayerLock()
@@ -61,11 +67,14 @@ public class StoryDirector : MonoBehaviour
     }
 
     /// <summary>สั่งเล่นลำดับเหตุการณ์ (หากมีฉากอื่นเล่นอยู่ จะเข้าคิวต่อท้ายอัตโนมัติ)</summary>
-    public void Play(StorySequence seq)
+    public void Play(StorySequence seq) => Play(seq, 0);
+
+    /// <summary>เล่นฉากโดยเริ่มจากคำสั่งที่ startIndex — ใช้ตอนตายในโลก PTSD แล้วเล่นฉากต่อจากจุดที่เข้าโลก</summary>
+    public void Play(StorySequence seq, int startIndex)
     {
         if (seq == null) return;
 
-        sequenceQueue.Enqueue(seq);
+        sequenceQueue.Enqueue((seq, Mathf.Max(0, startIndex)));
 
         if (!IsPlaying)
         {
@@ -79,10 +88,10 @@ public class StoryDirector : MonoBehaviour
 
         while (sequenceQueue.Count > 0)
         {
-            StorySequence currentSeq = sequenceQueue.Dequeue();
+            var (currentSeq, startIndex) = sequenceQueue.Dequeue();
             if (currentSeq != null)
             {
-                yield return StartCoroutine(PlaySequenceRoutine(currentSeq));
+                yield return StartCoroutine(PlaySequenceRoutine(currentSeq, startIndex));
             }
         }
 
@@ -90,7 +99,7 @@ public class StoryDirector : MonoBehaviour
         queueRoutine = null;
     }
 
-    private IEnumerator PlaySequenceRoutine(StorySequence seq)
+    private IEnumerator PlaySequenceRoutine(StorySequence seq, int startIndex)
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         PlayerMovement movement = player != null ? player.GetComponent<PlayerMovement>() : null;
@@ -105,9 +114,9 @@ public class StoryDirector : MonoBehaviour
         StoryContext ctx = new StoryContext
         {
             Player = player,
-            Flags = ServiceLocator.Get<IStoryFlags>(),
-            Counters = ServiceLocator.Get<IStoryCounters>(),
-            Quests = ServiceLocator.Get<IQuestService>(),
+            Flags = ServiceLocator.GetOptional<IStoryFlags>(),
+            Counters = ServiceLocator.GetOptional<IStoryCounters>(),
+            Quests = ServiceLocator.GetOptional<IQuestService>(),
             Runner = this
         };
 
@@ -115,8 +124,10 @@ public class StoryDirector : MonoBehaviour
         {
             if (seq.actions != null)
             {
-                for (int i = 0; i < seq.actions.Count; i++)
+                CurrentSequence = seq;
+                for (int i = startIndex; i < seq.actions.Count; i++)
                 {
+                    CurrentActionIndex = i;
                     IStoryAction action = seq.actions[i];
                     if (action != null)
                     {
@@ -129,6 +140,8 @@ public class StoryDirector : MonoBehaviour
         {
             // ปลดล็อกผู้เล่นเสมอเมื่อฉากเล่นจบหรือเกิดข้อผิดพลาด
             if (seq.lockPlayer) ReleasePlayerLock();
+            CurrentSequence = null;
+            CurrentActionIndex = -1;
         }
     }
 }

@@ -14,7 +14,7 @@ public class QuestActiveCondition : IStoryCondition
     {
         if (quest == null) return true;
 
-        IQuestService quests = ctx?.Quests ?? ServiceLocator.Get<IQuestService>();
+        IQuestService quests = ctx?.Quests ?? ServiceLocator.GetOptional<IQuestService>();
         return quests != null && quests.GetState(quest) == QuestState.Active;
     }
 }

@@ -17,7 +17,7 @@ public class HasFlagCondition : IStoryCondition
     {
         if (flag == null) return true;
 
-        IStoryFlags flags = ctx?.Flags ?? ServiceLocator.Get<IStoryFlags>();
+        IStoryFlags flags = ctx?.Flags ?? ServiceLocator.GetOptional<IStoryFlags>();
         if (flags == null) return false;
 
         return flags.Has(flag) == expectedState;

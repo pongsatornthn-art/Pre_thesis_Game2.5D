@@ -14,6 +14,22 @@ public class StoryContext
     public MonoBehaviour Runner;
     public GameObject LastSpawnedActor;
     public System.Collections.Generic.Dictionary<string, GameObject> Actors = new System.Collections.Generic.Dictionary<string, GameObject>();
+
+    /// <summary>
+    /// สร้างบริบทพร้อมบริการกลางครบชุด — โค้ดใหม่ให้ใช้ตัวนี้แทนการ new เอง
+    /// (เคยมีบั๊กลืมใส่บางช่อง เช่น Counters แล้วเงื่อนไขต้องไปหาเองทีหลัง)
+    /// </summary>
+    public static StoryContext Create(MonoBehaviour runner, GameObject player = null)
+    {
+        return new StoryContext
+        {
+            Player = player != null ? player : GameObject.FindGameObjectWithTag("Player"),
+            Flags = ServiceLocator.GetOptional<IStoryFlags>(),
+            Counters = ServiceLocator.GetOptional<IStoryCounters>(),
+            Quests = ServiceLocator.GetOptional<IQuestService>(),
+            Runner = runner
+        };
+    }
 }
 
 /// <summary>

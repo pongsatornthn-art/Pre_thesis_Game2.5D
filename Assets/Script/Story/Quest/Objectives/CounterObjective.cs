@@ -30,7 +30,7 @@ public class CounterObjective : QuestObjective
 
     private int GetValue(StoryContext ctx)
     {
-        IStoryCounters counters = ctx?.Counters ?? ServiceLocator.Get<IStoryCounters>();
+        IStoryCounters counters = ctx?.Counters ?? ServiceLocator.GetOptional<IStoryCounters>();
         return counters != null ? counters.Get(counter) : 0;
     }
 }

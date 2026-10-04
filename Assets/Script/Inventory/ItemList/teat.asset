@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 740a5462962be7d4cacaaa4315c81409, type: 3}
   m_Name: teat
   m_EditorClassIdentifier: 
+  itemId: a3665480ec02461abe8c5c15876e6ad4
   itemName: teat
   icon: {fileID: 21300000, guid: adc76a934b766f9458aa1fd59f468e8c, type: 3}
   description: 
@@ -19,18 +20,7 @@ MonoBehaviour:
   isStackable: 1
   maxStack: 99
   itemType: 0
-  equippedSprite: {fileID: 0}
-  weaponAnimatorOverride: {fileID: 0}
-  damage: 10
-  attackRange: 2
-  lightAttackCooldown: 0.5
-  attackCooldown: 0.5
-  staminaCost: 10
-  knockback: 3
-  maxDurability: 0
   price: 50
-  digestionReduceAmount: 20
-  healAmount: 50
-  causesBleeding: 0
-  bleedDuration: 10
-  bleedDamagePerSec: 2
+  equippedSprite: {fileID: 0}
+  itemNameKey: 
+  descriptionKey: 

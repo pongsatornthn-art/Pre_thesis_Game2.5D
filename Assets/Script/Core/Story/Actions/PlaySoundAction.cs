@@ -23,7 +23,7 @@ public class PlaySoundAction : IStoryAction
     {
         if (clip != null)
         {
-            IAudioService audio = ServiceLocator.Get<IAudioService>();
+            IAudioService audio = ServiceLocator.GetOptional<IAudioService>();
             Vector3 soundPos = ctx?.Player != null ? ctx.Player.transform.position : Vector3.zero;
 
             audio?.PlaySFX(clip, soundPos, volume, false);

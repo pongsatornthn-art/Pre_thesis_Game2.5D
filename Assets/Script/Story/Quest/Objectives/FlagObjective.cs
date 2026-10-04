@@ -15,7 +15,7 @@ public class FlagObjective : QuestObjective
     public override bool IsMet(StoryContext ctx)
     {
         if (flag == null) return false;   // ยังไม่ได้กรอก ห้ามนับว่าสำเร็จ
-        IStoryFlags flags = ctx?.Flags ?? ServiceLocator.Get<IStoryFlags>();
+        IStoryFlags flags = ctx?.Flags ?? ServiceLocator.GetOptional<IStoryFlags>();
         return flags != null && flags.Has(flag);
     }
 }

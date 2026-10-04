@@ -32,11 +32,11 @@ public class StoryTriggerOnEvent : MonoBehaviour
         if (onlyOnce && hasTriggered) return;
         if (sequence == null) return;
 
-        IStoryFlags flags = ServiceLocator.Get<IStoryFlags>();
+        IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
         if (requiredFlag != null && (flags == null || !flags.Has(requiredFlag))) return;
         if (blockedByFlag != null && flags != null && flags.Has(blockedByFlag)) return;
 
-        StoryDirector director = StoryDirector.Instance ?? ServiceLocator.Get<StoryDirector>();
+        StoryDirector director = StoryDirector.Instance ?? ServiceLocator.GetOptional<StoryDirector>();
         if (director == null) director = FindFirstObjectByType<StoryDirector>();
 
         if (director != null)

@@ -287,6 +287,16 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// [เพิ่มโดย Claude 2026-10-04] ตั้งเลือดตรงๆ ตอนโหลดเซฟ (PlayerStateSaveWrapper เรียก)
+    /// ไม่ใช้ TakeRawDamage เพราะจะยิง PlayerDamagedEvent (กรวยกระสุนเด้ง) ทั้งที่ไม่ได้โดนตีจริง
+    /// </summary>
+    public void SetHealthFromSave(int value)
+    {
+        currentHealth = Mathf.Clamp(value, 1, maxHealth);   // อย่างน้อย 1 — ไม่โหลดมาแล้วตายทันที
+        if (healthSlider != null) healthSlider.value = currentHealth;
+    }
+
     /// <summary>ฟื้นเลือด (ใช้ยา/ผ้าพันแผล) — เลือดไม่เกินค่าสูงสุด</summary>
     public void Heal(int amount)
     {

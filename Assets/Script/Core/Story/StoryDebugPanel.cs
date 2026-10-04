@@ -36,10 +36,10 @@ public class StoryDebugPanel : MonoBehaviour
 
     private void DrawDebugWindow(int windowID)
     {
-        IStoryFlags flagsService = ServiceLocator.Get<IStoryFlags>();
-        IQuestService questService = ServiceLocator.Get<IQuestService>();
+        IStoryFlags flagsService = ServiceLocator.GetOptional<IStoryFlags>();
+        IQuestService questService = ServiceLocator.GetOptional<IQuestService>();
 
-        IStoryCounters countersService = ServiceLocator.Get<IStoryCounters>();
+        IStoryCounters countersService = ServiceLocator.GetOptional<IStoryCounters>();
 
         GUILayout.Label("<b>📜 สมุดเควส (เรียงตามที่ได้รับ):</b>");
         if (questService != null && questService.Journal.Count > 0)

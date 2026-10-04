@@ -33,3 +33,9 @@ QUEST_SAMPLE_OBJ1;ตรวจสอบรอยเท้าบนพื้น;I
 QUEST_SAMPLE_OBJ2;หาทางเปิดประตูห้องนอน;Find a way to unlock the bedroom door
 DIALOGUE_SAMPLE_01;เมื่อกี้อะไรวะ...;What was that just now...
 DIALOGUE_SAMPLE_02;ประตูห้องนอนล็อกอยู่ ต้องหากุญแจ;The bedroom door is locked. Need to find a key.
+QUEST_TOAST_NEW;บันทึกใหม่: {0};New entry: {0}
+QUEST_TOAST_NEW_OBJECTIVE;เป้าหมายใหม่: {0};New objective: {0}
+QUEST_TOAST_OBJECTIVE_DONE;เสร็จแล้ว: {0};Done: {0}
+QUEST_TOAST_COMPLETED;บันทึกสำเร็จ: {0};Entry completed: {0}
+SAVE_DONE;บันทึกเกมแล้ว;Game saved
+SAVE_BLOCKED_PTSD;บันทึกเกมไม่ได้ในตอนนี้...;You cannot save right now...

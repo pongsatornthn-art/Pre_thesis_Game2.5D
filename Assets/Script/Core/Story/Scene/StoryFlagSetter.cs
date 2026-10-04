@@ -16,7 +16,7 @@ public class StoryFlagSetter : MonoBehaviour
     public void Set()
     {
         if (flag == null) return;
-        IStoryFlags flags = ServiceLocator.Get<IStoryFlags>();
+        IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
         if (flags == null)
         {
             Debug.LogWarning($"[StoryFlagSetter] ไม่พบ IStoryFlags — ปักธง '{flag.flagId}' ไม่สำเร็จ", this);
@@ -29,6 +29,6 @@ public class StoryFlagSetter : MonoBehaviour
     public void Clear()
     {
         if (flag == null) return;
-        ServiceLocator.Get<IStoryFlags>()?.Clear(flag);
+        ServiceLocator.GetOptional<IStoryFlags>()?.Clear(flag);
     }
 }

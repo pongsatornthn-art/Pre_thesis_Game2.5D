@@ -21,7 +21,7 @@ public class ShowDialogueAction : IStoryAction
 
     public IEnumerator Execute(StoryContext ctx)
     {
-        IDialogueService dialogueService = ServiceLocator.Get<IDialogueService>();
+        IDialogueService dialogueService = ServiceLocator.GetOptional<IDialogueService>();
 
         if (dialogueService != null)
         {
@@ -37,7 +37,7 @@ public class ShowDialogueAction : IStoryAction
         else
         {
             // Fallback เผื่อยังไม่ได้แปะ DialogueService ในซีน
-            ILocalizationService loc = ServiceLocator.Get<ILocalizationService>();
+            ILocalizationService loc = ServiceLocator.GetOptional<ILocalizationService>();
             string text = loc != null ? loc.GetText(textKey) : textKey;
             Debug.Log($"<color=yellow>💬 [Dialogue Fallback] {text}</color>");
 

@@ -58,6 +58,10 @@ public class HotbarController : MonoBehaviour
         }
     }
 
+    // [เพิ่มโดย Claude 2026-10-04] ให้ระบบเซฟอ่าน/ตั้งช่องที่ถืออยู่ได้ (PlayerStateSaveWrapper)
+    public int SelectedIndex => selectedIndex;
+    public void SelectSlotFromSave(int index) => SelectSlot(Mathf.Clamp(index, 0, totalSlots - 1));
+
     private void SelectSlot(int index)
     {
         selectedIndex = index;

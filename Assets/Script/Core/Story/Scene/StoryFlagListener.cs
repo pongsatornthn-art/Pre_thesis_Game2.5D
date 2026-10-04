@@ -3,12 +3,15 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// สะพานเชื่อมระหว่าง "เนื้อเรื่อง" กับ "ของในซีน"
-/// แปะที่ประตู / กำแพง / ผี แล้วเลือกธงที่จะฟัง — ธงขึ้นเมื่อไหร่ก็ทำงานทันที
+/// ของในซีน "ฟังธง" — ธงขึ้นแล้วยิง UnityEvent (เช่น ประตูเปิด / สิ่งกีดขวางหาย / ทางลับโผล่)
 ///
-/// หัวใจของวิธีนี้: ฝั่งเนื้อเรื่อง (ไฟล์ asset) แค่ปักธง ไม่ต้องรู้จักวัตถุชิ้นนี้เลย
-/// เลยไม่ติดข้อจำกัดที่ ScriptableObject ชี้ไปหาของในซีนไม่ได้
-/// และของในซีนชิ้นไหนจะฟังธงเดียวกันกี่ชิ้นก็ได้ (ประตู 3 บานเปิดพร้อมกันด้วยธงเดียว)
+/// ซิงก์กับความจำกลาง **ทุกครั้งที่ถูกเปิด (OnEnable)** ไม่ใช่แค่ตอนเริ่มซีน:
+///   ของในโลก PTSD ถูกซ่อนตอนธงขึ้น → พอสลับเข้าโลก PTSD ก็วาร์ปไปสภาพปลายทางเอง
+///   โหลดเซฟ → วาร์ปเหมือนกัน → ทางไม่มีวันหาย (QUEST_SAVE_SPEC.md หัวข้อ 5)
+///
+/// แยก event 2 ช่อง:
+///   onFlagSet           = ธงขึ้นตอนผู้เล่นอยู่ตรงนั้น → เล่นอนิเมชัน (เช่น SimpleMover.Play)
+///   onAlreadySetAtStart = ธงขึ้นอยู่แล้วตอนของนี้เพิ่งเปิด → วาร์ปไปเลย (เช่น SimpleMover.JumpToEnd)
 /// </summary>
 public class StoryFlagListener : MonoBehaviour
 {
@@ -22,42 +25,61 @@ public class StoryFlagListener : MonoBehaviour
     [Tooltip("ธงขึ้นตอนกำลังเล่นอยู่ → ให้เล่นอนิเมชันปกติ เช่น ลาก SimpleMover.Play มาใส่")]
     public UnityEvent onFlagSet;
 
-    [Tooltip("โหลดเซฟมาแล้วธงขึ้นอยู่ก่อนแล้ว → ให้วาร์ปไปสถานะปลายทางเลย เช่น SimpleMover.JumpToEnd")]
+    [Tooltip("ธงขึ้นอยู่ก่อนแล้ว (โหลดเซฟ / ธงขึ้นตอนของนี้ถูกซ่อนในอีกโลก) → วาร์ปไปสถานะปลายทาง เช่น SimpleMover.JumpToEnd")]
     public UnityEvent onAlreadySetAtStart;
 
     private IStoryFlags flags;
     private bool fired;
+    private bool subscribed;
 
-    private IEnumerator Start()
+    private void OnEnable()
     {
-        // รอ 1 เฟรมก่อนตรวจครั้งแรก เพื่อให้ระบบเซฟมีโอกาสกู้ธงคืนมาก่อน
-        // ไม่งั้นพอโหลดเซฟ ประตูที่เคยเปิดไว้จะค่อยๆ เปิดใหม่ให้ผู้เล่นเห็นแทนที่จะเปิดค้างอยู่
+        StartCoroutine(SyncNextFrame());
+    }
+
+    private void OnDisable()
+    {
+        Unsubscribe();
+    }
+
+    // รอ 1 เฟรม — ให้บริการกลางลงทะเบียนเสร็จ และให้ระบบเซฟใส่ธงคืนก่อน
+    private IEnumerator SyncNextFrame()
+    {
         yield return null;
 
-        flags = ServiceLocator.Get<IStoryFlags>();
+        // กำลังโหลดเซฟ → รอให้ใส่ธงคืนครบก่อน ไม่งั้นธงที่ถูกใส่คืนจะถูกมองว่า "เพิ่งขึ้น" แล้วเล่นอนิเมชันแทนการวาร์ป
+        while (SaveRestoreScope.IsBusy) yield return null;
+
+        if (flags == null) flags = ServiceLocator.GetOptional<IStoryFlags>();
         if (flags == null)
         {
             Debug.LogWarning($"[StoryFlagListener] ไม่พบ IStoryFlags — '{name}' จะไม่ทำงาน (ลืมใส่ StoryFlagService ในซีนหรือเปล่า)", this);
             yield break;
         }
 
-        if (listenFor != null && flags.Has(listenFor))
+        if (!subscribed)
+        {
+            flags.OnChanged += HandleFlagsChanged;
+            subscribed = true;
+        }
+
+        if (!fired && listenFor != null && flags.Has(listenFor))
         {
             fired = true;
             onAlreadySetAtStart?.Invoke();
         }
-
-        flags.OnChanged += HandleFlagsChanged;
     }
 
-    private void OnDestroy()
+    private void Unsubscribe()
     {
-        if (flags != null) flags.OnChanged -= HandleFlagsChanged;
+        if (subscribed && flags != null) flags.OnChanged -= HandleFlagsChanged;
+        subscribed = false;
     }
 
     private void HandleFlagsChanged()
     {
-        if (listenFor == null) return;
+        if (listenFor == null || flags == null) return;
+        if (SaveRestoreScope.IsBusy) return;   // ธงที่ถูกใส่คืนตอนโหลด ไม่ใช่เหตุการณ์ที่เกิดตอนเล่น
         if (triggerOnce && fired) return;
         if (!flags.Has(listenFor)) return;
 

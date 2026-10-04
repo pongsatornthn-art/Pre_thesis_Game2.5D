@@ -45,10 +45,10 @@ public class QuestPage : JournalPage
 
     private void OnEnable()
     {
-        questService = ServiceLocator.Get<IQuestService>();
+        questService = ServiceLocator.GetOptional<IQuestService>();
         if (questService != null) questService.OnChanged += Refresh;
 
-        locService = ServiceLocator.Get<ILocalizationService>();
+        locService = ServiceLocator.GetOptional<ILocalizationService>();
         if (locService != null) locService.OnLanguageChanged += Refresh;
     }
 
@@ -60,8 +60,8 @@ public class QuestPage : JournalPage
 
     public override void Refresh()
     {
-        if (questService == null) questService = ServiceLocator.Get<IQuestService>();
-        if (locService == null) locService = ServiceLocator.Get<ILocalizationService>();
+        if (questService == null) questService = ServiceLocator.GetOptional<IQuestService>();
+        if (locService == null) locService = ServiceLocator.GetOptional<ILocalizationService>();
 
         ClearSpawned();
 

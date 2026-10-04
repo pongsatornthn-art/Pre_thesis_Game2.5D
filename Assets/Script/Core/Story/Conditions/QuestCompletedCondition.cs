@@ -15,7 +15,7 @@ public class QuestCompletedCondition : IStoryCondition
     {
         if (quest == null) return false;   // ยังไม่ได้กรอก ห้ามปล่อยผ่าน ไม่งั้นเควสที่รออยู่จะโผล่ทันที
 
-        IQuestService quests = ctx?.Quests ?? ServiceLocator.Get<IQuestService>();
+        IQuestService quests = ctx?.Quests ?? ServiceLocator.GetOptional<IQuestService>();
         return quests != null && quests.GetState(quest) == QuestState.Completed;
     }
 }

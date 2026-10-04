@@ -80,7 +80,7 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
 
     private IEnumerator ShowRoutine(DialogueLine line)
     {
-        ILocalizationService loc = ServiceLocator.Get<ILocalizationService>();
+        ILocalizationService loc = ServiceLocator.GetOptional<ILocalizationService>();
         string text = loc != null ? loc.GetText(line.textKey) : line.textKey;
 
         if (dialogueText != null)

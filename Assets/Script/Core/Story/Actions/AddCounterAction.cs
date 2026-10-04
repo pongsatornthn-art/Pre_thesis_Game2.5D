@@ -19,7 +19,7 @@ public class AddCounterAction : IStoryAction
     {
         if (counter != null)
         {
-            IStoryCounters counters = ctx?.Counters ?? ServiceLocator.Get<IStoryCounters>();
+            IStoryCounters counters = ctx?.Counters ?? ServiceLocator.GetOptional<IStoryCounters>();
             if (counters != null) counters.Add(counter, amount);
             else Debug.LogWarning("[AddCounterAction] ไม่พบ IStoryCounters (StoryFlagService) ในซีน");
         }

@@ -87,7 +87,7 @@ public class DialogueService : MonoBehaviour, IDialogueService
                     // เล่นเสียงพากย์ผ่านบริการกลาง IAudioService หากมีระบุไว้
                     if (line.voiceClip != null)
                     {
-                        IAudioService audio = ServiceLocator.Get<IAudioService>();
+                        IAudioService audio = ServiceLocator.GetOptional<IAudioService>();
                         audio?.PlaySFX(line.voiceClip, transform.position, 1f, false);
                     }
 

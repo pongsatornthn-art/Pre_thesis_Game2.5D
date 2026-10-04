@@ -6,7 +6,10 @@ using UnityEngine.UI;
 /// <summary>
 /// ตัวแสดงผลบทสนทนาแบบกล่องล่างจอ (ScreenBox Dialogue Presenter)
 /// รองรับการแสดงชื่อผู้พูด, รูปใบหน้า (Portrait), ระบบพิมพ์ตัวอักษรทีละตัว (Typewriter)
-/// และรองรับการกดปุ่ม (Space / E / Enter / คลิกซ้าย) เพื่อเร่งข้อความหรือข้ามไปยังบรรทัดถัดไป
+/// และรองรับการกดปุ่ม (Space / Enter / ปุ่มโต้ตอบ F) เพื่อเร่งข้อความหรือข้ามไปยังบรรทัดถัดไป
+///
+/// [2026-10-04] เลิกใช้คลิกซ้าย (ชนกับยิงปืน) · ไม่รับปุ่มตอนหยุดเกม (คลิกปุ่มเมนู Pause แล้วบทพูดข้าม)
+/// · มี UIPanelController ในก้อนเดียวกัน → ใช้ fade ของมัน เหมือน UI อื่นในเกม
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
@@ -25,12 +28,15 @@ public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
     [SerializeField] private float charsPerSecond = 35f;
 
     private CanvasGroup canvasGroup;
+    private UIPanelController panel;   // ไม่บังคับ — ไม่มีก็สลับ alpha เอง
     private Coroutine currentRoutine;
+    private int shownFrame = -1;   // กดปุ่มโต้ตอบเพื่อเริ่มคุย → เฟรมเดียวกันห้ามนับเป็น "ข้าม" บรรทัดแรก
     private bool skipRequested = false;
 
     private void Awake()
     {
         canvasGroup = GetComponent<CanvasGroup>();
+        panel = GetComponent<UIPanelController>();
         HideImmediate();
         DialoguePresenterRegistry.Register(presenterId, this);
     }
@@ -43,13 +49,12 @@ public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
     private void Update()
     {
         // รับ Input สำหรับการกดข้ามหรือเร่งข้อความ
-        if (canvasGroup != null && canvasGroup.alpha > 0f)
+        if (currentRoutine == null || Time.frameCount == shownFrame) return;
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return;
+
+        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || InteractInput.Pressed)
         {
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E) ||
-                Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
-            {
-                skipRequested = true;
-            }
+            skipRequested = true;
         }
     }
 
@@ -66,9 +71,17 @@ public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
     private IEnumerator ShowRoutine(DialogueLine line)
     {
         skipRequested = false;
-        canvasGroup.alpha = 1f;
+        shownFrame = Time.frameCount;
+        if (panel != null)
+        {
+            if (!panel.IsVisible) panel.Show();
+        }
+        else
+        {
+            canvasGroup.alpha = 1f;
+        }
 
-        ILocalizationService loc = ServiceLocator.Get<ILocalizationService>();
+        ILocalizationService loc = ServiceLocator.GetOptional<ILocalizationService>();
 
         // 1. จัดการชื่อผู้พูด (ถ้าว่าง = ไม่แสดง)
         bool hasSpeaker = !string.IsNullOrEmpty(line.speakerKey);
@@ -143,6 +156,16 @@ public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
             currentRoutine = null;
         }
         skipRequested = false;
-        if (canvasGroup != null) canvasGroup.alpha = 0f;
+
+        if (panel != null)
+        {
+            // จบบทพูดกลางเกม → ค่อยๆ จางออก · ตอนเริ่มเกม (ยังไม่เคยโชว์) → ซ่อนทันที
+            if (panel.IsVisible) panel.Hide();
+            else panel.HideImmediate();
+        }
+        else if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+        }
     }
 }

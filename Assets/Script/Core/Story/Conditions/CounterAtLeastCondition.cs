@@ -17,7 +17,7 @@ public class CounterAtLeastCondition : IStoryCondition
     {
         if (counter == null) return false;
 
-        IStoryCounters counters = ctx?.Counters ?? ServiceLocator.Get<IStoryCounters>();
+        IStoryCounters counters = ctx?.Counters ?? ServiceLocator.GetOptional<IStoryCounters>();
         return counters != null && counters.Get(counter) >= atLeast;
     }
 }

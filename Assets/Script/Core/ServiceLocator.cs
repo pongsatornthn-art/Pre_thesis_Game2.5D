@@ -31,6 +31,28 @@ public static class ServiceLocator
         return default;
     }
 
+    /// <summary>
+    /// เหมือน Get แต่ไม่มีก็คืน null เงียบๆ — ใช้กับบริการที่ "ไม่มีก็ได้"
+    /// (ซีนทดสอบที่ไม่มี [JOURNAL] / ซีนแมพที่ไม่มี [CORE_SERVICES]) ไม่ให้ Console แดงทั้งที่เกมไม่ได้พัง
+    /// ผู้เรียกต้องเช็ค null เอง และเตือนเองถ้าบริการนั้นสำคัญ
+    /// </summary>
+    public static T GetOptional<T>() where T : class
+    {
+        return services.TryGetValue(typeof(T), out var found) ? (T)found : null;
+    }
+
+    /// <summary>ดึงบริการแบบ "ไม่มีก็ได้" — ไม่พิมพ์ error ลง Console (ใช้กับบริการที่ไม่บังคับ เช่น UI ที่รออาร์ต)</summary>
+    public static bool TryGet<T>(out T service)
+    {
+        if (services.TryGetValue(typeof(T), out var found))
+        {
+            service = (T)found;
+            return true;
+        }
+        service = default;
+        return false;
+    }
+
     public static void Unregister<T>()
     {
         var type = typeof(T);

@@ -42,7 +42,7 @@ public class PlayerInteraction : MonoBehaviour
                     // แสดง UI และโชว์ชื่อไอเทม (ถ้าลืมใส่ Text ใน Inspector จะได้ไม่พัง)
                     if (promptText != null)
                     {
-                        promptText.text = "Press [E] to pickup";
+                        promptText.text = $"Press [{InteractInput.KeyName}] to pickup";
                         promptText.gameObject.SetActive(true);
                     }
                     return; // จบการทำงานฟังก์ชันนี้แค่นี้
@@ -57,7 +57,7 @@ public class PlayerInteraction : MonoBehaviour
     // ฟังก์ชันรอกดปุ่ม E เพื่อเก็บของ
     void HandlePickup()
     {
-        if (currentTargetItem != null && Input.GetKeyDown(KeyCode.E))
+        if (currentTargetItem != null && InteractInput.Pressed) // [แก้โดย Claude 2026-10-04] E → ปุ่มโต้ตอบกลาง (F)
         {
             currentTargetItem.Pickup();
             ClearTarget();
