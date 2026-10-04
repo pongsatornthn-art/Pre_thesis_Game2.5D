@@ -2,15 +2,6 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// รูปแบบของตัวแสดงผลบทสนทนา
-/// </summary>
-public enum DialoguePresenterStyle
-{
-    WorldSpace, // ข้อความลอยเหนือหรือข้างตัวละครในโลก
-    ScreenBox   // กล่องบทพูดที่ด้านล่างของหน้าจอ
-}
-
-/// <summary>
 /// ข้อมูลบทสนทนา 1 บรรทัด (Line)
 /// ข้อความและชื่อทุกคนต้องอ้างอิงเป็นคีย์ใน LocalizationData.csv เท่านั้น ห้ามใส่ข้อความตรงๆ
 /// </summary>
@@ -19,6 +10,10 @@ public class DialogueLine
 {
     [Tooltip("คีย์ชื่อคนพูดใน LocalizationData.csv (เว้นว่าง = เสียงในหัวตัวเอก ไม่โชว์ชื่อ)")]
     public string speakerKey;
+
+    [Tooltip("ตัวละครในซีนที่พูดบรรทัดนี้ — ต้องตรงกับ Speaker Id ของ DialogueSpeaker ที่แปะไว้ (เช่น player / npc_mom)\n" +
+             "ข้อความลอยจะไปขึ้นข้างตัวนั้น · เว้นว่าง = ขึ้นตรงที่วางกล่องข้อความไว้")]
+    public string speakerId;
 
     [Tooltip("คีย์ข้อความใน LocalizationData.csv (ห้ามพิมพ์ข้อความจริงตรงๆ)")]
     public string textKey;
@@ -40,8 +35,9 @@ public class DialogueLine
 [CreateAssetMenu(fileName = "Dialogue_", menuName = "Story/Dialogue", order = 5)]
 public class DialogueData : ScriptableObject
 {
-    [Tooltip("รูปแบบกล่องบทพูดที่ต้องการใช้ในบทนี้")]
-    public DialoguePresenterStyle style;
+    [Tooltip("ชื่อรูปแบบการแสดงผล — ต้องตรงกับ Presenter Id ของกล่องข้อความในซีน\n" +
+             "world = ลอยข้างตัวละคร · box = กล่องล่างจอ + รูปหน้า · เว้นว่าง = ใช้ค่าเริ่มต้นของ DialogueService")]
+    public string presenterId = DialoguePresenterIds.World;
 
     [Tooltip("รายการบทสนทนาเรียงตามลำดับ")]
     public DialogueLine[] lines;

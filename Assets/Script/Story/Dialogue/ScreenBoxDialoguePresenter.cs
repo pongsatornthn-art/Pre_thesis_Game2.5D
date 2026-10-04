@@ -11,6 +11,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasGroup))]
 public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
 {
+    [Tooltip("ชื่อที่บทพูดใช้เรียกกล่องนี้ (ช่อง Presenter Id ใน DialogueData)")]
+    [SerializeField] private string presenterId = DialoguePresenterIds.Box;
+
     [Header("UI References")]
     [SerializeField] private TMP_Text speakerText;
     [SerializeField] private TMP_Text bodyText;
@@ -29,6 +32,12 @@ public class ScreenBoxDialoguePresenter : MonoBehaviour, IDialoguePresenter
     {
         canvasGroup = GetComponent<CanvasGroup>();
         HideImmediate();
+        DialoguePresenterRegistry.Register(presenterId, this);
+    }
+
+    private void OnDestroy()
+    {
+        DialoguePresenterRegistry.Unregister(presenterId, this);
     }
 
     private void Update()

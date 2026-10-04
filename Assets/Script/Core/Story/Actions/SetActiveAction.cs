@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Action สำหรับเปิดหรือปิดการทำงานของ GameObject ในฉาก (เช่น เปิดประตูทางลับ / ซ่อนไอเทม)
 /// </summary>
-[Serializable]
+[Serializable, PickerName("⚠️ ห้ามใช้ (รอลบ)/Set Active — ใช้ StoryFlagListener แทน")]
 public class SetActiveAction : IStoryAction
 {
     [Tooltip("วัตถุในฉากที่ต้องการเปิดหรือปิด")]

@@ -9,7 +9,7 @@ using UnityEngine;
 public class NotCondition : IStoryCondition
 {
     [Tooltip("เงื่อนไขที่จะถูกกลับค่า")]
-    [SerializeReference]
+    [SerializeReference, SubclassPicker]
     public IStoryCondition condition;
 
     public bool IsMet(StoryContext ctx)

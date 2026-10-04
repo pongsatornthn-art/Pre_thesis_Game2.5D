@@ -5,13 +5,14 @@ using UnityEngine;
 /// <summary>
 /// ระบบบริการบทสนทนาส่วนกลาง (Dialogue Service)
 /// ควบคุมการเล่นบทพูดทีละบรรทัด มีระบบคิวเพื่อป้องกันไม่ให้บทใหม่พูดทับบทเดิม
-/// และเลือก Presenter ผ่าน Interface ตามหลัก Open-Closed (OCP)
+/// และเลือก Presenter ด้วยชื่อผ่าน DialoguePresenterRegistry ตามหลัก Open-Closed (OCP)
+/// → ไฟล์นี้ไม่รู้จักคลาส Presenter ตัวไหนเลย เพิ่มสไตล์ใหม่ไม่ต้องแก้ไฟล์นี้
 /// </summary>
 public class DialogueService : MonoBehaviour, IDialogueService
 {
     [Header("Presenters")]
-    [SerializeField] private WorldSpaceDialoguePresenter worldPresenter;
-    [SerializeField] private ScreenBoxDialoguePresenter screenPresenter;
+    [Tooltip("ใช้เมื่อบทพูดไม่ได้ระบุ Presenter Id หรือหาชื่อที่ระบุไม่เจอ")]
+    [SerializeField] private string defaultPresenterId = DialoguePresenterIds.World;
 
     private readonly Queue<DialogueData> dialogueQueue = new Queue<DialogueData>();
     private Coroutine queueRoutine;
@@ -52,7 +53,7 @@ public class DialogueService : MonoBehaviour, IDialogueService
         if (string.IsNullOrEmpty(textKey)) yield break;
 
         DialogueData simpleData = ScriptableObject.CreateInstance<DialogueData>();
-        simpleData.style = DialoguePresenterStyle.WorldSpace;
+        simpleData.presenterId = defaultPresenterId;
         simpleData.lines = new[]
         {
             new DialogueLine
@@ -63,6 +64,9 @@ public class DialogueService : MonoBehaviour, IDialogueService
         };
 
         yield return StartCoroutine(Play(simpleData));
+
+        // asset ชั่วคราวที่สร้างตอนรัน ต้องทำลายเอง ไม่งั้นค้างในหน่วยความจำทุกครั้งที่เรียก
+        Destroy(simpleData);
     }
 
     private IEnumerator ProcessQueueRoutine()
@@ -73,7 +77,7 @@ public class DialogueService : MonoBehaviour, IDialogueService
             if (currentData != null && currentData.lines != null)
             {
                 // ดึง Presenter ผ่าน Interface IDialoguePresenter
-                activePresenter = GetPresenter(currentData.style);
+                activePresenter = GetPresenter(currentData.presenterId);
 
                 for (int i = 0; i < currentData.lines.Length; i++)
                 {
@@ -104,11 +108,22 @@ public class DialogueService : MonoBehaviour, IDialogueService
         queueRoutine = null;
     }
 
-    private IDialoguePresenter GetPresenter(DialoguePresenterStyle style)
+    private IDialoguePresenter GetPresenter(string presenterId)
     {
-        return style == DialoguePresenterStyle.WorldSpace
-            ? (IDialoguePresenter)worldPresenter
-            : screenPresenter;
+        string id = string.IsNullOrEmpty(presenterId) ? defaultPresenterId : presenterId;
+        IDialoguePresenter presenter = DialoguePresenterRegistry.Get(id);
+
+        if (presenter == null && id != defaultPresenterId)
+        {
+            Debug.LogWarning($"[DialogueService] ไม่พบ Presenter ชื่อ '{id}' ในซีน — ใช้ '{defaultPresenterId}' แทน");
+            presenter = DialoguePresenterRegistry.Get(defaultPresenterId);
+        }
+
+        if (presenter == null)
+        {
+            Debug.LogWarning($"[DialogueService] ไม่พบ Presenter ชื่อ '{id}' ในซีน — บทพูดนี้จะไม่แสดง");
+        }
+        return presenter;
     }
 
     public void StopCurrent()

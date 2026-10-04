@@ -2,9 +2,9 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// เงื่อนไขตรวจสอบว่าเควสที่ระบุกำลังเปิดใช้งานอยู่ (Active) หรือไม่
+/// เงื่อนไขตรวจสอบว่าเควสที่ระบุกำลังทำอยู่ (จดลงสมุดแล้ว ยังไม่จบ)
 /// </summary>
-[Serializable]
+[Serializable, PickerName("เควส/กำลังทำเควสนี้อยู่")]
 public class QuestActiveCondition : IStoryCondition
 {
     [Tooltip("เควสที่ต้องการตรวจสอบว่ากำลังทำอยู่หรือไม่")]
@@ -15,8 +15,6 @@ public class QuestActiveCondition : IStoryCondition
         if (quest == null) return true;
 
         IQuestService quests = ctx?.Quests ?? ServiceLocator.Get<IQuestService>();
-        if (quests == null) return false;
-
-        return quests.ActiveQuest == quest;
+        return quests != null && quests.GetState(quest) == QuestState.Active;
     }
 }

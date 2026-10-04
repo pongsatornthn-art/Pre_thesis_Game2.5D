@@ -6,7 +6,7 @@ using UnityEngine;
 /// Action สำหรับสั่งให้ตัวละครเดินหรือวิ่งตามจุด Waypoints ที่กำหนดในฉาก
 /// รองรับทั้งการรอให้เดินถึงจุดหมายก่อน (waitFinish = true) หรือให้เดินไปพร้อมกับทำ Action อื่นต่อ
 /// </summary>
-[Serializable]
+[Serializable, PickerName("⚠️ ห้ามใช้ (รอลบ)/Move Actor — ใช้ SimpleMover แทน")]
 public class MoveActorAction : IStoryAction
 {
     [Tooltip("วัตถุในฉากที่ต้องการสั่งให้เดิน (เว้นว่างได้หากต้องการใช้ตัวละครที่เพิ่งเสกมา)")]

@@ -47,8 +47,8 @@ public class SaveManager : MonoBehaviour
     {
         GameSaveData gameData = new GameSaveData();
 
-        // 1. กวาดสายตาหาทุกวัตถุในฉากที่มีรหัส UUID
-        foreach (var entity in Object.FindObjectsByType<SaveableEntity>(FindObjectsSortMode.None))
+        // 1. กวาดสายตาหาทุกวัตถุในฉากที่มีรหัส UUID — รวมของที่ถูกซ่อนอยู่ด้วย
+        foreach (var entity in FindAllEntities())
         {
             if (string.IsNullOrEmpty(entity.UUID)) continue;
 
@@ -58,12 +58,24 @@ public class SaveManager : MonoBehaviour
             var saveables = entity.GetComponents<ISaveable>();
             foreach (var saveable in saveables)
             {
-                ComponentSaveData compData = new ComponentSaveData
+                string typeName = saveable.GetType().Name;
+                string stateJson;
+                try
                 {
-                    componentName = saveable.GetType().Name,
-                    stateJson = saveable.CaptureState() // ขอข้อมูลจากสคริปต์นั้นๆ
-                };
-                entityData.components.Add(compData);
+                    stateJson = saveable.CaptureState(); // ขอข้อมูลจากสคริปต์นั้นๆ
+                }
+                catch (System.Exception e)
+                {
+                    // ชิ้นเดียวพัง ห้ามลากทั้งไฟล์เซฟพังตาม
+                    Debug.LogError($"[SaveManager] เซฟ {typeName} บน {entity.name} ไม่สำเร็จ — ข้ามไป\n{e}", entity);
+                    continue;
+                }
+
+                entityData.components.Add(new ComponentSaveData
+                {
+                    componentName = typeName,
+                    stateJson = stateJson
+                });
             }
 
             // ถ้าวัตถุนั้นมีข้อมูลเซฟ ก็ยัดใส่กระเป๋าใหญ่
@@ -94,24 +106,40 @@ public class SaveManager : MonoBehaviour
         string json = File.ReadAllText(SaveFilePath);
         GameSaveData gameData = JsonUtility.FromJson<GameSaveData>(json);
 
-        // 2. หากล่องข้อมูลแต่ละใบ
+        // 2. ทำสมุดรายชื่อ UUID → วัตถุ ครั้งเดียว (รวมของที่ถูกซ่อน เช่น โลก PTSD ที่ปิดอยู่)
+        var entityByUuid = new Dictionary<string, SaveableEntity>();
+        foreach (var entity in FindAllEntities())
+        {
+            if (string.IsNullOrEmpty(entity.UUID)) continue;
+            if (entityByUuid.ContainsKey(entity.UUID))
+            {
+                Debug.LogWarning($"[SaveManager] UUID ซ้ำ: {entity.name} กับ {entityByUuid[entity.UUID].name} (มักเกิดจาก Duplicate object) — กด 'บังคับสร้าง UUID ใหม่' ที่ตัวใดตัวหนึ่ง", entity);
+                continue;
+            }
+            entityByUuid.Add(entity.UUID, entity);
+        }
+
+        // 3. หากล่องข้อมูลแต่ละใบ
         foreach (var entityData in gameData.entities)
         {
-            // 3. ตามหาวัตถุจริงในฉาก ที่มี UUID ตรงกับกล่องข้อมูล
-            var entityObj = FindEntityByUUID(entityData.uuid);
-            if (entityObj != null)
+            if (!entityByUuid.TryGetValue(entityData.uuid, out SaveableEntity entityObj)) continue;
+
+            // 4. กระจายข้อมูลให้แต่ละสคริปต์
+            var saveables = entityObj.GetComponents<ISaveable>();
+            foreach (var saveable in saveables)
             {
-                // 4. กระจายข้อมูลให้แต่ละสคริปต์
-                var saveables = entityObj.GetComponents<ISaveable>();
-                foreach (var saveable in saveables)
+                string typeName = saveable.GetType().Name;
+                var compData = entityData.components.Find(c => c.componentName == typeName);
+                if (compData == null) continue;
+
+                try
                 {
-                    string typeName = saveable.GetType().Name;
-                    var compData = entityData.components.Find(c => c.componentName == typeName);
-                    
-                    if (compData != null)
-                    {
-                        saveable.RestoreState(compData.stateJson); // คืนความทรงจำ
-                    }
+                    saveable.RestoreState(compData.stateJson); // คืนความทรงจำ
+                }
+                catch (System.Exception e)
+                {
+                    // ของที่ถูกซ่อนตั้งแต่เริ่มฉากยังไม่เคยรัน Awake — สคริปต์ที่เตรียมของใน Awake อาจพังตรงนี้
+                    Debug.LogError($"[SaveManager] โหลด {typeName} บน {entityObj.name} ไม่สำเร็จ — ข้ามไป\n{e}", entityObj);
                 }
             }
         }
@@ -119,14 +147,10 @@ public class SaveManager : MonoBehaviour
         Debug.Log("[SaveManager] 📂 โหลดเกมสำเร็จ!");
     }
 
-    private SaveableEntity FindEntityByUUID(string uuid)
+    // ต้อง Include ของที่ถูกซ่อน — PTSDManager สลับโลกด้วยการปิดทั้งก้อน (RealWorld_Env / MemoryWorld_Env)
+    // ถ้าไม่ Include ของในโลกที่ปิดอยู่จะถูกข้ามทั้งตอนเซฟและตอนโหลด
+    private static SaveableEntity[] FindAllEntities()
     {
-        // อาจจะช้าหน่อยถ้าฉากใหญ่ แต่สำหรับเกมอินดี้ไม่มีปัญหาครับ
-        var allEntities = Object.FindObjectsByType<SaveableEntity>(FindObjectsSortMode.None);
-        foreach (var entity in allEntities)
-        {
-            if (entity.UUID == uuid) return entity;
-        }
-        return null;
+        return Object.FindObjectsByType<SaveableEntity>(FindObjectsInactive.Include, FindObjectsSortMode.None);
     }
 }

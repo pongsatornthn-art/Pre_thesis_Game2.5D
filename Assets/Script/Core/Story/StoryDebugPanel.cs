@@ -17,6 +17,7 @@ public class StoryDebugPanel : MonoBehaviour
     private bool isVisible = false;
     private Rect windowRect = new Rect(20, 20, 360, 480);
     private Vector2 flagsScrollPos;
+    private Vector2 questScrollPos;
     private string inputFlagId = "";
 
     private void Update()
@@ -38,37 +39,31 @@ public class StoryDebugPanel : MonoBehaviour
         IStoryFlags flagsService = ServiceLocator.Get<IStoryFlags>();
         IQuestService questService = ServiceLocator.Get<IQuestService>();
 
-        GUILayout.Label("<b>📜 เควสปัจจุบัน (Active Quest):</b>");
-        if (questService != null && questService.ActiveQuest != null)
+        IStoryCounters countersService = ServiceLocator.Get<IStoryCounters>();
+
+        GUILayout.Label("<b>📜 สมุดเควส (เรียงตามที่ได้รับ):</b>");
+        if (questService != null && questService.Journal.Count > 0)
         {
-            QuestData q = questService.ActiveQuest;
-            GUILayout.Label($"  ID: <color=yellow>{q.questId}</color>");
-
-            if (q.objectives != null)
+            questScrollPos = GUILayout.BeginScrollView(questScrollPos, GUILayout.Height(220));
+            foreach (QuestData q in questService.Journal)
             {
-                for (int i = 0; i < q.objectives.Length; i++)
-                {
-                    var obj = q.objectives[i];
-                    bool done = questService.IsObjectiveDone(obj);
-                    string status = done ? "<color=green>[✓ เสร็จ]</color>" : "<color=red>[ ] ยังไม่เสร็จ</color>";
-                    string flagText = obj.completedWhenFlagSet != null ? obj.completedWhenFlagSet.flagId : "none";
+                if (q == null) continue;
+                QuestState state = questService.GetState(q);
+                string stateText = state == QuestState.Completed ? "<color=green>[จบ]</color>" : "<color=yellow>[ทำอยู่]</color>";
+                GUILayout.Label($"{stateText} {q.questId}");
 
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label($"  {status} ธง: {flagText}");
-                    if (!done && obj.completedWhenFlagSet != null)
-                    {
-                        if (GUILayout.Button("ทำให้ผ่าน", GUILayout.Width(75)))
-                        {
-                            flagsService?.Set(obj.completedWhenFlagSet);
-                        }
-                    }
-                    GUILayout.EndHorizontal();
+                if (q.objectives == null) continue;
+                foreach (QuestObjective obj in q.objectives)
+                {
+                    if (obj == null) continue;
+                    DrawObjectiveRow(questService, flagsService, countersService, q, obj);
                 }
             }
+            GUILayout.EndScrollView();
         }
         else
         {
-            GUILayout.Label("  <i>(ไม่มีเควสที่กำลังทำอยู่)</i>");
+            GUILayout.Label("  <i>(ยังไม่มีเควสในสมุด)</i>");
         }
 
         GUILayout.Space(10);
@@ -91,8 +86,30 @@ public class StoryDebugPanel : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.Space(5);
-        GUILayout.Label("<b>รายการเควสที่จบแล้ว:</b> " + (questService != null ? questService.CompletedQuests.Count.ToString() : "0"));
-
         GUI.DragWindow(new Rect(0, 0, 10000, 25));
+    }
+
+    private static void DrawObjectiveRow(IQuestService quests, IStoryFlags flags, IStoryCounters counters, QuestData q, QuestObjective obj)
+    {
+        bool done = quests.IsObjectiveDone(q, obj);
+        bool visible = quests.IsObjectiveVisible(q, obj);
+        string status = done ? "<color=green>✓</color>" : (visible ? "<color=red>□</color>" : "<color=grey>(ซ่อน)</color>");
+
+        string detail = obj.descriptionKey;
+        if (quests.TryGetObjectiveProgress(q, obj, out int cur, out int target)) detail += $" ({cur}/{target})";
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"    {status} {detail}");
+
+        // ปุ่มโกง — ใช้ได้กับชนิดที่รู้วิธีทำให้สำเร็จเท่านั้น
+        if (!done && obj is FlagObjective flagObj && flagObj.flag != null && GUILayout.Button("ผ่าน", GUILayout.Width(45)))
+        {
+            flags?.Set(flagObj.flag);
+        }
+        if (!done && obj is CounterObjective counterObj && counterObj.counter != null && GUILayout.Button("+1", GUILayout.Width(45)))
+        {
+            counters?.Add(counterObj.counter, 1);
+        }
+        GUILayout.EndHorizontal();
     }
 }

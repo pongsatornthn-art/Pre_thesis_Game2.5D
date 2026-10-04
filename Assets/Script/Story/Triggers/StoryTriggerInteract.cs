@@ -19,7 +19,7 @@ public class StoryTriggerInteract : MonoBehaviour
 
     [Header("เงื่อนไขขั้นสูง (Advanced Conditions)")]
     [Tooltip("เงื่อนไขขั้นสูงเพิ่มเติม (เช่น HasItem, QuestActive, And, Not) — เว้นว่างได้")]
-    [SerializeReference] private IStoryCondition customCondition;
+    [SerializeReference, SubclassPicker] private IStoryCondition customCondition;
 
     [Header("การทำงาน")]
     [Tooltip("ปุ่มที่ใช้กดโต้ตอบ")]

@@ -9,6 +9,7 @@ public class StoryContext
 {
     public GameObject Player;
     public IStoryFlags Flags;
+    public IStoryCounters Counters;   // ว่างได้ — ผู้ใช้ควร fallback ไป ServiceLocator เอง
     public IQuestService Quests;
     public MonoBehaviour Runner;
     public GameObject LastSpawnedActor;

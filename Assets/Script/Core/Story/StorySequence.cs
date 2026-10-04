@@ -14,6 +14,6 @@ public class StorySequence : ScriptableObject
     [Tooltip("ล็อกไม่ให้ผู้เล่นเดินตลอดช่วงที่ฉากนี้เล่น")]
     public bool lockPlayer;
 
-    [SerializeReference]
+    [SerializeReference, SubclassPicker]
     public List<IStoryAction> actions = new List<IStoryAction>();
 }

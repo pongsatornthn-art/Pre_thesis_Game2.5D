@@ -10,7 +10,7 @@ using UnityEngine;
 public class AndCondition : IStoryCondition
 {
     [Tooltip("รายการเงื่อนไขย่อยที่ต้องเป็นจริงทั้งหมด")]
-    [SerializeReference]
+    [SerializeReference, SubclassPicker]
     public List<IStoryCondition> conditions = new List<IStoryCondition>();
 
     public bool IsMet(StoryContext ctx)

@@ -7,7 +7,7 @@ using UnityEngine;
 /// กฎเหล็ก: ต้องยืมวัตถุผ่าน SimplePool เท่านั้น ห้าม Instantiate ตรงๆ
 /// เพื่อป้องกันปัญหา Garbage Collection และอาการกระตุก (Frame Drop)
 /// </summary>
-[Serializable]
+[Serializable, PickerName("⚠️ ห้ามใช้ (รอลบ)/Spawn Actor — ใช้ของในซีนแทน")]
 public class SpawnActorAction : IStoryAction
 {
     [Tooltip("Prefab ของตัวละครหรือวัตถุที่ต้องการเสก (ต้องมีหรือเข้ากันได้กับ SimplePool)")]

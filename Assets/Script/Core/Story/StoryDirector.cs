@@ -106,6 +106,7 @@ public class StoryDirector : MonoBehaviour
         {
             Player = player,
             Flags = ServiceLocator.Get<IStoryFlags>(),
+            Counters = ServiceLocator.Get<IStoryCounters>(),
             Quests = ServiceLocator.Get<IQuestService>(),
             Runner = this
         };
