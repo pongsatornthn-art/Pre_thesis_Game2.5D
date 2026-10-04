@@ -16,43 +16,42 @@ public class SeeThroughWall : MonoBehaviour
     {
         if (player == null) return;
 
-        // คำนวณทิศทางและระยะทางจาก กล้อง ไปหา ผู้เล่น
         Vector3 direction = player.position - transform.position;
         float distance = direction.magnitude;
 
-        // ยิง Raycast จากกล้องไปหาผู้เล่น โดยเช็กเฉพาะ Layer ที่ตั้งไว้
         if (Physics.Raycast(transform.position, direction, out RaycastHit hit, distance, wallLayer))
         {
-            // ถ้าชนกำแพง และไม่ใช่กำแพงเดิมที่กำลังโปร่งใสอยู่
             if (currentWall != hit.transform)
             {
-                ResetWall(); // คืนค่ากำแพงเก่า (ถ้ามี) กลับมาทึบก่อน
+                ResetWall();
                 currentWall = hit.transform;
 
-                // ดึง Material ของกำแพงที่โดนชนมาปรับความโปร่งใส
                 wallMaterial = currentWall.GetComponent<MeshRenderer>().material;
-                originalColor = wallMaterial.color;
+
+                // 🌟 เปลี่ยนมาใช้ GetColor ของ URP
+                originalColor = wallMaterial.GetColor("_BaseColor");
 
                 Color newColor = originalColor;
-                newColor.a = transparentAlpha; // ลดค่า Alpha
-                wallMaterial.color = newColor;
+                newColor.a = transparentAlpha;
+
+                // 🌟 เปลี่ยนมาใช้ SetColor ของ URP
+                wallMaterial.SetColor("_BaseColor", newColor);
             }
         }
         else
         {
-            // ถ้าเลเซอร์ไม่โดนกำแพงแล้ว (ผู้เล่นเดินออกมาแล้ว) ให้คืนค่ากำแพงเดิม
             ResetWall();
         }
     }
 
-    // ฟังก์ชันสำหรับคืนค่าความทึบให้กำแพง
     private void ResetWall()
     {
         if (currentWall != null && wallMaterial != null)
         {
-            wallMaterial.color = originalColor;
+            // 🌟 เปลี่ยนมาใช้ SetColor ของ URP
+            wallMaterial.SetColor("_BaseColor", originalColor);
             currentWall = null;
             wallMaterial = null;
         }
     }
-}
+    }
