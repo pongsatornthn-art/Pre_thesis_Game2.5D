@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 740a5462962be7d4cacaaa4315c81409, type: 3}
   m_Name: New Item
   m_EditorClassIdentifier: 
+  itemId: be52bf9b58f14e73925b9391e107d39a
   itemName: New Item
   icon: {fileID: 0}
   description: 
@@ -19,24 +20,7 @@ MonoBehaviour:
   isStackable: 1
   maxStack: 99
   itemType: 5
-  equippedSprite: {fileID: 0}
-  weaponAnimatorOverride: {fileID: 0}
-  damage: 10
-  attackRange: 2
-  lightAttackCooldown: 0.5
-  attackCooldown: 0.5
-  staminaCost: 10
-  knockback: 3
-  ammoType: {fileID: 0}
-  magazineSize: 12
-  reloadTime: 1.5
-  focusTime: 1.5
-  maxSpreadAngle: 15
-  recoilSpread: 5
-  maxDurability: 0
   price: 50
-  digestionReduceAmount: 20
-  healAmount: 50
-  causesBleeding: 0
-  bleedDuration: 10
-  bleedDamagePerSec: 2
+  equippedSprite: {fileID: 0}
+  itemNameKey: 
+  descriptionKey: 
