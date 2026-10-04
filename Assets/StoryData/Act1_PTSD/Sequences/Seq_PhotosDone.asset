@@ -9,8 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 47e322ae85581c942ae45433e2419677, type: 3}
-  m_Name: QuestCatalog
+  m_Script: {fileID: 11500000, guid: 1ee9df5b87bdad44d966a1b9c076cf88, type: 3}
+  m_Name: Seq_PhotosDone
   m_EditorClassIdentifier: 
-  quests:
-  - {fileID: 11400000, guid: 66dcbeb08d515da4caacb8daab05a0e5, type: 2}
+  lockPlayer: 0
+  actions: []
+  references:
+    version: 2
+    RefIds: []

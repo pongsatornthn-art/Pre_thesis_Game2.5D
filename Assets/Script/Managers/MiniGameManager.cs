@@ -21,6 +21,12 @@ public class MiniGameManager : MonoBehaviour
     public PlayableDirector enterCutscene;
     public PlayableDirector exitCutscene;
 
+    // --- ส่วนที่เพิ่มเข้ามาใหม่: เชื่อมต่อกับระบบเนื้อเรื่อง ---
+    [Header("Story Integration")]
+    [Tooltip("ใส่ธง (Flag) ที่ต้องการให้ระบบบันทึกว่าผ่านมินิเกมนี้แล้ว")]
+    public StoryFlagId onCompleteFlag;
+    // --------------------------------------------------
+
     private bool inMiniGame = false;
     private bool hasPlayed = false;
 
@@ -142,5 +148,21 @@ public class MiniGameManager : MonoBehaviour
 
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
+
+        // --- ส่วนที่เพิ่มเข้ามาใหม่: ส่งสัญญาณบอกระบบว่าเล่นผ่านแล้ว ---
+        if (onCompleteFlag != null)
+        {
+            IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
+            if (flags != null)
+            {
+                flags.Set(onCompleteFlag);
+                Debug.Log($"[MiniGameManager] ส่งสัญญาณผ่านมินิเกมแล้ว: {onCompleteFlag.flagId}");
+            }
+            else
+            {
+                Debug.LogWarning("[MiniGameManager] ไม่พบระบบ IStoryFlags ในฉาก!");
+            }
+        }
+        // ---------------------------------------------------------
     }
 }

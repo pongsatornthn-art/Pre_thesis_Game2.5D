@@ -36,7 +36,7 @@ public class DoorController : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && InteractInput.Pressed) // [แก้โดย Claude 2026-10-04] E → ปุ่มโต้ตอบกลาง (F)
+        if (isPlayerNear && Input.GetKeyDown(KeyCode.E))
         {
             if (isUnlocked)
             {
@@ -99,21 +99,22 @@ public class DoorController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"[DoorController] OnTriggerEnter โดนวัตถุ: {other.name} | Tag: {other.tag}");
         if (other.CompareTag("Player"))
         {
             isPlayerNear = true;
             if (interactPrompt != null) interactPrompt.SetActive(true);
+            Debug.Log("[DoorController] ตรวจพบ Player อยู่ใกล้ประตูแล้ว");
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
+        Debug.Log($"[DoorController] OnTriggerExit หลุดจากวัตถุ: {other.name}");
         if (other.CompareTag("Player"))
         {
             isPlayerNear = false;
             if (interactPrompt != null) interactPrompt.SetActive(false);
-
-            // 🌟 ถ้าผู้เล่นเดินหนีออกจากประตู ให้ซ่อนข้อความขวาบนทันที
             if (notificationText != null) notificationText.text = "";
         }
     }
