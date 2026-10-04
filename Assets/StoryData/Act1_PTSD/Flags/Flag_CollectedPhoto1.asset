@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf8075da4b3c4274ba41c02b16800ea9, type: 3}
   m_Name: Flag_CollectedPhoto1
   m_EditorClassIdentifier: 
-  flagId: 
+  flagId: CollectedPhoto1

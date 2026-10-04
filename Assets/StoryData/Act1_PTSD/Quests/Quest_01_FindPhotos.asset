@@ -12,16 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6622c41c0ae1e5a4aacac1daf9d3ad64, type: 3}
   m_Name: Quest_01_FindPhotos
   m_EditorClassIdentifier: 
-  questId: 
+  questId: Quest01_Photos
   titleKey: 
   descriptionKey: 
-  autoStart: 0
+  autoStart: 1
   availableWhen:
     rid: -2
-  objectives: []
-  onCompleted: {fileID: 0}
+  objectives:
+  - rid: 1963572838959153234
+  onCompleted: {fileID: 11400000, guid: 31b62e45d8428f8418a3f9fd45aae022, type: 2}
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
+    - rid: 1963572838959153234
+      type: {class: CounterObjective, ns: , asm: Assembly-CSharp}
+      data:
+        objectiveId: b9ba5d6a02d743bdb59df78686e667a6
+        descriptionKey: 
+        requires:
+          rid: -2
+        hiddenUntilAvailable: 0
+        timeLimitSeconds: 0
+        counter: {fileID: 11400000, guid: 4648761c5df7bd545ba0024567afe7ab, type: 2}
+        target: 1
