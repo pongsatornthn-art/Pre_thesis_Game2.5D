@@ -14,6 +14,9 @@ public class PTSDMinigameCharger : MonoBehaviour
     private bool isCharging = false;
     private bool hasTriggeredMinigame = false;
 
+    // 🌟 เพิ่มตัวแปรเช็คว่าอยู่ใน SafeZone หรือยัง
+    [HideInInspector] public bool isPlayerInSafeZone = false;
+
     [Header("UI References")]
     [Tooltip("ลาก UI Panel ทั้งก้อนมาใส่ (ที่มีหลอดกับข้อความเตือน)")]
     public GameObject chargeUIPanel;
@@ -33,12 +36,12 @@ public class PTSDMinigameCharger : MonoBehaviour
     private void Start()
     {
         if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
-        if (warningTextObj != null) warningTextObj.SetActive(false); // ซ่อนคำเตือนสีแดงตอนเริ่มเกม
+        if (warningTextObj != null) warningTextObj.SetActive(false);
     }
 
     private void Update()
     {
-        // ถ้าวิทยุกลางพัง หรือไม่ได้อยู่ในสถานะ PTSD (ทุกรูปแบบ) ให้ปิด UI ทิ้งให้หมด
+        // ถ้าวิทยุกลางพัง หรือไม่ได้อยู่ในสถานะ PTSD ให้ปิด UI ทิ้งให้หมด
         if (PTSDManager.Instance == null || PTSDManager.Instance.currentMode == PTSDMode.None)
         {
             if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
@@ -50,49 +53,47 @@ public class PTSDMinigameCharger : MonoBehaviour
         // ถ้าเล่นมินิเกมผ่านไปแล้ว ก็ไม่ต้องทำอะไรต่อ
         if (hasTriggeredMinigame) return;
 
-        // ถ้าเข้าเงื่อนไข PTSD (ไม่ว่า Type A หรือ B) ก็เปิด UI หลอดชาร์จขึ้นมาเตรียมรอ
+        // 🌟 ถ้ายินอยู่ในโหมด PTSD แต่ "ยังไม่เข้า SafeZone" ก็ปิด UI ซ่อนไว้ก่อน
+        if (!isPlayerInSafeZone)
+        {
+            if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
+            currentCharge = 0f; // ไม่ให้แอบชาร์จตอนอยู่นอกโซน
+            return;
+        }
+
+        // 🌟 ถ้าเข้า SafeZone แล้ว ถึงจะยอมเปิด UI ให้เห็น
         if (chargeUIPanel != null && !chargeUIPanel.activeSelf)
         {
             chargeUIPanel.SetActive(true);
             if (promptTextObj != null) promptTextObj.SetActive(true);
         }
 
-        // 🌟 แยกการทำงาน: เช็คการชาร์จหลอด
         HandleCharging();
-        // 🌟 อัปเดตภาพหลอดชาร์จให้ยาวขึ้น/หดลง
         UpdateUI();
     }
 
     private void HandleCharging()
     {
-        // 🌟 1. SYSTEM LOCK: ดักเช็คก่อนเลยว่าติดสถานะ Type B หรือเปล่า?
         if (PTSDManager.Instance.currentMode == PTSDMode.Narrative_TypeB)
         {
-            // ถ้ากด Spacebar แต่ติด Type B อยู่
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                // โชว์ข้อความเตือนสีแดงให้ผู้เล่นรู้ว่า "ห้ามซ่อน!"
                 if (warningTextObj != null) warningTextObj.SetActive(true);
-                if (promptTextObj != null) promptTextObj.SetActive(false); // ซ่อนข้อความให้กดค้างไปเลย
-
+                if (promptTextObj != null) promptTextObj.SetActive(false);
                 Debug.LogWarning("จิตใจของคุณสับสนเกินกว่าจะสงบสติอารมณ์ได้... ต้องแก้ปริศนาเท่านั้น!");
             }
 
-            // ถ้าปล่อยปุ่ม Spacebar ก็ซ่อนข้อความสีแดงกลับไป
             if (Input.GetKeyUp(KeyCode.Space))
             {
                 if (warningTextObj != null) warningTextObj.SetActive(false);
                 if (promptTextObj != null) promptTextObj.SetActive(true);
             }
 
-            // 🌟 2. เตะออกทันที ไม่ให้หลอดชาร์จเพิ่มขึ้นแม้แต่น้อย
             currentCharge = 0f;
             return;
         }
 
-        // ==========================================
-        // 🌟 3. ถ้าเป็น Type A ปกติ ก็อนุญาตให้ชาร์จหลอดได้ตามเดิม
-        // ==========================================
+        // โหมด Type A ปกติ อนุญาตให้ชาร์จ
         if (Input.GetKey(KeyCode.Space))
         {
             isCharging = true;

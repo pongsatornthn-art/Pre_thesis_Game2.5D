@@ -84,7 +84,7 @@ public class PTSDManager : MonoBehaviour
     }
 
     // ==========================================
-    // 🟢 ปิดโหมด PTSD
+    // 🟢 ปิดโหมด PTSD (แบบดึงกลับที่เดิม)
     // ==========================================
     public void ExitPTSD()
     {
@@ -97,7 +97,23 @@ public class PTSDManager : MonoBehaviour
         Debug.Log("กลับสู่โลกความจริง");
     }
 
-    private IEnumerator TransitionRoutine(bool isEnteringPTSD)
+    // ==========================================
+    // 🟢 ปิดโหมด PTSD (แบบบังคับวาร์ปไปจุดใหม่ - สำหรับเวลาโดนผีจับ)
+    // ==========================================
+    public void ExitPTSD_AndWarp(Transform newRespawnPoint)
+    {
+        if (currentMode == PTSDMode.None) return;
+
+        currentMode = PTSDMode.None;
+        OnPTSDStateChanged?.Invoke(false);
+
+        // รัน Transition ปิด PTSD โดยส่งเป้าหมายการวาร์ปใหม่เข้าไปด้วย
+        StartCoroutine(TransitionRoutine(false, newRespawnPoint));
+        Debug.Log("ออกจาก PTSD และกำลังวาร์ปไปจุดเกิดใหม่...");
+    }
+
+    // 🌟 แก้ไข TransitionRoutine ให้รับค่า newRespawnPoint (ถ้าไม่มีก็เป็น null)
+    private IEnumerator TransitionRoutine(bool isEnteringPTSD, Transform newRespawnPoint = null)
     {
         if (transitionVolume != null)
         {
@@ -112,21 +128,42 @@ public class PTSDManager : MonoBehaviour
         if (isEnteringPTSD)
         {
             if (player != null) savedPlayerPosition = player.transform.position;
+
             if (realWorldEnv != null) realWorldEnv.SetActive(false);
             if (memoryWorldEnv != null) memoryWorldEnv.SetActive(true);
 
             ToggleEffects(true);
             OnEnterPTSD?.Invoke();
         }
-        else
+        else // ตอนออกจากโหมด
         {
             if (player != null)
             {
                 CharacterController cc = player.GetComponent<CharacterController>();
                 if (cc != null) cc.enabled = false;
-                player.transform.position = savedPlayerPosition;
-                if (cc != null) cc.enabled = true;
+
+                yield return null; // รอ 1 เฟรมให้ปิดฟิสิกส์สนิท
+
+                // 🌟 เช็คว่ามีการส่งจุดเกิดใหม่มาให้หรือไม่?
+                if (newRespawnPoint != null)
+                {
+                    // ถ้ามี ให้วาร์ปไปจุดใหม่
+                    player.transform.position = newRespawnPoint.position;
+                    player.transform.rotation = newRespawnPoint.rotation;
+                }
+                else
+                {
+                    // ถ้าไม่มี ให้ดึงกลับจุดเดิมที่จำไว้ตอนเข้าโหมด
+                    player.transform.position = savedPlayerPosition;
+                }
+
+                Physics.SyncTransforms(); // อัปเดตตำแหน่งทันที
+
+                yield return null; // รออีก 1 เฟรม
+
+                if (cc != null) cc.enabled = true; // เปิดฟิสิกส์คืน
             }
+
             if (realWorldEnv != null) realWorldEnv.SetActive(true);
             if (memoryWorldEnv != null) memoryWorldEnv.SetActive(false);
 

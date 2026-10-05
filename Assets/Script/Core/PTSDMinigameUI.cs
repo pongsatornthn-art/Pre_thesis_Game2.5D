@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class PTSDMinigameUI : MonoBehaviour
@@ -23,12 +23,15 @@ public class PTSDMinigameUI : MonoBehaviour
 
         if (minigamePanel != null)
         {
+            // 🌟 ซ่อนหลอดวงกลมไว้ตั้งแต่แรก
             minigamePanel.SetActive(false);
         }
 
         if (minigameController != null)
         {
+            // 🌟 เปลี่ยนให้ "หลอดวงกลม" โชว์ก็ต่อเมื่อ "กด Spacebar เริ่มเกมแล้ว" เท่านั้น
             minigameController.OnMinigameStart.AddListener(ShowUI);
+
             minigameController.OnMinigameSuccess.AddListener(HideUI);
             minigameController.OnMinigameFailed.AddListener(HideUI);
             minigameController.OnMinigameCanceled.AddListener(HideUI);
@@ -59,7 +62,6 @@ public class PTSDMinigameUI : MonoBehaviour
         if (cursorRect == null || backgroundRect == null) return;
 
         float normalizedValue = minigameController.GetCurrentGaugeValue() / 100f;
-
         float targetX = (normalizedValue * gaugeWidth) - (gaugeWidth / 2f);
 
         cursorRect.anchoredPosition = new Vector2(targetX, cursorRect.anchoredPosition.y);

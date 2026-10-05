@@ -5,6 +5,8 @@ public class PTSDMinigameController : MonoBehaviour
 {
     [Header("Minigame State")]
     public bool isMinigameActive = false;
+
+    [HideInInspector] public bool canStartMinigame = false;
     private bool isPrompting = false;
 
     [Header("Win/Loss Conditions")]
@@ -27,7 +29,6 @@ public class PTSDMinigameController : MonoBehaviour
     public float shrinkAmountOnMiss = 5f;
 
     private float currentZoneWidth;
-
     public float targetZoneMin = 40f;
     public float targetZoneMax = 60f;
 
@@ -40,6 +41,22 @@ public class PTSDMinigameController : MonoBehaviour
     public UnityEvent OnMinigameCanceled;
     public UnityEvent<int> OnProgressUpdated;
     public UnityEvent<int> OnMissed;
+
+    // 🌟 Event รับค่าจาก SafeZone
+    public UnityEvent OnPlayerEnteredSafeZone;
+    public UnityEvent OnPlayerExitedSafeZone;
+
+    private void Awake()
+    {
+        // 🌟 ตั้งค่าให้การเดินเข้า-ออกโซน ไปกระตุ้นแค่ตัว Prompt ("Hold [SPACE]") อย่างเดียว
+        OnPlayerEnteredSafeZone.AddListener(() => {
+            if (!isMinigameActive) OnPromptUIVisibility?.Invoke(true);
+        });
+
+        OnPlayerExitedSafeZone.AddListener(() => {
+            OnPromptUIVisibility?.Invoke(false);
+        });
+    }
 
     private void Update()
     {
@@ -54,9 +71,16 @@ public class PTSDMinigameController : MonoBehaviour
 
     public void StartMinigame()
     {
+        if (!canStartMinigame)
+        {
+            Debug.LogWarning("บล็อค! มีมือมืดพยายามเริ่มมินิเกมจากนอกโซน SafeZone");
+            return;
+        }
+
         isMinigameActive = true;
         isPrompting = false;
 
+        // ซ่อนข้อความเตือนเมื่อมินิเกมเริ่มรัน
         OnPromptUIVisibility?.Invoke(false);
 
         currentSuccesses = 0;
@@ -179,7 +203,6 @@ public class PTSDMinigameController : MonoBehaviour
         {
             OnMinigameSuccess?.Invoke();
             Debug.Log("รอดแล้ว! อาการ PTSD สงบลง");
-            // 🌟 แก้ตรงนี้ให้เป็นคำสั่ง ExitPTSD ที่ถูกต้อง
             if (PTSDManager.Instance != null) PTSDManager.Instance.ExitPTSD();
         }
         else
