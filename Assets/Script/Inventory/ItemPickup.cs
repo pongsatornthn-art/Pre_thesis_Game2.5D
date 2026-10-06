@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 
 public class ItemPickup : MonoBehaviour
 {
@@ -6,8 +7,10 @@ public class ItemPickup : MonoBehaviour
     public ItemData item;
     public int amount = 1;
 
-    // เปลี่ยนจาก void Pickup() เป็น public void Pickup() 
-    // เพื่อให้ PlayerInteraction มาสั่งทำงานได้
+    [Header("Quest & Story Integration")]
+    [Tooltip("ลากระบบปักธงเควส (เช่น StoryFlagSetter หรือ StoryCollectible) มาสั่งทำงานที่นี่")]
+    public UnityEvent OnPickupSuccess;
+
     public void Pickup()
     {
         if (item == null)
@@ -16,16 +19,16 @@ public class ItemPickup : MonoBehaviour
             return;
         }
 
-        // 🌟 ให้ไอเทมเป็นคนตัดสินใจเองว่าจะเข้าคลังไหน (กระเป๋า / ของสำคัญ / สมุดเอกสาร)
-        // ไม่ต้องมาเช็คชนิดตรงนี้ เพิ่มไอเทมชนิดใหม่ในอนาคตไม่ต้องกลับมาแก้ไฟล์นี้
         if (item.Collect(amount))
         {
             Debug.Log($"<color=green>เก็บ {item.itemName} สำเร็จ!</color>");
+            OnPickupSuccess?.Invoke();
+
             Destroy(gameObject);
         }
         else
         {
-            Debug.LogWarning($"เก็บ {item.itemName} ไม่ได้ (กระเป๋าเต็ม หรือยังไม่มีคลังปลายทางในซีน)");
+            Debug.LogWarning($"เก็บ {item.itemName} ไม่ได้ (คลังปลายทางมีปัญหา)");
         }
     }
 }

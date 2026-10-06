@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6622c41c0ae1e5a4aacac1daf9d3ad64, type: 3}
+  m_Name: Quest_03_DeliverPieces
+  m_EditorClassIdentifier: 
+  questId: quest_03_deliver_pieces
+  titleKey: "\u0E19\u0E33\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E44\u0E1B\u0E2A\u0E48\u0E07"
+  descriptionKey: "\u0E19\u0E33\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E44\u0E1B\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E04\u0E37\u0E19\u0E17\u0E35\u0E48\u0E08\u0E38\u0E14\u0E2A\u0E48\u0E07\u0E40\u0E04\u0E27\u0E2A"
+  autoStart: 0
+  availableWhen:
+    rid: -2
+  objectives:
+  - rid: 1963572877566410842
+  onCompleted: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 1963572877566410842
+      type: {class: FlagObjective, ns: , asm: Assembly-CSharp}
+      data:
+        objectiveId: 6d8d613dc6754de991ece8819e794ae4
+        descriptionKey: 
+        requires:
+          rid: -2
+        hiddenUntilAvailable: 0
+        timeLimitSeconds: 0
+        flag: {fileID: 11400000, guid: d7bcc346c3466ff468f518654e60a5e4, type: 2}

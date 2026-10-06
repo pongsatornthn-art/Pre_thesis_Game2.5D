@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3895616197642490273}
   - component: {fileID: 5611827236342469777}
   m_Layer: 0
-  m_Name: Door
+  m_Name: Door01
   m_TagString: Untagged
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
@@ -67,7 +67,7 @@ Animator:
   m_GameObject: {fileID: 1988253031706851258}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 2eeef3f418e3c204b993b5f1193094eb, type: 2}
+  m_Controller: {fileID: 9100000, guid: 84082906e2dabe74ea3c6b61ffa8b38e, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
