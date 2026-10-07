@@ -32,8 +32,12 @@ MonoBehaviour:
         objectiveId: 46ecb6832c654fa7a1f3fda874744ee3
         descriptionKey: "\u0E23\u0E27\u0E1A\u0E23\u0E27\u0E21\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u0E17\u0E35\u0E48\u0E02\u0E32\u0E14\u0E2B\u0E32\u0E22"
         requires:
-          rid: -2
+          rid: 1963572897867366483
         hiddenUntilAvailable: 0
         timeLimitSeconds: 0
         counter: {fileID: 11400000, guid: 5879380800fb2234eb9a689095f2b6ea, type: 2}
         target: 1
+    - rid: 1963572897867366483
+      type: {class: WorldModeCondition, ns: , asm: Assembly-CSharp}
+      data:
+        mustBe: 3
