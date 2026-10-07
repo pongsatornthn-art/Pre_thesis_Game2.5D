@@ -4,6 +4,7 @@ using UnityEngine;
 /// ตอบคำถามเดียว: "ผู้เล่นมีไอเทมนี้อยู่ไหม" — ไม่ว่าไอเทมจะไปอยู่คลังไหน
 ///   KeyItemData  → คลังของสำคัญ (หน้า K)
 ///   DocumentData → สมุดเอกสาร (หน้า N)
+///   MemoryFragmentData → คลังความทรงจำ (หน้า L) — "มี" = ช่องของมันปลดแล้ว
 ///   ItemData อื่น → กระเป๋า (หน้า I / hotbar)
 /// ตรงกับที่ ItemData.Collect() ส่งของไปแต่ละคลัง — เพิ่มคลังใหม่ แก้ที่นี่ที่เดียว
 /// ใช้โดย: CollectItemsObjective · HasItemsCondition · DeliverPoint
@@ -26,6 +27,10 @@ public static class ItemOwnership
                 IDocumentLog log = ServiceLocator.GetOptional<IDocumentLog>();
                 return log != null && log.HasCollected(doc.documentId) ? 1 : 0;
 
+            case MemoryFragmentData fragment:
+                IMemoryArchive archive = ServiceLocator.GetOptional<IMemoryArchive>();
+                return archive != null && archive.IsUnlocked(fragment.entry) ? 1 : 0;
+
             default:
                 return Inventory.Instance != null ? Inventory.Instance.GetItemCount(item) : 0;
         }
@@ -47,7 +52,8 @@ public static class ItemOwnership
                 ServiceLocator.GetOptional<IKeyItemHolder>()?.Consume(key.targetDoorID);
                 return;
             case DocumentData _:
-                return;
+            case MemoryFragmentData _:
+                return;   // เอกสาร/ความทรงจำเก็บถาวร ไม่หัก (เจ้าของตกลง 2026-10-07: ปลดแล้วปลดถาวร)
             default:
                 if (Inventory.Instance != null) Inventory.Instance.RemoveItem(item, amount);
                 return;

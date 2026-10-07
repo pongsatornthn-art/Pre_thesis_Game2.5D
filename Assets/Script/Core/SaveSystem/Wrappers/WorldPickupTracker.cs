@@ -1,18 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 /// <summary>
 /// จำว่า "ไอเทมที่วางในแมพชิ้นไหนถูกเก็บไปแล้ว" — แก้บั๊ก: โหลดเซฟแล้วกุญแจ/ปืน/กระสุนโผล่ที่เดิม เก็บซ้ำได้ไม่จำกัด
 ///
-/// ไม่ต้องตั้งค่าทีละชิ้น: ตอนเริ่มซีนจะแปะ PickupWatcher ให้ ItemPickup (ของเพื่อน) ทุกชิ้นเอง
-/// ItemPickup ถูกทำลายตอนเก็บ → PickupWatcher แจ้งมาที่นี่ → ถูกเซฟ
-/// โหลดเซฟ → ชิ้นที่เคยเก็บแล้วถูกลบออกจากแมพทันที
-/// **ไม่แก้ไฟล์เพื่อน** · วางที่ [STORY] คู่กับ SaveableEntity
+/// ไอเทมแต่ละชิ้นต้องมี PickupWatcher แปะคู่ ItemPickup (ของเพื่อน — ไม่แก้ไฟล์เขา)
+/// วิธีแปะทีเดียวทั้งซีน: คลิกขวาที่คอมโพเนนต์นี้ → "แปะตัวเฝ้าให้ไอเทมทุกชิ้นในซีน" แล้วเซฟซีน
+/// ไอเทมที่ลืมแปะ → ตอนกด Play จะเตือนใน Console (ระบบไม่แปะให้เองตอนเล่น — กติกาเจ้าของ)
 ///
-/// รหัสชิ้น = ชื่อซีน + ตำแหน่งใน Hierarchy + ไอเทม + พิกัด (ปัด 0.1)
-/// ⚠️ ย้าย/เปลี่ยนชื่อไอเทมในแมพหลังมีเซฟแล้ว → เซฟเก่าจำชิ้นนั้นไม่ได้ (โผล่ใหม่ 1 ครั้ง) — ไม่พังเกม
+/// วางที่ [STORY] คู่กับ SaveableEntity
 /// ไม่จำ: ของที่ผู้เล่นกด G ทิ้งลงพื้น (สร้างใหม่ระหว่างเล่น) — โหลดแล้วหายไป
 /// </summary>
 [RequireComponent(typeof(SaveableEntity))]
@@ -31,18 +28,24 @@ public class WorldPickupTracker : MonoBehaviour, ISaveable, ISaveRestoreOrder
 
     private void Start()
     {
-        foreach (ItemPickup pickup in FindObjectsByType<ItemPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (PickupWatcher w in FindObjectsByType<PickupWatcher>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            string id = BuildId(pickup);
-            if (watchers.ContainsKey(id))
+            if (string.IsNullOrEmpty(w.PickupId)) continue;
+            if (watchers.ContainsKey(w.PickupId))
             {
-                Debug.LogWarning($"[WorldPickupTracker] ไอเทม 2 ชิ้นได้รหัสเดียวกัน (ชื่อ+ตำแหน่งซ้ำกัน): {pickup.name} — เปลี่ยนชื่อชิ้นใดชิ้นหนึ่ง", pickup);
+                Debug.LogWarning($"[WorldPickupTracker] ตัวเฝ้า 2 ชิ้นรหัสซ้ำ ({w.name} กับ {watchers[w.PickupId].name}) — มักเกิดจาก Duplicate · คลิกขวาที่ PickupWatcher → 'สุ่มรหัสใหม่'", w);
                 continue;
             }
+            w.Bind(this);
+            watchers.Add(w.PickupId, w);
+        }
 
-            PickupWatcher watcher = pickup.gameObject.AddComponent<PickupWatcher>();
-            watcher.Init(this, id);
-            watchers.Add(id, watcher);
+        foreach (ItemPickup p in FindObjectsByType<ItemPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (p.GetComponent<PickupWatcher>() == null)
+            {
+                Debug.LogWarning($"[WorldPickupTracker] ไอเทม '{p.name}' ยังไม่มี PickupWatcher — เก็บแล้วโหลดเซฟจะโผล่ซ้ำ · คลิกขวาที่ WorldPickupTracker → 'แปะตัวเฝ้าให้ไอเทมทุกชิ้นในซีน'", p);
+            }
         }
     }
 
@@ -74,13 +77,18 @@ public class WorldPickupTracker : MonoBehaviour, ISaveable, ISaveRestoreOrder
         }
     }
 
-    private static string BuildId(ItemPickup pickup)
+#if UNITY_EDITOR
+    [ContextMenu("แปะตัวเฝ้าให้ไอเทมทุกชิ้นในซีน")]
+    private void AddWatchersInEditor()
     {
-        StringBuilder path = new StringBuilder();
-        for (Transform t = pickup.transform; t != null; t = t.parent) path.Insert(0, "/" + t.name);
-
-        Vector3 p = pickup.transform.position;
-        string itemId = pickup.item != null ? pickup.item.ItemId : "none";
-        return $"{pickup.gameObject.scene.name}{path}|{itemId}|{Mathf.RoundToInt(p.x * 10)},{Mathf.RoundToInt(p.y * 10)},{Mathf.RoundToInt(p.z * 10)}";
+        int added = 0;
+        foreach (ItemPickup p in FindObjectsByType<ItemPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (p.GetComponent<PickupWatcher>() != null) continue;
+            UnityEditor.Undo.AddComponent<PickupWatcher>(p.gameObject);
+            added++;
+        }
+        Debug.Log($"[WorldPickupTracker] แปะตัวเฝ้าเพิ่ม {added} ชิ้น — อย่าลืมเซฟซีน (Ctrl+S)");
     }
+#endif
 }

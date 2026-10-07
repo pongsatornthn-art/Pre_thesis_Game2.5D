@@ -11,4 +11,9 @@ public interface IStoryFlags
     void Set(StoryFlagId flag);      // ตั้งซ้ำไม่ยิง event ซ้ำ
     void Clear(StoryFlagId flag);
     event Action OnChanged;          // แจ้งเตือนเมื่อมีสถานะธงเปลี่ยนแปลง
+
+    // ธงแบบไม่มีไฟล์ — ใช้ภายในของในซีนที่จำตัวเองได้ (เช่น StoryCollectible ที่ไม่ได้ใส่ธง) · เซฟ/โหลดเหมือนธงปกติ
+    bool HasKey(string key);
+    void SetKey(string key);
+    void ClearKey(string key);
 }

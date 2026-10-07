@@ -11,6 +11,7 @@ using UnityEngine;
 /// บรรทัดที่ไม่ระบุ → ลอยตรงที่วางกล่องนี้ไว้ในซีนเหมือนเดิม
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
+[RequireComponent(typeof(Billboard))]   // แปะให้ตอนวางใน Editor (เห็นใน Inspector) แทนการแปะด้วยโค้ดตอนเล่น
 public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
 {
     [Tooltip("ชื่อที่บทพูดใช้เรียกกล่องนี้ (ช่อง Presenter Id ใน DialogueData)")]
@@ -40,12 +41,6 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
         {
             worldCanvas.overrideSorting = true;
             worldCanvas.sortingOrder = 500;
-        }
-
-        // ข้อกำหนดที่ 2: หันเข้าหากล้อง — ใช้ Billboard.cs ที่มีอยู่แล้วในโปรเจกต์ ห้ามเขียนใหม่
-        if (GetComponent<Billboard>() == null)
-        {
-            gameObject.AddComponent<Billboard>();
         }
 
         HideImmediate();

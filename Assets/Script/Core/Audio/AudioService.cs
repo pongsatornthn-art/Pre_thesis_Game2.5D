@@ -13,17 +13,19 @@ public class AudioService : MonoBehaviour, IAudioService
     [Header("Menu Sounds")]
     public MenuSoundThemeSO menuTheme;
     public AudioMixerGroup uiMixerGroup; 
-    private AudioSource uiSource; // ลำโพง 2D สำหรับ UI
+    [Tooltip("ลำโพง 2D สำหรับเสียงเมนู — กดคลิกขวาที่คอมโพเนนต์ → 'สร้างลำโพงให้ครบ' ถ้ายังไม่มี")]
+    [SerializeField] private AudioSource uiSource;
 
     [Header("BGM")]
     public AudioMixerGroup bgmMixerGroup;
-    private AudioSource bgmSource; 
+    [SerializeField] private AudioSource bgmSource;
 
     [Header("SFX Pooling")]
     public AudioMixerGroup sfxMixerGroup;
-    [Tooltip("จำนวนลำโพง SFX ที่เตรียมไว้เวียนกันเล่น (AAA Object Pooling)")]
+    [Tooltip("จำนวนลำโพง SFX ที่สร้างตอนกด 'สร้างลำโพงให้ครบ'")]
     public int sfxPoolSize = 10;
-    private AudioSource[] sfxPool;
+    [Tooltip("ลำโพง SFX ที่เวียนกันเล่น (AAA Object Pooling) — เป็น object ลูกในก้อนนี้ เห็น/ปรับได้ใน Inspector")]
+    [SerializeField] private AudioSource[] sfxPool = new AudioSource[0];
     private int sfxPoolIndex = 0;
 
     private void Awake()
@@ -31,31 +33,51 @@ public class AudioService : MonoBehaviour, IAudioService
         // 1. ลงทะเบียนเป็น Service ให้คนทั้งเกมเรียกใช้ได้
         ServiceLocator.Register<IAudioService>(this);
 
-        // 2. สร้างลำโพง UI (เสียงแบนๆ ไม่สนระยะทาง 2D)
-        uiSource = gameObject.AddComponent<AudioSource>();
-        uiSource.outputAudioMixerGroup = uiMixerGroup;
-        uiSource.spatialBlend = 0f; 
-        uiSource.playOnAwake = false;
-
-        // 3. สร้างลำโพง BGM
-        bgmSource = gameObject.AddComponent<AudioSource>();
-        bgmSource.outputAudioMixerGroup = bgmMixerGroup;
-        bgmSource.spatialBlend = 0f; 
-        bgmSource.loop = true;
-        bgmSource.playOnAwake = false;
-
-        // 4. สร้างคลังลำโพง SFX ล่วงหน้า (ไม่ต้องไปสร้างใหม่ทีละอันตอนยิงปืน)
-        sfxPool = new AudioSource[sfxPoolSize];
-        for (int i = 0; i < sfxPoolSize; i++)
+        // [2026-10-07] เลิกสร้างลำโพงด้วยโค้ดตอนเริ่มเกม — ทุกตัวต้องอยู่ใน prefab แก้ได้ใน Inspector (กติกาเจ้าของ)
+        if (uiSource == null || bgmSource == null || sfxPool == null || sfxPool.Length == 0)
         {
-            GameObject sfxObj = new GameObject($"SFX_Pool_{i}");
-            sfxObj.transform.SetParent(transform);
-            AudioSource src = sfxObj.AddComponent<AudioSource>();
-            src.outputAudioMixerGroup = sfxMixerGroup;
-            src.playOnAwake = false;
-            sfxPool[i] = src;
+            Debug.LogError("[AudioService] ลำโพงยังไม่ครบ — คลิกขวาที่คอมโพเนนต์ AudioService → 'สร้างลำโพงให้ครบ' (ทำใน Editor ครั้งเดียว)", this);
         }
     }
+
+#if UNITY_EDITOR
+    /// <summary>สร้างลำโพงทั้งหมดเป็น component/object จริงใน Editor — กดครั้งเดียว แล้วเซฟ prefab</summary>
+    [ContextMenu("สร้างลำโพงให้ครบ")]
+    private void CreateSpeakersInEditor()
+    {
+        if (uiSource == null)
+        {
+            uiSource = UnityEditor.Undo.AddComponent<AudioSource>(gameObject);
+            uiSource.outputAudioMixerGroup = uiMixerGroup;
+            uiSource.spatialBlend = 0f;
+            uiSource.playOnAwake = false;
+        }
+        if (bgmSource == null)
+        {
+            bgmSource = UnityEditor.Undo.AddComponent<AudioSource>(gameObject);
+            bgmSource.outputAudioMixerGroup = bgmMixerGroup;
+            bgmSource.spatialBlend = 0f;
+            bgmSource.loop = true;
+            bgmSource.playOnAwake = false;
+        }
+        if (sfxPool == null || sfxPool.Length == 0)
+        {
+            sfxPool = new AudioSource[sfxPoolSize];
+            for (int i = 0; i < sfxPoolSize; i++)
+            {
+                GameObject sfxObj = new GameObject($"SFX_Pool_{i}");
+                UnityEditor.Undo.RegisterCreatedObjectUndo(sfxObj, "Create SFX speaker");
+                sfxObj.transform.SetParent(transform, false);
+                AudioSource src = sfxObj.AddComponent<AudioSource>();
+                src.outputAudioMixerGroup = sfxMixerGroup;
+                src.playOnAwake = false;
+                src.spatialBlend = 1f;
+                sfxPool[i] = src;
+            }
+        }
+        UnityEditor.EditorUtility.SetDirty(this);
+    }
+#endif
 
     private void OnDestroy()
     {
@@ -75,7 +97,7 @@ public class AudioService : MonoBehaviour, IAudioService
 
     public void PlaySFX(AudioClip clip, Vector3 position, float volume = 1f, bool randomizePitch = true)
     {
-        if (clip == null) return;
+        if (clip == null || sfxPool == null || sfxPool.Length == 0) return;
 
         // หยิบลำโพงตัวที่ว่างในคิวมาใช้
         AudioSource src = sfxPool[sfxPoolIndex];
@@ -98,12 +120,12 @@ public class AudioService : MonoBehaviour, IAudioService
         src.Play();
 
         // เลื่อนคิวไปใช้ลำโพงตัวถัดไปรอบหน้า
-        sfxPoolIndex = (sfxPoolIndex + 1) % sfxPoolSize;
+        sfxPoolIndex = (sfxPoolIndex + 1) % sfxPool.Length;
     }
 
     public void PlayBGM(AudioClip clip, float fadeTime = 1f)
     {
-        if (bgmSource.clip == clip) return; // ถ้าเป็นเพลงเดิมไม่ต้องเปลี่ยน
+        if (bgmSource == null || bgmSource.clip == clip) return; // ยังไม่มีลำโพง / เป็นเพลงเดิมไม่ต้องเปลี่ยน
 
         StartCoroutine(FadeBGM(clip, fadeTime));
     }

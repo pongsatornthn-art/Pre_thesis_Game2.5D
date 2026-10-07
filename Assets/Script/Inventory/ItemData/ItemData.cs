@@ -2,7 +2,7 @@
 using UnityEngine.Scripting;
 // ⚠️ เพิ่มชนิดใหม่ให้ "ต่อท้าย" เท่านั้น ห้ามแทรกกลาง
 // เพราะ Unity เซฟค่าเป็นตัวเลขลำดับ ถ้าแทรกกลางไอเทมเดิมทุกตัวจะเปลี่ยนประเภทมั่ว
-public enum ItemType { General, MeleeWeapon, RangedWeapon, Ammo, Totem, Consumable, Key, Document }
+public enum ItemType { General, MeleeWeapon, RangedWeapon, Ammo, Totem, Consumable, Key, Document, Memory }
 
 [Preserve]
 [CreateAssetMenu(fileName = "New General Item", menuName = "Inventory/Items/General Item")]

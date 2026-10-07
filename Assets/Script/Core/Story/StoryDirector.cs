@@ -133,6 +133,12 @@ public class StoryDirector : MonoBehaviour
                     {
                         yield return action.Execute(ctx);
                     }
+
+                    if (ctx.StopSequence)
+                    {
+                        Debug.Log($"[StoryDirector] ฉาก '{seq.name}' หยุดกลางทางที่คำสั่งที่ {i + 1} (คำสั่งสั่งหยุด)");
+                        break;
+                    }
                 }
             }
         }

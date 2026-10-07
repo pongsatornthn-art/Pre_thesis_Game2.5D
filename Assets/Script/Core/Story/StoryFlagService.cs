@@ -55,37 +55,37 @@ public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISav
     #region Flags
 
     /// <summary>ตรวจสอบว่าธงนี้ถูกตั้งค่าแล้วหรือไม่</summary>
-    public bool Has(StoryFlagId flag)
-    {
-        if (flag == null || string.IsNullOrEmpty(flag.Id)) return false;
-        return activeFlags.Contains(flag.Id);
-    }
+    public bool Has(StoryFlagId flag) => flag != null && HasKey(flag.Id);
+    public void Set(StoryFlagId flag) { if (flag != null) SetKey(flag.Id); }
+    public void Clear(StoryFlagId flag) { if (flag != null) ClearKey(flag.Id); }
+
+    public bool HasKey(string key) => !string.IsNullOrEmpty(key) && activeFlags.Contains(key);
 
     /// <summary>
     /// ตั้งสถานะธง หากธงถูกตั้งอยู่แล้วจะไม่ยิง OnChanged ซ้ำ
     /// เพื่อป้องกันไม่ให้ระบบเควสหรือทริกเกอร์ทำงานวนรอบโดยไม่จำเป็น
     /// </summary>
-    public void Set(StoryFlagId flag)
+    public void SetKey(string key)
     {
-        if (flag == null || string.IsNullOrEmpty(flag.Id)) return;
+        if (string.IsNullOrEmpty(key)) return;
 
-        if (activeFlags.Add(flag.Id))
+        if (activeFlags.Add(key))
         {
             UpdateDebugLists();
-            Debug.Log($"<color=cyan>🚩 [WorldState] ตั้งธง: {flag.Id}</color>");
+            Debug.Log($"<color=cyan>🚩 [WorldState] ตั้งธง: {key}</color>");
             OnChanged?.Invoke();
         }
     }
 
     /// <summary>ล้างสถานะธง</summary>
-    public void Clear(StoryFlagId flag)
+    public void ClearKey(string key)
     {
-        if (flag == null || string.IsNullOrEmpty(flag.Id)) return;
+        if (string.IsNullOrEmpty(key)) return;
 
-        if (activeFlags.Remove(flag.Id))
+        if (activeFlags.Remove(key))
         {
             UpdateDebugLists();
-            Debug.Log($"<color=yellow>🏳️ [WorldState] ล้างธง: {flag.Id}</color>");
+            Debug.Log($"<color=yellow>🏳️ [WorldState] ล้างธง: {key}</color>");
             OnChanged?.Invoke();
         }
     }

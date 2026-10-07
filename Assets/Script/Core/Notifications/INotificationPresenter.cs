@@ -8,6 +8,7 @@ public enum NotificationKind
     ObjectiveProgress,   // (2/4)
     ObjectiveCompleted,  // ขีดฆ่า 1 ข้อ
     QuestCompleted,      // ขีดฆ่าทั้งเควส
+    MemoryUnlocked,      // ความทรงจำใหม่ (หน้า L)
     GameSaved,
     SaveBlocked
 }

@@ -23,6 +23,7 @@ public class QuestNotifier : MonoBehaviour
     [SerializeField] private bool notifyObjectiveCompleted = true;
     [SerializeField] private bool notifyQuestCompleted = true;
     [SerializeField] private bool notifySave = true;
+    [SerializeField] private bool notifyMemoryUnlocked = true;
 
     [Header("เวลา (วินาทีจริง)")]
     [SerializeField, Min(0.5f)] private float holdSeconds = 2.5f;
@@ -39,6 +40,7 @@ public class QuestNotifier : MonoBehaviour
     [SerializeField] private string objectiveCompletedKey = "QUEST_TOAST_OBJECTIVE_DONE";
     [SerializeField] private string questCompletedKey = "QUEST_TOAST_COMPLETED";
     [SerializeField] private string gameSavedKey = "SAVE_DONE";
+    [SerializeField] private string memoryUnlockedKey = "MEMORY_TOAST_NEW";
 
     private readonly Queue<NotificationMessage> queue = new Queue<NotificationMessage>();
     private Coroutine runner;
@@ -62,6 +64,7 @@ public class QuestNotifier : MonoBehaviour
         GameEventBus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         GameEventBus.Subscribe<GameSavedEvent>(OnGameSaved);
         GameEventBus.Subscribe<SaveBlockedEvent>(OnSaveBlocked);
+        GameEventBus.Subscribe<MemoryUnlockedEvent>(OnMemoryUnlocked);
     }
 
     private void OnDisable()
@@ -73,6 +76,7 @@ public class QuestNotifier : MonoBehaviour
         GameEventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         GameEventBus.Unsubscribe<GameSavedEvent>(OnGameSaved);
         GameEventBus.Unsubscribe<SaveBlockedEvent>(OnSaveBlocked);
+        GameEventBus.Unsubscribe<MemoryUnlockedEvent>(OnMemoryUnlocked);
 
         // เคลียร์คิวค้าง — กลับมาเปิดใหม่จะได้ไม่เด้งของเก่ารัวๆ
         queue.Clear();
@@ -117,6 +121,11 @@ public class QuestNotifier : MonoBehaviour
     {
         // เซฟอัตโนมัติที่ถูกปฏิเสธไม่ต้องบอกผู้เล่น (ไม่ได้เป็นคนกดเอง)
         if (notifySave && e.Reason == SaveReason.Manual) Enqueue(NotificationKind.SaveBlocked, Text(e.ReasonKey), null);
+    }
+
+    private void OnMemoryUnlocked(MemoryUnlockedEvent e)
+    {
+        if (notifyMemoryUnlocked && e.Entry != null) Enqueue(NotificationKind.MemoryUnlocked, Format(memoryUnlockedKey, Text(e.Entry.titleKey)), completedSound);
     }
 
     #endregion

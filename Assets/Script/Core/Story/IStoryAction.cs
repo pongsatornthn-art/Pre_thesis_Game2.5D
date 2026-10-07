@@ -13,6 +13,12 @@ public class StoryContext
     public IQuestService Quests;
     public MonoBehaviour Runner;
     public GameObject LastSpawnedActor;
+
+    /// <summary>
+    /// คำสั่งตั้งเป็น true = หยุดฉากนี้ ไม่ทำคำสั่งที่เหลือ (เช่น ผู้เล่นออกจากมินิเกมกลางคัน → ห้ามเล่นคัทซีนต่อ)
+    /// StoryDirector เช็คหลังจบแต่ละคำสั่ง — ไม่ต้องรู้ว่าคำสั่งชนิดไหนเป็นคนสั่ง
+    /// </summary>
+    public bool StopSequence;
     public System.Collections.Generic.Dictionary<string, GameObject> Actors = new System.Collections.Generic.Dictionary<string, GameObject>();
 
     /// <summary>

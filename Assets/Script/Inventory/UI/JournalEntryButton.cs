@@ -59,6 +59,12 @@ public class JournalEntryButton : MonoBehaviour
         if (selectedHighlight != null) selectedHighlight.SetActive(selected);
     }
 
+    /// <summary>ย้อมสีไอคอน — คลังความทรงจำใช้ย้อมดำเป็นเงาตอนยังไม่ปลด (ไม่ต้องวาดรูปเงาแยก)</summary>
+    public void SetIconTint(Color color)
+    {
+        if (icon != null) icon.color = color;
+    }
+
     public void SetUnread(bool unread)
     {
         if (unreadDot != null) unreadDot.SetActive(unread);

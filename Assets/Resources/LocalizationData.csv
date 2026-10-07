@@ -39,3 +39,9 @@ QUEST_TOAST_OBJECTIVE_DONE;เสร็จแล้ว: {0};Done: {0}
 QUEST_TOAST_COMPLETED;บันทึกสำเร็จ: {0};Entry completed: {0}
 SAVE_DONE;บันทึกเกมแล้ว;Game saved
 SAVE_BLOCKED_PTSD;บันทึกเกมไม่ได้ในตอนนี้...;You cannot save right now...
+JOURNAL_TAB_MEMORY;ความทรงจำ;Memories
+MEMORY_LOCKED;???;???
+MEMORY_TOAST_NEW;ความทรงจำใหม่: {0};New memory: {0}
+MEMORY_EMPTY;ยังไม่มีความทรงจำ;No memories yet
+MINIGAME_ASSEMBLY_HINT;คลิกเลือกชิ้น · R หมุน · คลิกช่องเพื่อวาง;Click a piece · R to rotate · Click a slot to place
+COMIC_HINT_NEXT;Space / F ไปหน้าถัดไป · Tab ข้าม;Space / F next page · Tab skip

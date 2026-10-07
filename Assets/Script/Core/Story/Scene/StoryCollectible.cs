@@ -7,13 +7,19 @@ using UnityEngine;
 /// **จำผ่านธงในความจำกลาง** — โหลดเซฟ / สลับโลก / ตายเริ่มใหม่ ชิ้นที่เก็บแล้วจะไม่โผล่ซ้ำ
 ///   ซิงก์ทุกครั้งที่ถูกเปิด (OnEnable) จึงทำงานถูกแม้อยู่ในโลก PTSD ที่ถูกซ่อนไว้
 ///
-/// ⚠️ ธง "Collected Flag" ต้องไม่ซ้ำกันทุกชิ้น — 4 ชิ้น = ธง 4 อัน
+/// [2026-10-07] ช่อง "Collected Flag" ไม่บังคับแล้ว — เว้นว่าง = ชิ้นนี้จำตัวเองด้วยรหัสที่สุ่มให้ (ไม่ต้องสร้างไฟล์ธงทีละชิ้น)
+/// ใส่ธงเฉพาะตอนที่อยากให้อย่างอื่นรอธงนี้ (เช่น เป้าหมายเควส / ประตู)
+/// ⚠️ Duplicate ชิ้นที่มีรหัสแล้ว → ระบบสุ่มรหัสใหม่ให้เองใน Editor
 /// </summary>
 public class StoryCollectible : StoryInteractableBase
 {
     [Header("เก็บแล้วเกิดอะไร")]
-    [Tooltip("ธงประจำชิ้นนี้ (ห้ามซ้ำกับชิ้นอื่น) — ใช้จำว่าเก็บไปแล้ว")]
+    [Tooltip("ไม่บังคับ — เว้นว่างได้ ชิ้นนี้จำตัวเองอยู่แล้ว · ใส่เมื่ออยากให้เควส/ประตูรอธงนี้ (ห้ามใช้ธงซ้ำกับชิ้นอื่น)")]
     [SerializeField] private StoryFlagId collectedFlag;
+
+    [SerializeField, HideInInspector] private string autoKey;   // รหัสจำตัวเอง สุ่มให้ใน Editor
+
+    private string CollectedKey => collectedFlag != null ? collectedFlag.Id : (string.IsNullOrEmpty(autoKey) ? null : "collected:" + autoKey);
 
     [Tooltip("ตัวนับที่จะเพิ่ม เช่น Counter_PicturePieces (เว้นว่างได้)")]
     [SerializeField] private StoryCounterId counter;
@@ -34,8 +40,14 @@ public class StoryCollectible : StoryInteractableBase
 
     private void OnEnable()
     {
-        flags = ServiceLocator.GetOptional<IStoryFlags>();
-        if (flags != null) flags.OnChanged += SyncWithWorldState;
+        Subscribe();
+        SyncWithWorldState();
+    }
+
+    // ซีนเพิ่งเปิด: ชิ้นนี้อาจ OnEnable ก่อน StoryFlagService ลงทะเบียน → ลองต่ออีกรอบตอน Start
+    private void Start()
+    {
+        Subscribe();
         SyncWithWorldState();
     }
 
@@ -43,11 +55,21 @@ public class StoryCollectible : StoryInteractableBase
     {
         base.OnDisable();
         if (flags != null) flags.OnChanged -= SyncWithWorldState;
+        flags = null;
+    }
+
+    private void Subscribe()
+    {
+        if (flags != null) return;
+        flags = ServiceLocator.GetOptional<IStoryFlags>();
+        if (flags != null) flags.OnChanged += SyncWithWorldState;
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (collectOnTouch && other.CompareTag("Player") && IsInteractable())
+        // [แก้ 2026-10-07] เดิมเช็ค IsInteractable() ซึ่งตอบ false เสมอเมื่อติ๊ก Collect On Touch (กันป้ายกด F ขึ้น)
+        // → เดินชนแล้วไม่เก็บเลย · ทางเดินชนต้องเช็คแค่ "เก็บไปแล้วหรือยัง"
+        if (collectOnTouch && other.CompareTag("Player") && !IsCollected())
         {
             OnInteract(StoryContext.Create(this, other.gameObject));
         }
@@ -58,20 +80,51 @@ public class StoryCollectible : StoryInteractableBase
     protected override void OnInteract(StoryContext ctx)
     {
         if (IsCollected()) return;
-        if (collectedFlag == null)
+        if (CollectedKey == null)
         {
-            Debug.LogError($"[StoryCollectible] '{name}' ยังไม่ได้ใส่ Collected Flag — เก็บแล้วจะจำไม่ได้ โหลดเซฟจะโผล่ซ้ำ", this);
+            Debug.LogError($"[StoryCollectible] '{name}' ไม่มีรหัสจำตัวเอง — คลิกขวาที่คอมโพเนนต์ → 'สุ่มรหัสใหม่' แล้วเซฟซีน", this);
             return;
         }
 
         // ตัวนับก่อน แล้วค่อยปักธง — QuestService คำนวณใหม่ทุกครั้งที่อย่างใดอย่างหนึ่งเปลี่ยน
         if (counter != null) ctx.Counters?.Add(counter, amount);
-        ctx.Flags?.Set(collectedFlag);   // → SyncWithWorldState ซ่อนตัวเอง
+        ctx.Flags?.SetKey(CollectedKey);   // → SyncWithWorldState ซ่อนตัวเอง
 
         PlaySequence(onCollected);
     }
 
-    private bool IsCollected() => collectedFlag != null && flags != null && flags.Has(collectedFlag);
+    private bool IsCollected() => flags != null && flags.HasKey(CollectedKey);
+
+#if UNITY_EDITOR
+    protected override void Reset()
+    {
+        base.Reset();
+        RegenerateKey();
+    }
+
+    // สุ่มรหัสให้ชิ้นที่ยังไม่มี + แก้รหัสซ้ำจากการ Duplicate (Ctrl+D ก๊อปรหัสมาด้วย)
+    private void OnValidate()
+    {
+        if (Application.isPlaying) return;
+        if (string.IsNullOrEmpty(autoKey)) { RegenerateKey(); return; }
+
+        foreach (StoryCollectible other in FindObjectsByType<StoryCollectible>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (other != this && other.autoKey == autoKey && other.gameObject.scene == gameObject.scene)
+            {
+                RegenerateKey();
+                return;
+            }
+        }
+    }
+
+    [ContextMenu("สุ่มรหัสใหม่")]
+    private void RegenerateKey()
+    {
+        autoKey = System.Guid.NewGuid().ToString("N");
+        UnityEditor.EditorUtility.SetDirty(this);
+    }
+#endif
 
     // ซิงก์ได้ทั้ง 2 ทาง: เก็บแล้ว → ซ่อน · ธงถูกล้าง (คืนจุดเซฟ/เริ่ม PTSD ใหม่) → โผล่กลับ
     private void SyncWithWorldState()
