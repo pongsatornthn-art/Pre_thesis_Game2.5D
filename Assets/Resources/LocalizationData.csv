@@ -43,5 +43,13 @@ JOURNAL_TAB_MEMORY;ความทรงจำ;Memories
 MEMORY_LOCKED;???;???
 MEMORY_TOAST_NEW;ความทรงจำใหม่: {0};New memory: {0}
 MEMORY_EMPTY;ยังไม่มีความทรงจำ;No memories yet
-MINIGAME_ASSEMBLY_HINT;คลิกเลือกชิ้น · R หมุน · คลิกช่องเพื่อวาง;Click a piece · R to rotate · Click a slot to place
+MINIGAME_ASSEMBLY_HINT;ลากเศษรูปจากช่องขวาไปวางบนกระดาน · R หมุน · คลิกขวาเอาคืน;Drag pieces from the right onto the board · R rotate · Right-click to take back
 COMIC_HINT_NEXT;Space / F ไปหน้าถัดไป · Tab ข้าม;Space / F next page · Tab skip
+MEMORY_PAINTING_PIECE_2;เศษรูปวาด (ชิ้นที่ 2);Painting Scrap (2)
+MEMORY_PAINTING_PIECE_3;เศษรูปวาด (ชิ้นที่ 3);Painting Scrap (3)
+MEMORY_PAINTING_PIECE_4;เศษรูปวาด (ชิ้นที่ 4);Painting Scrap (4)
+MEMORY_PAINTING_PIECE_5;เศษรูปวาด (ชิ้นที่ 5);Painting Scrap (5)
+MEMORY_PAINTING_PIECE_6;เศษรูปวาด (ชิ้นที่ 6);Painting Scrap (6)
+MEMORY_PAINTING_PIECE_DESC;เศษกระดาษที่ถูกฉีกออกจากรูปวาดบนขาตั้ง (ข้อความทดสอบ);A scrap torn from the painting on the easel (placeholder)
+MEMORY_PAINTING_FULL;รูปวาดที่ถูกประกอบคืน;The Restored Painting
+MEMORY_PAINTING_FULL_DESC;รูปวาดที่ประกอบจากเศษกระดาษจนสมบูรณ์ (ข้อความทดสอบ);The painting, pieced back together (placeholder)

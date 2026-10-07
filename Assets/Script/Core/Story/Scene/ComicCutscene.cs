@@ -54,7 +54,20 @@ public class ComicCutscene : CutsceneBase
     {
         base.Awake();
         foreach (Page p in pages) if (p?.root != null) p.root.SetActive(false);
-        if (panel != null) panel.HideImmediate();
+
+        // UIPanelController.HideImmediate ปิด object ทั้งก้อน — ถ้าแผงอยู่ก้อนเดียวกับสคริปต์นี้ ห้ามเรียก
+        // (ก้อนที่ถูกปิดเริ่ม coroutine ไม่ได้ → สั่งเล่นแล้วไม่เล่น · เจอจริงตอนทดสอบ 2026-10-07) → ซ่อนด้วย alpha แทน
+        if (panel != null && panel.gameObject != gameObject) panel.HideImmediate();
+        else HideSelfWithAlpha();
+    }
+
+    private void HideSelfWithAlpha()
+    {
+        CanvasGroup group = GetComponent<CanvasGroup>();
+        if (group == null) return;
+        group.alpha = 0f;
+        group.interactable = false;
+        group.blocksRaycasts = false;
     }
 
     private void Update()
@@ -68,6 +81,14 @@ public class ComicCutscene : CutsceneBase
 
     public override void Play()
     {
+        // แผงซ่อนจบรอบก่อนจะปิดก้อนนี้ไว้ → เปิดก่อนเริ่ม coroutine
+        if (!gameObject.activeSelf) gameObject.SetActive(true);
+        if (!gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning($"[ComicCutscene] '{name}' อยู่ใต้ object ที่ปิดอยู่ — เล่นไม่ได้", this);
+            return;
+        }
+
         if (running != null) StopCoroutine(running);
         running = StartCoroutine(PlayRoutine());
     }
@@ -80,7 +101,7 @@ public class ComicCutscene : CutsceneBase
         shownFrame = Time.frameCount;   // กด F เริ่มฉาก → เฟรมเดียวกันห้ามนับเป็นเปิดหน้าถัดไป
 
         if (panel != null) panel.Show();
-        else gameObject.SetActive(true);
+        else { CanvasGroup g = GetComponent<CanvasGroup>(); if (g != null) { g.alpha = 1f; g.blocksRaycasts = true; } }
 
         for (int i = 0; i < pages.Count && !skipRequested; i++)
         {
@@ -104,9 +125,10 @@ public class ComicCutscene : CutsceneBase
         }
 
         foreach (Page p in pages) if (p?.root != null) p.root.SetActive(false);
-        if (panel != null) panel.Hide();
-
         running = null;
+
+        if (panel != null) panel.Hide();
+        else HideSelfWithAlpha();
     }
 
     private IEnumerator FadePage(GameObject root, bool show)

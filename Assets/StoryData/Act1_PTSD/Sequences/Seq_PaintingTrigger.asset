@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lockPlayer: 1
   actions:
+  - rid: 2958633122009186381
   - rid: 1963572877566410833
   - rid: 1963572877566410838
+  - rid: 2958633122009186382
   - rid: 1963572881657167949
   references:
     version: 2
@@ -28,8 +30,18 @@ MonoBehaviour:
       type: {class: EnterPtsdAction, ns: , asm: Assembly-CSharp}
       data:
         mode: 2
-        waitSeconds: 1.5
+        waitSeconds: 0.3
+        waitForWorldSwap: 1
     - rid: 1963572881657167949
       type: {class: GiveQuestAction, ns: , asm: Assembly-CSharp}
       data:
         quest: {fileID: 11400000, guid: 9614941a0814aa1479fb58fba3ea85e6, type: 2}
+    - rid: 2958633122009186381
+      type: {class: EnterCloseUpAction, ns: , asm: Assembly-CSharp}
+      data:
+        viewId: drawing_table
+        holdSeconds: 2.5
+    - rid: 2958633122009186382
+      type: {class: ExitCloseUpAction, ns: , asm: Assembly-CSharp}
+      data:
+        waitSeconds: 0

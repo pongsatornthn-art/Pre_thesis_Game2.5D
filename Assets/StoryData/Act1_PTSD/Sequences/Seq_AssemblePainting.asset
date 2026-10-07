@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ee9df5b87bdad44d966a1b9c076cf88, type: 3}
+  m_Name: Seq_AssemblePainting
+  m_EditorClassIdentifier: 
+  lockPlayer: 1
+  actions:
+  - rid: 2958633122009186383
+  - rid: 2958633122009186384
+  - rid: 2958633122009186385
+  - rid: 2958633122009186386
+  - rid: 2958633122009186387
+  - rid: 2958633122009186388
+  - rid: 2958633122009186389
+  references:
+    version: 2
+    RefIds:
+    - rid: 2958633122009186383
+      type: {class: EnterCloseUpAction, ns: , asm: Assembly-CSharp}
+      data:
+        viewId: drawing_table
+        holdSeconds: 0.5
+    - rid: 2958633122009186384
+      type: {class: PlayMinigameAction, ns: , asm: Assembly-CSharp}
+      data:
+        minigameId: picture_assembly
+        flagOnSuccess: {fileID: 11400000, guid: d110443d68ff43e42a08ecae1848d8b7, type: 2}
+        exitCloseUpOnAbort: 1
+    - rid: 2958633122009186385
+      type: {class: UnlockMemoryAction, ns: , asm: Assembly-CSharp}
+      data:
+        entry: {fileID: 11400000, guid: 48ce356fea97e1448b50612da68a33a4, type: 2}
+    - rid: 2958633122009186386
+      type: {class: PlayCutsceneAction, ns: , asm: Assembly-CSharp}
+      data:
+        cutsceneId: painting_memory
+        waitUntilEnd: 1
+        maxWaitSeconds: 300
+    - rid: 2958633122009186387
+      type: {class: ExitPtsdAction, ns: , asm: Assembly-CSharp}
+      data:
+        waitSeconds: 1.5
+    - rid: 2958633122009186388
+      type: {class: SetFlagAction, ns: , asm: Assembly-CSharp}
+      data:
+        flag: {fileID: 11400000, guid: e1167d2f105d8024a9a694356f4015f3, type: 2}
+    - rid: 2958633122009186389
+      type: {class: ExitCloseUpAction, ns: , asm: Assembly-CSharp}
+      data:
+        waitSeconds: 0

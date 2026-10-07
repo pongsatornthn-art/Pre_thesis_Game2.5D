@@ -18,11 +18,24 @@ public interface IWorldModeService
     WorldMode Mode { get; }
     bool IsInPtsd { get; }
 
+    /// <summary>
+    /// โลกที่ "ตาเห็น" ตอนนี้ — ต่างจาก Mode ช่วงอนิเมชันสลับโลก (Mode เปลี่ยนทันทีที่สั่ง แต่ฉากเพิ่งสลับตอนจอมืดสุด)
+    /// ของที่โผล่/หายตามโลก (WorldPresence) ใช้ตัวนี้ จะได้สลับพร้อมฉากของปอ
+    /// </summary>
+    WorldMode VisibleWorld { get; }
+
     void EnterPtsd(WorldMode mode);
     void ExitPtsd();
 
     /// <summary>(ก่อนหน้า, ตอนนี้)</summary>
     event Action<WorldMode, WorldMode> OnModeChanged;
+}
+
+/// <summary>ประกาศตอนฉากสลับเสร็จจริง (จอมืดสุด · ตรงกับ OnEnterPTSD/OnExitPTSD ของ PTSDManager)</summary>
+public readonly struct WorldVisualsSwappedEvent
+{
+    public readonly WorldMode Visible;
+    public WorldVisualsSwappedEvent(WorldMode visible) { Visible = visible; }
 }
 
 /// <summary>ประกาศใน GameEventBus ทุกครั้งที่สลับโลก</summary>

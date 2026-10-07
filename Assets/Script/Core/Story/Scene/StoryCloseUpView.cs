@@ -35,6 +35,12 @@ public class StoryCloseUpView : SceneIdentified<StoryCloseUpView>
     [Tooltip("ปิดสคริปต์ เช่น PlayerMovement / PlayerInteraction / PlayerCombat / ตัวเล็งกล้อง")]
     [SerializeField] private Behaviour[] disableWhileActive = new Behaviour[0];
 
+    [Tooltip("ซ่อนแค่ 'ภาพ' (รวมลูกทั้งหมด) เช่น ตัวผู้เล่น — กันตัวละครยืนบังกล้อง close-up\n" +
+             "ไม่ปิด object / ไม่ปิดสคริปต์ (ระบบผู้เล่นของปอทำงานต่อปกติ) · ลากตัว Player มาใส่ได้เลย")]
+    [SerializeField] private GameObject[] hideVisualsWhileActive = new GameObject[0];
+
+    private readonly System.Collections.Generic.List<Renderer> hiddenRenderers = new();
+
     [Tooltip("ล็อกเมาส์ไว้กลางจอ (ต้องเปิดถ้าให้หันมองด้วยเมาส์)")]
     [SerializeField] private bool lockCursor = true;
 
@@ -43,6 +49,17 @@ public class StoryCloseUpView : SceneIdentified<StoryCloseUpView>
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetActive() => Active = null;
+
+    private Quaternion homeRotation;   // มุมที่จัดไว้ในซีน
+
+    protected override void Awake()
+    {
+        base.Awake();
+        Transform t = LookTransform;
+        if (t != null) homeRotation = t.localRotation;
+    }
+
+    private Transform LookTransform => lookController != null ? lookController.transform : (ViewCamera != null ? ViewCamera.transform : null);
 
     private void Start()
     {
@@ -68,11 +85,40 @@ public class StoryCloseUpView : SceneIdentified<StoryCloseUpView>
         ApplyActive(true);
     }
 
+    /// <summary>เปิด/ปิดการหันมองด้วยเมาส์ชั่วคราว (มินิเกมที่ต้องใช้เมาส์ลากของ ปิดไว้ให้กล้องนิ่ง)
+    /// ปิด = กล้องกลับไปมุมที่จัดไว้ในซีนด้วย (ไม่ค้างมุมที่ผู้เล่นหันไปทิ้งไว้)</summary>
+    public void SetLookEnabled(bool enabled)
+    {
+        if (Active != this) return;
+        if (lookController != null) lookController.enabled = enabled;
+        if (!enabled && LookTransform != null) LookTransform.localRotation = homeRotation;
+    }
+
     public void Exit()
     {
         if (Active != this) return;
         Active = null;
         ApplyActive(false);
+    }
+
+    // ใช้ forceRenderingOff ไม่ใช่ enabled — สคริปต์ของปอเปิด/ปิด enabled เอง (เช่น รูปปืนในมือ แสงปากกระบอก)
+    // ถ้าเราไปแตะ enabled แล้วคืนค่าทับ ปืนอาจโผล่ทั้งที่ไม่ได้ถือ · forceRenderingOff เป็นสวิตช์แยก ไม่ชนกัน
+    private void SetVisualsHidden(bool hide)
+    {
+        foreach (Renderer r in hiddenRenderers) if (r != null) r.forceRenderingOff = false;
+        hiddenRenderers.Clear();
+        if (!hide) return;
+
+        foreach (GameObject go in hideVisualsWhileActive)
+        {
+            if (go == null) continue;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r.forceRenderingOff) continue;   // ถูกซ่อนด้วยเหตุผลอื่นอยู่แล้ว ไม่แตะ
+                r.forceRenderingOff = true;
+                hiddenRenderers.Add(r);
+            }
+        }
     }
 
     private void ApplyActive(bool on)
@@ -84,6 +130,7 @@ public class StoryCloseUpView : SceneIdentified<StoryCloseUpView>
         foreach (GameObject go in hideWhileActive) if (go != null) go.SetActive(!on);
         foreach (GameObject go in showWhileActive) if (go != null) go.SetActive(on);
         foreach (Behaviour b in disableWhileActive) if (b != null) b.enabled = !on;
+        SetVisualsHidden(on);
 
         if (lockCursor)
         {

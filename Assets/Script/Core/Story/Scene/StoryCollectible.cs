@@ -11,7 +11,7 @@ using UnityEngine;
 /// ใส่ธงเฉพาะตอนที่อยากให้อย่างอื่นรอธงนี้ (เช่น เป้าหมายเควส / ประตู)
 /// ⚠️ Duplicate ชิ้นที่มีรหัสแล้ว → ระบบสุ่มรหัสใหม่ให้เองใน Editor
 /// </summary>
-public class StoryCollectible : StoryInteractableBase
+public class StoryCollectible : StoryInteractableBase, IPresenceGate
 {
     [Header("เก็บแล้วเกิดอะไร")]
     [Tooltip("ไม่บังคับ — เว้นว่างได้ ชิ้นนี้จำตัวเองอยู่แล้ว · ใส่เมื่ออยากให้เควส/ประตูรอธงนี้ (ห้ามใช้ธงซ้ำกับชิ้นอื่น)")]
@@ -126,21 +126,14 @@ public class StoryCollectible : StoryInteractableBase
     }
 #endif
 
+    /// <summary>เหตุผลการโผล่ข้อนี้: เก็บไปแล้ว = ไม่โผล่ (รวมกับ WorldPresence ฯลฯ ผ่าน ScenePresence)</summary>
+    public bool AllowVisible => !IsCollected();
+
     // ซิงก์ได้ทั้ง 2 ทาง: เก็บแล้ว → ซ่อน · ธงถูกล้าง (คืนจุดเซฟ/เริ่ม PTSD ใหม่) → โผล่กลับ
+    // ใช้ ScenePresence รวมผลกับเหตุผลอื่นบน object เดียวกัน (เช่น WorldPresence) — ไม่เปิด/ปิดเองตรงๆ แล้ว กันแย่งกัน
     private void SyncWithWorldState()
     {
-        bool visible = !IsCollected();
-
-        if (visualRoot != null)
-        {
-            if (visualRoot.activeSelf != visible) visualRoot.SetActive(visible);
-        }
-        else
-        {
-            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = visible;
-        }
-
-        // ปิดตัวชนด้วย — ไม่งั้นป้าย "กด E" ยังขึ้นตรงที่ว่าง
-        foreach (Collider c in GetComponents<Collider>()) c.enabled = visible;
+        ScenePresence.Refresh(gameObject);
+        if (visualRoot != null) visualRoot.SetActive(ScenePresence.IsAllowed(gameObject));
     }
 }

@@ -36,7 +36,8 @@ public class HotbarController : MonoBehaviour
         // [เพิ่มโดย Claude 2026-09-19] เปิดสมุดอยู่ = ห้ามรับปุ่มเลข/ลูกกลิ้ง
         // ไม่งั้นกดเลข 1-6 เพื่อเลือกช่องในกระเป๋า จะไปสลับอาวุธในมือด้วยพร้อมกัน
         // และหมุนลูกกลิ้งดูสมุดก็จะเปลี่ยนอาวุธมั่วไปหมด
-        if (JournalController.IsAnyOpen || Time.timeScale == 0f) return;
+        // [เพิ่มโดย Claude 2026-10-07] เล่นมินิเกมอยู่ = ห้ามสลับของในมือ (แถบถูกซ่อนอยู่ ผู้เล่นไม่เห็นว่าเปลี่ยน)
+        if (JournalController.IsAnyOpen || Time.timeScale == 0f || MinigameBase.AnyRunning) return;
 
         if (Input.GetKeyDown(KeyCode.Alpha1)) SelectSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SelectSlot(1);

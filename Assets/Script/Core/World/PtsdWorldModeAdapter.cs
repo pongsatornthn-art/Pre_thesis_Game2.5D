@@ -10,9 +10,11 @@ using UnityEngine;
 public class PtsdWorldModeAdapter : MonoBehaviour, IWorldModeService
 {
     private WorldMode mode = WorldMode.Real;
+    private WorldMode visibleWorld = WorldMode.Real;
 
     public WorldMode Mode => mode;
     public bool IsInPtsd => mode != WorldMode.Real;
+    public WorldMode VisibleWorld => visibleWorld;
     public event Action<WorldMode, WorldMode> OnModeChanged;
 
     private void Awake()
@@ -24,12 +26,34 @@ public class PtsdWorldModeAdapter : MonoBehaviour, IWorldModeService
     private void Start()
     {
         // เผื่อเริ่มซีนมาอยู่ในโหมด PTSD อยู่แล้ว (ตั้งค่าไว้ใน Inspector ของ PTSDManager)
-        if (PTSDManager.Instance != null) SetMode(Map(PTSDManager.Instance.currentMode));
+        PTSDManager ptsd = PTSDManager.Instance;
+        if (ptsd == null) return;
+
+        SetMode(Map(ptsd.currentMode));
+        visibleWorld = mode;
+
+        // ฟัง UnityEvent สาธารณะของปอตอนฉากสลับเสร็จ (AddListener ตอนเล่น ไม่แก้ไฟล์/ไม่แก้ค่าในซีนของเขา)
+        ptsd.OnEnterPTSD.AddListener(HandleVisualsEnteredPtsd);
+        ptsd.OnExitPTSD.AddListener(HandleVisualsExitedPtsd);
+    }
+
+    private void HandleVisualsEnteredPtsd() => SetVisible(mode != WorldMode.Real ? mode : WorldMode.PtsdSurvival);
+    private void HandleVisualsExitedPtsd() => SetVisible(WorldMode.Real);
+
+    private void SetVisible(WorldMode visible)
+    {
+        visibleWorld = visible;
+        GameEventBus.Publish(new WorldVisualsSwappedEvent(visible));
     }
 
     private void OnDestroy()
     {
         PTSDManager.OnPTSDStateChanged -= HandlePtsdStateChanged;
+        if (PTSDManager.Instance != null)
+        {
+            PTSDManager.Instance.OnEnterPTSD.RemoveListener(HandleVisualsEnteredPtsd);
+            PTSDManager.Instance.OnExitPTSD.RemoveListener(HandleVisualsExitedPtsd);
+        }
         ServiceLocator.Unregister<IWorldModeService>();
     }
 

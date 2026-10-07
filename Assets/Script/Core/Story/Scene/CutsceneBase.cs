@@ -11,4 +11,16 @@ public abstract class CutsceneBase : SceneIdentified<CutsceneBase>
 
     /// <summary>ข้ามไปจบทันที</summary>
     public abstract void Skip();
+
+    // เครื่องมือทดสอบ: ตอนกด Play อยู่ คลิกขวาที่หัวคอมโพเนนต์นี้ใน Inspector → เล่นคัทซีนทันที (ไม่ต้องเดินไปถึงจุดในเนื้อเรื่อง)
+    [UnityEngine.ContextMenu("▶ ทดสอบเล่น (ต้องกด Play ก่อน)")]
+    private void TestPlayFromInspector()
+    {
+        if (!UnityEngine.Application.isPlaying)
+        {
+            UnityEngine.Debug.LogWarning($"[{GetType().Name}] กด Play ก่อน แล้วค่อยคลิกขวา → ทดสอบเล่น", this);
+            return;
+        }
+        Play();
+    }
 }

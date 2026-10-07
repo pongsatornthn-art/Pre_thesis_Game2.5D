@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19a043d0bfbccb94eb40d6284226cf75, type: 3}
+  m_Name: Fragment_PaintingPiece_3
+  m_EditorClassIdentifier: 
+  itemId: fb622295c3e94c78b92f69c5aeca66e6
+  itemName: "\u0E40\u0E28\u0E29\u0E23\u0E39\u0E1B\u0E27\u0E32\u0E14 3"
+  icon: {fileID: -1283378110472742480, guid: df9f531585235c94daa2c1c4e4c2692f, type: 3}
+  description: 
+  descriptionImage: {fileID: 0}
+  isStackable: 0
+  maxStack: 99
+  itemType: 8
+  price: 50
+  equippedSprite: {fileID: 0}
+  itemNameKey: 
+  descriptionKey: 
+  entry: {fileID: 11400000, guid: 564d8be725f037f4a99a5a46df6e215d, type: 2}
+  alsoAddCounter: {fileID: 11400000, guid: 5879380800fb2234eb9a689095f2b6ea, type: 2}

@@ -14,6 +14,9 @@ public class MemoryFragmentData : ItemData
     [Tooltip("ช่องที่ชิ้นนี้ปลด (รูป/ชื่อ/เรื่องย่อในหน้า L มาจากช่องนี้)")]
     public MemoryEntryData entry;
 
+    [Tooltip("เพิ่มตัวนับนี้ +1 ตอนเก็บด้วย (ไม่บังคับ) — เช่น Counter_PicturePieces ให้เควสแบบนับ (x/N) ของปอเดินต่อได้")]
+    public StoryCounterId alsoAddCounter;
+
     private void Reset()
     {
         itemType = ItemType.Memory;
@@ -35,7 +38,9 @@ public class MemoryFragmentData : ItemData
             return false;
         }
 
+        bool firstTime = !archive.IsUnlocked(entry);
         archive.Unlock(entry);
+        if (firstTime && alsoAddCounter != null) ServiceLocator.GetOptional<IStoryCounters>()?.Add(alsoAddCounter, 1);
         return true;
     }
 }
