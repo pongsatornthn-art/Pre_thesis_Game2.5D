@@ -4,37 +4,48 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// หน้า "ของสำคัญ" ในสมุด — อ่านจากคลังแยก (IKeyItemHolder) ไม่ใช่กระเป๋าปกติ
-/// ของในหน้านี้ทิ้งไม่ได้ ลากไม่ได้ กดดูรายละเอียดได้อย่างเดียว
+/// หน้า "ของสำคัญ" (K) ในสมุด — อ่านจากคลังแยก (IKeyItemHolder) ไม่ใช่กระเป๋าปกติ · ทิ้งไม่ได้ ลากไม่ได้ ดูได้อย่างเดียว
+///
+/// หน้าตา (เจ้าของออกแบบ 2026-10-07 — ดัดแปลงอาร์ตจากหน้ากระเป๋า I):
+///   ซ้าย  = ช่องของ 8 ช่อง (KeyItemSlot วางในซีนตายตัว — แทนที่รูป+ชื่อตัวละคร ซึ่งสั่งซ่อนผ่านช่อง Hide While Open)
+///   กลาง = รูปใหญ่ (Description Image ของไอเทม · ไม่มีใช้ไอคอน)
+///   ขวา  = ชื่อ + ข้อความยาวเต็มแถบ (ของสำคัญมีเนื้อเรื่อง)
+/// ของเกินจำนวนช่อง → เตือนใน Console (เพิ่มช่องในซีนได้เลย ไม่ต้องแก้โค้ด)
 /// </summary>
 public class KeyItemPage : JournalPage
 {
-    [Header("รายการฝั่งซ้าย")]
-    [Tooltip("ก้อนที่จะเสกช่องรายการลงไป (ควรมี Grid/Vertical Layout Group)")]
-    [SerializeField] private Transform listContainer;
-    [SerializeField] private JournalEntryButton entryPrefab;
+    [Header("ซ้าย — ช่องของ (เรียงตามลำดับที่เก็บได้)")]
+    [SerializeField] private List<KeyItemSlot> slots = new List<KeyItemSlot>();
 
-    [Header("รายละเอียดฝั่งขวา")]
-    [SerializeField] private GameObject detailPanel;
-    [SerializeField] private Image detailIcon;
-    [SerializeField] private TMP_Text detailName;
-    [SerializeField] private TMP_Text detailDescription;
+    [Header("กลาง — รูปใหญ่")]
+    [SerializeField] private Image bigImage;
 
-    [Header("ข้อความตอนไม่มีของ")]
+    [Header("ขวา — ข้อความ")]
+    [SerializeField] private TMP_Text nameText;
+    [SerializeField] private TMP_Text descriptionText;
+
+    [Header("ซ่อนตอนยังไม่ได้เลือกอะไร (เช่น กรอบรูปกลาง + กระดาษข้อความขวา)")]
+    [SerializeField] private GameObject[] detailParts = new GameObject[0];
+
+    [Tooltip("ข้อความตอนยังไม่มีของ (เว้นว่างได้)")]
     [SerializeField] private GameObject emptyMessage;
 
-    private readonly List<JournalEntryButton> spawned = new List<JournalEntryButton>();
     private IKeyItemHolder holder;
     private ILocalizationService locService;
     private KeyItemData selected;
 
+    private void Awake()
+    {
+        foreach (KeyItemSlot s in slots) if (s != null) s.Bind(this);
+    }
+
     private void OnEnable()
     {
-        // เกาะ event ไว้ เผื่อเก็บกุญแจใหม่ระหว่างเปิดสมุดค้างไว้
-        holder = ServiceLocator.Get<IKeyItemHolder>();
+        // เกาะ event ไว้ เผื่อเก็บของใหม่ระหว่างเปิดสมุดค้างไว้
+        holder = ServiceLocator.GetOptional<IKeyItemHolder>();
         if (holder != null) holder.OnChanged += Refresh;
 
-        locService = ServiceLocator.Get<ILocalizationService>();
+        locService = ServiceLocator.GetOptional<ILocalizationService>();
         if (locService != null) locService.OnLanguageChanged += Refresh;
     }
 
@@ -46,88 +57,56 @@ public class KeyItemPage : JournalPage
 
     public override void Refresh()
     {
-        if (holder == null) holder = ServiceLocator.Get<IKeyItemHolder>();
-
-        ClearList();
-
+        if (holder == null) holder = ServiceLocator.GetOptional<IKeyItemHolder>();
         IReadOnlyList<KeyItemData> keys = holder?.All;
-        bool hasAny = keys != null && keys.Count > 0;
+        int count = keys?.Count ?? 0;
 
-        if (emptyMessage != null) emptyMessage.SetActive(!hasAny);
-
-        if (!hasAny)
+        for (int i = 0; i < slots.Count; i++)
         {
-            ShowDetail(null);
-            return;
+            if (slots[i] != null) slots[i].Set(i < count ? keys[i] : null);
         }
+        if (count > slots.Count)
+            Debug.LogWarning($"[KeyItemPage] ของสำคัญมี {count} ชิ้น แต่มีช่องแค่ {slots.Count} — เพิ่มช่อง KeyItemSlot ในซีนแล้วลากใส่ Slots", this);
 
-        foreach (KeyItemData key in keys)
-        {
-            if (key == null) continue;
-            SpawnEntry(key);
-        }
+        if (emptyMessage != null) emptyMessage.SetActive(count == 0);
 
-        // ถ้าของที่เลือกไว้หายไป (ถูกใช้ไปแล้ว) ให้เด้งกลับไปอันแรก
-        ShowDetail(ListContains(keys, selected) ? selected : keys[0]);
+        // ของที่เลือกไว้หายไป (ถูกใช้เปิดประตูแล้ว) → เด้งไปชิ้นแรก
+        Select(Contains(keys, selected) ? selected : (count > 0 ? keys[0] : null));
     }
 
-    private static bool ListContains(IReadOnlyList<KeyItemData> list, KeyItemData target)
+    /// <summary>โชว์รายละเอียดชิ้นนี้ (ช่องเป็นคนเรียกตอนคลิก) · null = ซ่อนรายละเอียด</summary>
+    internal void Select(KeyItemData item)
+    {
+        selected = item;
+        foreach (KeyItemSlot s in slots) if (s != null) s.SetSelected(item != null && s.Item == item);
+        foreach (GameObject go in detailParts) if (go != null) go.SetActive(item != null);
+        if (item == null) return;
+
+        if (bigImage != null)
+        {
+            Sprite big = item.descriptionImage != null ? item.descriptionImage : item.icon;
+            bigImage.sprite = big;
+            bigImage.enabled = big != null;
+            bigImage.preserveAspect = true;
+        }
+
+        if (locService == null) locService = ServiceLocator.GetOptional<ILocalizationService>();
+        if (nameText != null)
+        {
+            nameText.text = item.DisplayName;
+            if (locService != null) nameText.font = locService.GetFont(FontCategory.Header);
+        }
+        if (descriptionText != null)
+        {
+            descriptionText.text = item.DisplayDescription;
+            if (locService != null) descriptionText.font = locService.GetFont(FontCategory.Default);
+        }
+    }
+
+    private static bool Contains(IReadOnlyList<KeyItemData> list, KeyItemData target)
     {
         if (list == null || target == null) return false;
-
-        for (int i = 0; i < list.Count; i++)
-        {
-            if (list[i] == target) return true;
-        }
+        for (int i = 0; i < list.Count; i++) if (list[i] == target) return true;
         return false;
-    }
-
-    private void SpawnEntry(KeyItemData key)
-    {
-        if (entryPrefab == null || listContainer == null) return;
-
-        JournalEntryButton entry = Instantiate(entryPrefab, listContainer);
-        entry.Setup(key.icon, key.DisplayName, false, () => ShowDetail(key));
-        spawned.Add(entry);
-    }
-
-    private void ShowDetail(KeyItemData key)
-    {
-        selected = key;
-
-        if (detailPanel != null) detailPanel.SetActive(key != null);
-        if (key == null) return;
-
-        if (detailIcon != null)
-        {
-            detailIcon.sprite = key.icon;
-            detailIcon.enabled = key.icon != null;
-        }
-        if (detailName != null)
-        {
-            detailName.text = key.DisplayName;
-            if (locService != null) detailName.font = locService.GetFont(FontCategory.Header);
-        }
-        if (detailDescription != null)
-        {
-            detailDescription.text = key.DisplayDescription;
-            if (locService != null) detailDescription.font = locService.GetFont(FontCategory.Default);
-        }
-
-        // ไฮไลท์ช่องที่เลือก
-        for (int i = 0; i < spawned.Count; i++)
-        {
-            if (spawned[i] == null) continue;
-            spawned[i].SetSelected(holder != null && i < holder.All.Count && holder.All[i] == key);
-        }
-    }
-
-    private void ClearList()
-    {
-        foreach (JournalEntryButton e in spawned)
-        {
-            if (e != null) Destroy(e.gameObject);
-        }
-        spawned.Clear();
     }
 }

@@ -97,6 +97,7 @@ public class QuestPage : JournalPage
                 if (obj == null || !questService.IsObjectiveVisible(quest, obj)) continue;
 
                 string text = GetText(obj.descriptionKey);
+                if (string.IsNullOrEmpty(text)) continue;   // เป้าหมายที่ยังไม่ได้ใส่ข้อความ — ไม่โชว์แถวว่าง
                 if (questService.TryGetObjectiveProgress(quest, obj, out int current, out int target) && target > 1)
                 {
                     text += $" ({current}/{target})";

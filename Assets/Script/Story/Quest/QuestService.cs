@@ -100,6 +100,11 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable, ISaveRestor
         if (documents != null) documents.OnChanged += HandleWorldChanged;
         if (subscribedInventory != null) subscribedInventory.OnInventoryChanged += HandleWorldChanged;
 
+        // [2026-10-08] เป้าหมายที่มีเงื่อนไข "อยู่โลกไหน" ต้องคิดใหม่ตอนสลับโลกด้วย
+        // (เคยพัง: ตัวนับครบตอนเงื่อนไขยังไม่ผ่าน → สลับโลกแล้วไม่มีใครสั่งคิดใหม่ เป้าหมายค้างตลอดไป)
+        subscribedWorld = ServiceLocator.GetOptional<IWorldModeService>();
+        if (subscribedWorld != null) subscribedWorld.OnModeChanged += HandleWorldModeChanged;
+
         if (flags == null)
         {
             Debug.LogWarning("[QuestService] ไม่พบ IStoryFlags (StoryFlagService) — เป้าหมายแบบธง/ตัวนับจะไม่มีวันสำเร็จ");
@@ -117,8 +122,13 @@ public class QuestService : MonoBehaviour, IQuestService, ISaveable, ISaveRestor
         if (keyItems != null) keyItems.OnChanged -= HandleWorldChanged;
         if (documents != null) documents.OnChanged -= HandleWorldChanged;
         if (subscribedInventory != null) subscribedInventory.OnInventoryChanged -= HandleWorldChanged;
+        if (subscribedWorld != null) subscribedWorld.OnModeChanged -= HandleWorldModeChanged;
         ServiceLocator.Unregister<IQuestService>();
     }
+
+    private IWorldModeService subscribedWorld;
+
+    private void HandleWorldModeChanged(WorldMode from, WorldMode to) => HandleWorldChanged();
 
     private void HandleWorldChanged()
     {

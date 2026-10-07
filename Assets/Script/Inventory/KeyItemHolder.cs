@@ -13,7 +13,7 @@ public class KeyItemHolder : MonoBehaviour, IKeyItemHolder, ISaveable
     [Header("Debug (ดูเฉยๆ ตอนเล่น)")]
     [SerializeField] private List<KeyItemData> keys = new List<KeyItemData>();
 
-    [Header("Catalog สำรองสำหรับโหลดเซฟ (เว้นว่างได้ ระบบจะค้นหาจาก Resources ด้วย)")]
+    [Header("Catalog สำรองสำหรับโหลดเซฟ (เว้นว่างได้ — ปกติหาจาก ItemCatalog ใน Resources)")]
     [SerializeField] private List<KeyItemData> keyCatalog = new List<KeyItemData>();
 
     public event Action OnChanged;
@@ -22,7 +22,8 @@ public class KeyItemHolder : MonoBehaviour, IKeyItemHolder, ISaveable
     [System.Serializable]
     private struct SaveData
     {
-        public List<string> savedDoorIds;
+        public List<string> savedItemIds;   // 2026-10-07: จำด้วยรหัสไอเทม — ของสำคัญที่ไม่ใช่กุญแจ (เช่น รูปวาด) ไม่มีรหัสประตู
+        public List<string> savedDoorIds;   // เซฟรุ่นเก่า (ก่อน 2026-10-07) — อ่านอย่างเดียว
     }
 
     private void Awake()
@@ -81,13 +82,10 @@ public class KeyItemHolder : MonoBehaviour, IKeyItemHolder, ISaveable
 
     public string CaptureState()
     {
-        SaveData data = new SaveData { savedDoorIds = new List<string>() };
+        SaveData data = new SaveData { savedItemIds = new List<string>() };
         foreach (KeyItemData k in keys)
         {
-            if (k != null && !string.IsNullOrEmpty(k.targetDoorID))
-            {
-                data.savedDoorIds.Add(k.targetDoorID);
-            }
+            if (k != null) data.savedItemIds.Add(k.ItemId);
         }
         return JsonUtility.ToJson(data);
     }
@@ -99,61 +97,66 @@ public class KeyItemHolder : MonoBehaviour, IKeyItemHolder, ISaveable
         SaveData data = JsonUtility.FromJson<SaveData>(stateJson);
         keys.Clear();
 
-        if (data.savedDoorIds == null || data.savedDoorIds.Count == 0)
+        if (data.savedItemIds != null && data.savedItemIds.Count > 0)
         {
-            OnChanged?.Invoke();
-            return;
+            ItemCatalog catalog = ItemCatalog.LoadDefault();
+            foreach (string id in data.savedItemIds)
+            {
+                KeyItemData key = FindById(id, catalog);
+                if (key != null) keys.Add(key);
+                else Debug.LogWarning($"[KeyItemHolder] โหลดเซฟแล้วหาของสำคัญรหัส \"{id}\" ไม่เจอ — คลิกขวา ItemCatalog (Resources) → เติมไอเทมทั้งโปรเจกต์อัตโนมัติ");
+            }
         }
-
-        // ค้นหา KeyItemData ที่ตรงกับ doorId จาก Catalog หรือ Resources
-        // โหลดจาก Resources แบบขี้เกียจ — ถ้า Catalog ครบก็ไม่ต้องแตะดิสก์เลย
-        KeyItemData[] resourceKeys = null;
-
-        foreach (string doorId in data.savedDoorIds)
+        else if (data.savedDoorIds != null)
         {
-            if (string.IsNullOrEmpty(doorId)) continue;
-
-            KeyItemData matchedKey = null;
-
-            // 1. ค้นหาใน Catalog ที่ระบุใน Inspector
-            if (keyCatalog != null)
-            {
-                matchedKey = keyCatalog.Find(k => k != null && k.targetDoorID == doorId);
-            }
-
-            // 2. ค้นหาใน Resources
-            if (matchedKey == null)
-            {
-                if (resourceKeys == null) resourceKeys = Resources.LoadAll<KeyItemData>("");
-
-                for (int i = 0; i < resourceKeys.Length; i++)
-                {
-                    if (resourceKeys[i] != null && resourceKeys[i].targetDoorID == doorId)
-                    {
-                        matchedKey = resourceKeys[i];
-                        break;
-                    }
-                }
-            }
-
-            // 3. ถ้าหา asset ไม่เจอ ให้สร้าง instance ชั่วคราวเพื่อให้ logic Has/Consume ยังทำงานได้
-            //    แต่กุญแจตัวนี้จะ "ไม่มีรูป ไม่มีคำอธิบาย" ต้องเตือนไว้ ไม่งั้นตามหาสาเหตุไม่เจอ
-            if (matchedKey == null)
-            {
-                Debug.LogWarning(
-                    $"[KeyItemHolder] โหลดเซฟแล้วหา asset กุญแจของประตู \"{doorId}\" ไม่เจอ " +
-                    $"— สร้างตัวชั่วคราวแทน (เปิดประตูได้ แต่ไม่มีรูปในสมุด)\n" +
-                    $"แก้โดยลาก asset กุญแจใส่ช่อง Key Catalog ที่ก้อน [JOURNAL] หรือย้าย asset ไปโฟลเดอร์ Resources");
-
-                matchedKey = ScriptableObject.CreateInstance<KeyItemData>();
-                matchedKey.targetDoorID = doorId;
-                matchedKey.itemName = doorId;
-            }
-
-            keys.Add(matchedKey);
+            foreach (string doorId in data.savedDoorIds) RestoreLegacyDoorKey(doorId);   // เซฟรุ่นเก่า
         }
 
         OnChanged?.Invoke();
+    }
+
+    private KeyItemData FindById(string id, ItemCatalog catalog)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        if (keyCatalog != null)
+        {
+            KeyItemData k = keyCatalog.Find(x => x != null && x.ItemId == id);
+            if (k != null) return k;
+        }
+        return catalog != null ? catalog.Find(id) as KeyItemData : null;
+    }
+
+    private KeyItemData[] resourceKeys;   // เซฟรุ่นเก่าเท่านั้น
+
+    /// <summary>เซฟรุ่นเก่าจำด้วยรหัสประตู — หาจาก Key Catalog / Resources · ไม่เจอ = สร้างตัวชั่วคราว (เปิดประตูได้ แต่ไม่มีรูป)</summary>
+    private void RestoreLegacyDoorKey(string doorId)
+    {
+        if (string.IsNullOrEmpty(doorId)) return;
+
+        KeyItemData matchedKey = keyCatalog != null ? keyCatalog.Find(k => k != null && k.targetDoorID == doorId) : null;
+
+        if (matchedKey == null)
+        {
+            if (resourceKeys == null) resourceKeys = Resources.LoadAll<KeyItemData>("");
+            foreach (KeyItemData k in resourceKeys)
+            {
+                if (k != null && k.targetDoorID == doorId) { matchedKey = k; break; }
+            }
+        }
+
+        if (matchedKey == null)
+        {
+            Debug.LogWarning(
+                $"[KeyItemHolder] โหลดเซฟแล้วหา asset กุญแจของประตู \"{doorId}\" ไม่เจอ " +
+                $"— สร้างตัวชั่วคราวแทน (เปิดประตูได้ แต่ไม่มีรูปในสมุด)\n" +
+                $"แก้โดยลาก asset กุญแจใส่ช่อง Key Catalog ที่ก้อน [JOURNAL] หรือย้าย asset ไปโฟลเดอร์ Resources");
+
+            matchedKey = ScriptableObject.CreateInstance<KeyItemData>();
+            matchedKey.targetDoorID = doorId;
+            matchedKey.itemName = doorId;
+        }
+
+        keys.Add(matchedKey);
     }
 
     #endregion

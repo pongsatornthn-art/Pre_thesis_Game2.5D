@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc8cc4dd6d9b0064d991c65208c13a23, type: 3}
+  m_Name: Key_Painting
+  m_EditorClassIdentifier: 
+  itemId: a7a0167304c44ff58f714c657360b40a
+  itemName: Painting Key
+  icon: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
+  description: 
+  descriptionImage: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
+  isStackable: 0
+  maxStack: 1
+  itemType: 6
+  price: 0
+  equippedSprite: {fileID: 0}
+  itemNameKey: KEYITEM_PAINTING_KEY
+  descriptionKey: KEYITEM_PAINTING_KEY_DESC
+  targetDoorID: 
+  consumeOnUse: 1

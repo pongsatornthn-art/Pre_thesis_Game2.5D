@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Quest_02_FindPieces
   m_EditorClassIdentifier: 
   questId: quest_02_find_pieces
-  titleKey: "\u0E15\u0E32\u0E21\u0E2B\u0E32\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E"
-  descriptionKey: "\u0E2B\u0E32\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E23\u0E39\u0E1B\u0E27\u0E32\u0E14\u0E17\u0E35\u0E48\u0E0B\u0E48\u0E2D\u0E19\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E2B\u0E49\u0E2D\u0E07\u0E04\u0E23\u0E31\u0E27"
+  titleKey: QUEST_02_PIECES_TITLE
+  descriptionKey: QUEST_02_PIECES_DESC
   autoStart: 0
   availableWhen:
     rid: -2
@@ -30,14 +30,10 @@ MonoBehaviour:
       type: {class: CounterObjective, ns: , asm: Assembly-CSharp}
       data:
         objectiveId: 46ecb6832c654fa7a1f3fda874744ee3
-        descriptionKey: "\u0E23\u0E27\u0E1A\u0E23\u0E27\u0E21\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u0E17\u0E35\u0E48\u0E02\u0E32\u0E14\u0E2B\u0E32\u0E22"
+        descriptionKey: QUEST_02_PIECES_OBJ1
         requires:
-          rid: 1963572897867366483
+          rid: -2
         hiddenUntilAvailable: 0
         timeLimitSeconds: 0
         counter: {fileID: 11400000, guid: 5879380800fb2234eb9a689095f2b6ea, type: 2}
-        target: 1
-    - rid: 1963572897867366483
-      type: {class: WorldModeCondition, ns: , asm: Assembly-CSharp}
-      data:
-        mustBe: 3
+        target: 5

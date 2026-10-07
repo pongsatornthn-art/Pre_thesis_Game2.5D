@@ -23,7 +23,6 @@ GameObject:
   - component: {fileID: 6611241148026925585}
   - component: {fileID: 1583834871185479404}
   - component: {fileID: 6503163071536121527}
-  - component: {fileID: 1545782407652019134}
   m_Layer: 0
   m_Name: '[STORY]'
   m_TagString: Untagged
@@ -209,7 +208,6 @@ MonoBehaviour:
   notifyObjectiveCompleted: 1
   notifyQuestCompleted: 1
   notifySave: 1
-  notifyMemoryUnlocked: 1
   holdSeconds: 2.5
   questStartedSound: {fileID: 0}
   progressSound: {fileID: 0}
@@ -220,7 +218,6 @@ MonoBehaviour:
   objectiveCompletedKey: QUEST_TOAST_OBJECTIVE_DONE
   questCompletedKey: QUEST_TOAST_COMPLETED
   gameSavedKey: SAVE_DONE
-  memoryUnlockedKey: MEMORY_TOAST_NEW
 --- !u!114 &6611241148026925585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -259,16 +256,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b731631bc5a778d4db7f795d30ee5553, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1545782407652019134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5538744636938355374}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ae05a71a7cd9f34d8ab5d0a38989348, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  catalog: {fileID: 11400000, guid: 1816d340f90533a478fe97007728576b, type: 2}

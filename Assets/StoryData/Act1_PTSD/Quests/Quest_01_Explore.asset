@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: Quest_01_Explore
   m_EditorClassIdentifier: 
   questId: Quest01_Explore
-  titleKey: "\u0E2A\u0E33\u0E23\u0E27\u0E08\u0E42\u0E16\u0E07\u0E17\u0E32\u0E07\u0E40\u0E14\u0E34\u0E19\u0E0A\u0E31\u0E49\u0E19
-    1"
+  titleKey: QUEST_01_EXPLORE_TITLE
   descriptionKey: 
   autoStart: 1
   availableWhen:

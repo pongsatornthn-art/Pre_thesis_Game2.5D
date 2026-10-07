@@ -16,10 +16,10 @@ MonoBehaviour:
   actions:
   - rid: 2958633122009186383
   - rid: 2958633122009186384
-  - rid: 2958633122009186385
   - rid: 2958633122009186386
   - rid: 2958633122009186387
   - rid: 2958633122009186388
+  - rid: 2958633122009186390
   - rid: 2958633122009186389
   references:
     version: 2
@@ -35,10 +35,6 @@ MonoBehaviour:
         minigameId: picture_assembly
         flagOnSuccess: {fileID: 11400000, guid: d110443d68ff43e42a08ecae1848d8b7, type: 2}
         exitCloseUpOnAbort: 1
-    - rid: 2958633122009186385
-      type: {class: UnlockMemoryAction, ns: , asm: Assembly-CSharp}
-      data:
-        entry: {fileID: 11400000, guid: 48ce356fea97e1448b50612da68a33a4, type: 2}
     - rid: 2958633122009186386
       type: {class: PlayCutsceneAction, ns: , asm: Assembly-CSharp}
       data:
@@ -53,6 +49,11 @@ MonoBehaviour:
       type: {class: SetFlagAction, ns: , asm: Assembly-CSharp}
       data:
         flag: {fileID: 11400000, guid: e1167d2f105d8024a9a694356f4015f3, type: 2}
+    - rid: 2958633122009186390
+      type: {class: WaitForFlagAction, ns: , asm: Assembly-CSharp}
+      data:
+        flag: {fileID: 11400000, guid: cc92e073bda8496fa9856acd7baab69e, type: 2}
+        timeoutSeconds: 0
     - rid: 2958633122009186389
       type: {class: ExitCloseUpAction, ns: , asm: Assembly-CSharp}
       data:

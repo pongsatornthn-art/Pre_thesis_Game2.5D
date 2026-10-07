@@ -93,7 +93,13 @@ public class JournalController : MonoBehaviour
         // 3. ดักปุ่ม Esc เพื่อปิดสมุด
         //    PauseManager.Update() เช็ค JournalController.IsAnyOpen แล้วปล่อยผ่านให้เรา
         //    จึงไม่ต้องตามเช็ด ResumeGame() ทีหลังอีก
-        if (IsOpen && Input.GetKeyDown(closeKey)) Close();
+        if (IsOpen && Input.GetKeyDown(closeKey))
+        {
+            // หน้าที่เปิดอยู่ขอจัดการเองก่อน (เช่น หน้าเอกสาร: Esc ปิดแค่หน้าอ่าน)
+            JournalPage current = FindPage(CurrentPageId);
+            if (current != null && current.HandleBack()) return;
+            Close();
+        }
     }
 
     /// <summary>เปิดสมุดไปที่หน้าที่ระบุ</summary>
@@ -116,12 +122,13 @@ public class JournalController : MonoBehaviour
         else if (bookRoot != null) bookRoot.SetActive(true);
 
         // สลับหน้าข้างใน
+        // ปิดหน้าอื่นก่อน แล้วค่อยเปิดหน้าเป้าหมาย — หน้าที่ซ่อนของบนพื้นหลังสมุด (รูปตัวละคร/Hotbar/พื้นหลัง)
+        // ต้องคืนของก่อน หน้าใหม่ถึงจะซ่อนของตัวเองได้ถูก (ถ้าสลับลำดับ หน้าเก่าจะคืนของทับหน้าใหม่)
         foreach (JournalPage page in pages)
         {
-            if (page == null) continue;
-            if (page == target) page.Show();
-            else page.Hide();
+            if (page != null && page != target) page.Hide();
         }
+        target.Show();
 
         CurrentPageId = target.PageId;
 

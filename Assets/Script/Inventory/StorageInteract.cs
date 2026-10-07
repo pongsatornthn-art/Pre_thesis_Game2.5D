@@ -16,7 +16,7 @@ public class StorageInteract : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && InteractInput.Pressed) // [แก้โดย Claude 2026-10-04] E → ปุ่มโต้ตอบกลาง (F)
+        if (isPlayerNear && InteractInput.PickupPressed) // [แก้โดย Claude 2026-10-07] กลับเป็น E ตามเดิม (ปุ่มเก็บของ/เปิดปิด)
         {
             if (boxUI.uiPanel.activeSelf)
             {

@@ -39,17 +39,18 @@ QUEST_TOAST_OBJECTIVE_DONE;เสร็จแล้ว: {0};Done: {0}
 QUEST_TOAST_COMPLETED;บันทึกสำเร็จ: {0};Entry completed: {0}
 SAVE_DONE;บันทึกเกมแล้ว;Game saved
 SAVE_BLOCKED_PTSD;บันทึกเกมไม่ได้ในตอนนี้...;You cannot save right now...
-JOURNAL_TAB_MEMORY;ความทรงจำ;Memories
-MEMORY_LOCKED;???;???
-MEMORY_TOAST_NEW;ความทรงจำใหม่: {0};New memory: {0}
-MEMORY_EMPTY;ยังไม่มีความทรงจำ;No memories yet
 MINIGAME_ASSEMBLY_HINT;ลากเศษรูปจากช่องขวาไปวางบนกระดาน · R หมุน · คลิกขวาเอาคืน;Drag pieces from the right onto the board · R rotate · Right-click to take back
 COMIC_HINT_NEXT;Space / F ไปหน้าถัดไป · Tab ข้าม;Space / F next page · Tab skip
-MEMORY_PAINTING_PIECE_2;เศษรูปวาด (ชิ้นที่ 2);Painting Scrap (2)
-MEMORY_PAINTING_PIECE_3;เศษรูปวาด (ชิ้นที่ 3);Painting Scrap (3)
-MEMORY_PAINTING_PIECE_4;เศษรูปวาด (ชิ้นที่ 4);Painting Scrap (4)
-MEMORY_PAINTING_PIECE_5;เศษรูปวาด (ชิ้นที่ 5);Painting Scrap (5)
-MEMORY_PAINTING_PIECE_6;เศษรูปวาด (ชิ้นที่ 6);Painting Scrap (6)
-MEMORY_PAINTING_PIECE_DESC;เศษกระดาษที่ถูกฉีกออกจากรูปวาดบนขาตั้ง (ข้อความทดสอบ);A scrap torn from the painting on the easel (placeholder)
-MEMORY_PAINTING_FULL;รูปวาดที่ถูกประกอบคืน;The Restored Painting
-MEMORY_PAINTING_FULL_DESC;รูปวาดที่ประกอบจากเศษกระดาษจนสมบูรณ์ (ข้อความทดสอบ);The painting, pieced back together (placeholder)
+KEYITEM_PAINTING_FULL;รูปวาดที่ถูกประกอบคืน;The Restored Painting
+KEYITEM_PAINTING_FULL_DESC;รูปวาดที่ประกอบจากเศษกระดาษจนสมบูรณ์ (ข้อความทดสอบ);The painting, pieced back together (placeholder)
+KEYITEM_PAINTING_KEY;กุญแจหลังรูปวาด;Key Behind the Painting
+KEYITEM_PAINTING_KEY_DESC;กุญแจที่ซ่อนอยู่หลังรูปวาดบนขาตั้ง (ข้อความทดสอบ);A key hidden behind the painting on the easel (placeholder)
+DOC_KEY_NOTE_TITLE;โน้ตที่ถูกทิ้งไว้;A Note Left Behind
+DOC_KEY_NOTE_BODY;ผมได้กุญแจห้องเอกสารอันใหม่ไว้ให้คุณหญิงแล้วนะครับ ผมจะเก็บไว้ในตู้ห้องนอนคนใช้ครับ ส่วนกุญแจล็อกตู้ผมซ่อนไว้หลังกรอบรูปนะครับ;Madam, I have the new key to the document room ready for you. I will keep it in the cabinet in the servants' bedroom. As for the key to the cabinet lock, I have hidden it behind the picture frame.
+QUEST_01_EXPLORE_TITLE;สำรวจโถงทางเดินชั้น 1;Explore the 1st Floor Hallway
+QUEST_02_PIECES_TITLE;ตามหาชิ้นส่วนรูปภาพ;Find the Picture Pieces
+QUEST_02_PIECES_DESC;หาชิ้นส่วนรูปวาดที่ซ่อนอยู่ในห้องครัว;Find the painting pieces hidden in the kitchen
+QUEST_02_PIECES_OBJ1;รวบรวมชิ้นส่วนรูปภาพที่ขาดหาย;Collect the missing picture pieces
+QUEST_03_DELIVER_TITLE;นำชิ้นส่วนไปส่ง;Deliver the Pieces
+QUEST_03_DELIVER_DESC;นำชิ้นส่วนทั้งหมดไปประกอบคืนที่จุดส่งเควส;Bring all the pieces back to be reassembled
+QUEST_03_DELIVER_OBJ1;นำเศษรูปไปประกอบคืนที่ขาตั้งวาดรูป;Reassemble the scraps at the easel

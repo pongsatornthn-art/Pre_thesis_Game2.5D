@@ -706,14 +706,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b58ada69ef7fb04c8df402c0aeb1568, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  thaiDefaultFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  thaiHeaderFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  thaiButtonFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  thaiDialogFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  engDefaultFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  engHeaderFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  engButtonFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
-  engDialogFont: {fileID: 11400000, guid: e25e2c8e1cde6a946a7480f92519f228, type: 2}
+  thaiDefaultFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  thaiHeaderFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  thaiButtonFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  thaiDialogFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  engDefaultFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  engHeaderFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  engButtonFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
+  engDialogFont: {fileID: 11400000, guid: a5f0a918ef1180a46ab64982d27a7cd8, type: 2}
 --- !u!114 &1862115123387742087
 MonoBehaviour:
   m_ObjectHideFlags: 0

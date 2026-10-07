@@ -31,6 +31,22 @@ public abstract class JournalPage : MonoBehaviour
     [Tooltip("ภาพแท็บตอนถูกเลือกอยู่ (เว้นว่างได้)")]
     [SerializeField] private GameObject tabActiveHighlight;
 
+    [Tooltip("ของบนพื้นหลังสมุดที่ใช้ร่วมกันทุกหน้า แต่หน้านี้ไม่อยากให้โชว์ (เช่น หน้าของสำคัญซ่อนรูป+ชื่อตัวละคร) — ปิดหน้านี้แล้วโผล่กลับเอง")]
+    [SerializeField] private GameObject[] hideWhileOpen = new GameObject[0];
+
+    [Tooltip("ของที่มีสคริปต์ทำงานอยู่ (เช่น แถบ Hotbar) — ซ่อนแบบโปร่งใสด้วย CanvasGroup ไม่ปิด object สคริปต์ของมันจึงไม่หลุดค่า")]
+    [SerializeField] private CanvasGroup[] fadeWhileOpen = new CanvasGroup[0];
+
+    private readonly System.Collections.Generic.Dictionary<CanvasGroup, (float alpha, bool raycasts)> faded = new();
+
+    [Tooltip("รูปพื้นหลังสมุด (ใช้ร่วมกันทุกหน้า) — ลาก Image ของ BookBG มาใส่ ถ้าหน้านี้อยากใช้รูปพื้นหลังอีกแบบ")]
+    [SerializeField] private Image sharedBackground;
+    [Tooltip("รูปพื้นหลังตอนเปิดหน้านี้ (เว้นว่าง = ใช้รูปเดิม) — ปิดหน้านี้แล้วคืนรูปเดิมเอง")]
+    [SerializeField] private Sprite backgroundWhileOpen;
+
+    private Sprite originalBackground;
+    private bool backgroundSwapped;
+
     public string PageId => pageId;
     public KeyCode ShortcutKey => shortcutKey;
     public Button TabButton => tabButton;
@@ -42,6 +58,7 @@ public abstract class JournalPage : MonoBehaviour
         else if (content != null) content.SetActive(true);
 
         if (tabActiveHighlight != null) tabActiveHighlight.SetActive(true);
+        SetSharedHidden(true);
         Refresh();
     }
 
@@ -52,6 +69,7 @@ public abstract class JournalPage : MonoBehaviour
         else if (content != null) content.SetActive(false);
 
         if (tabActiveHighlight != null) tabActiveHighlight.SetActive(false);
+        SetSharedHidden(false);
     }
 
     /// <summary>ปิดหน้านี้ทันที (ใช้ตอนเริ่มเกม)</summary>
@@ -61,7 +79,49 @@ public abstract class JournalPage : MonoBehaviour
         else if (content != null) content.SetActive(false);
 
         if (tabActiveHighlight != null) tabActiveHighlight.SetActive(false);
+        SetSharedHidden(false);
     }
+
+    private void SetSharedHidden(bool hidden)
+    {
+        if (sharedBackground != null && backgroundWhileOpen != null)
+        {
+            if (hidden && !backgroundSwapped)
+            {
+                originalBackground = sharedBackground.sprite;
+                sharedBackground.sprite = backgroundWhileOpen;
+                backgroundSwapped = true;
+            }
+            else if (!hidden && backgroundSwapped)
+            {
+                sharedBackground.sprite = originalBackground;
+                backgroundSwapped = false;
+            }
+        }
+
+        foreach (GameObject go in hideWhileOpen) if (go != null) go.SetActive(!hidden);
+
+        foreach (CanvasGroup cg in fadeWhileOpen)
+        {
+            if (cg == null) continue;
+            if (hidden)
+            {
+                if (faded.ContainsKey(cg)) continue;   // ซ่อนอยู่แล้ว อย่าจำค่าทับ
+                faded[cg] = (cg.alpha, cg.blocksRaycasts);
+                cg.alpha = 0f;
+                cg.blocksRaycasts = false;
+            }
+            else if (faded.TryGetValue(cg, out var saved))
+            {
+                cg.alpha = saved.alpha;
+                cg.blocksRaycasts = saved.raycasts;
+                faded.Remove(cg);
+            }
+        }
+    }
+
+    /// <summary>กด Esc ตอนเปิดหน้านี้ — คืน true = หน้านี้จัดการเอง (เช่น ปิดหน้าอ่านเอกสาร) สมุดจะไม่ปิด</summary>
+    public virtual bool HandleBack() => false;
 
     /// <summary>วาดข้อมูลใหม่ (เรียกตอนเปิดหน้า และตอนข้อมูลเปลี่ยน)</summary>
     public abstract void Refresh();

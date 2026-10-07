@@ -6,7 +6,7 @@ using UnityEngine;
 /// Action สำหรับหน่วงเวลารอจนกว่า Story Flag ที่กำหนดจะถูกตั้งค่าขึ้นมา
 /// ใช้สำหรับเหตุการณ์คัตซีนที่ต้องการรอให้ผู้เล่นทำสิ่งใดสิ่งหนึ่งในฉากก่อนดำเนินเหตุการณ์ต่อ
 /// </summary>
-[Serializable]
+[Serializable, PickerName("รอ/รอจนธงขึ้น")]
 public class WaitForFlagAction : IStoryAction
 {
     [Tooltip("ธงที่ต้องรอให้ถูกตั้งค่า (Has = true)")]

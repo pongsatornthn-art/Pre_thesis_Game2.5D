@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Quest_03_DeliverPieces
   m_EditorClassIdentifier: 
   questId: quest_03_deliver_pieces
-  titleKey: "\u0E19\u0E33\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E44\u0E1B\u0E2A\u0E48\u0E07"
-  descriptionKey: "\u0E19\u0E33\u0E0A\u0E34\u0E49\u0E19\u0E2A\u0E48\u0E27\u0E19\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E44\u0E1B\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E04\u0E37\u0E19\u0E17\u0E35\u0E48\u0E08\u0E38\u0E14\u0E2A\u0E48\u0E07\u0E40\u0E04\u0E27\u0E2A"
-  autoStart: 0
+  titleKey: QUEST_03_DELIVER_TITLE
+  descriptionKey: QUEST_03_DELIVER_DESC
+  autoStart: 1
   availableWhen:
-    rid: -2
+    rid: 2958633127395721289
   objectives:
   - rid: 1963572877566410842
   onCompleted: {fileID: 0}
@@ -30,9 +30,13 @@ MonoBehaviour:
       type: {class: FlagObjective, ns: , asm: Assembly-CSharp}
       data:
         objectiveId: 6d8d613dc6754de991ece8819e794ae4
-        descriptionKey: 
+        descriptionKey: QUEST_03_DELIVER_OBJ1
         requires:
           rid: -2
         hiddenUntilAvailable: 0
         timeLimitSeconds: 0
-        flag: {fileID: 11400000, guid: d7bcc346c3466ff468f518654e60a5e4, type: 2}
+        flag: {fileID: 11400000, guid: d110443d68ff43e42a08ecae1848d8b7, type: 2}
+    - rid: 2958633127395721289
+      type: {class: QuestCompletedCondition, ns: , asm: Assembly-CSharp}
+      data:
+        quest: {fileID: 11400000, guid: 9614941a0814aa1479fb58fba3ea85e6, type: 2}

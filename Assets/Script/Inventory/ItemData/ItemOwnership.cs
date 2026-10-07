@@ -4,7 +4,7 @@ using UnityEngine;
 /// ตอบคำถามเดียว: "ผู้เล่นมีไอเทมนี้อยู่ไหม" — ไม่ว่าไอเทมจะไปอยู่คลังไหน
 ///   KeyItemData  → คลังของสำคัญ (หน้า K)
 ///   DocumentData → สมุดเอกสาร (หน้า N)
-///   MemoryFragmentData → คลังความทรงจำ (หน้า L) — "มี" = ช่องของมันปลดแล้ว
+///   MemoryFragmentData → ไม่โชว์ที่ไหน จำไว้ในความจำกลาง — "มี" = เคยเก็บแล้ว
 ///   ItemData อื่น → กระเป๋า (หน้า I / hotbar)
 /// ตรงกับที่ ItemData.Collect() ส่งของไปแต่ละคลัง — เพิ่มคลังใหม่ แก้ที่นี่ที่เดียว
 /// ใช้โดย: CollectItemsObjective · HasItemsCondition · DeliverPoint
@@ -28,8 +28,7 @@ public static class ItemOwnership
                 return log != null && log.HasCollected(doc.documentId) ? 1 : 0;
 
             case MemoryFragmentData fragment:
-                IMemoryArchive archive = ServiceLocator.GetOptional<IMemoryArchive>();
-                return archive != null && archive.IsUnlocked(fragment.entry) ? 1 : 0;
+                return fragment.IsCollected() ? 1 : 0;
 
             default:
                 return Inventory.Instance != null ? Inventory.Instance.GetItemCount(item) : 0;
@@ -53,7 +52,7 @@ public static class ItemOwnership
                 return;
             case DocumentData _:
             case MemoryFragmentData _:
-                return;   // เอกสาร/ความทรงจำเก็บถาวร ไม่หัก (เจ้าของตกลง 2026-10-07: ปลดแล้วปลดถาวร)
+                return;   // เอกสาร/เศษที่เก็บแล้ว เก็บถาวร ไม่หัก
             default:
                 if (Inventory.Instance != null) Inventory.Instance.RemoveItem(item, amount);
                 return;
