@@ -15,6 +15,7 @@ MonoBehaviour:
   lockPlayer: 0
   actions:
   - rid: 1963572881657167957
+  - rid: 1963572897867366475
   references:
     version: 2
     RefIds:
@@ -22,3 +23,8 @@ MonoBehaviour:
       type: {class: GiveQuestAction, ns: , asm: Assembly-CSharp}
       data:
         quest: {fileID: 11400000, guid: 9614941a0814aa1479fb58fba3ea85e6, type: 2}
+    - rid: 1963572897867366475
+      type: {class: EnterPtsdAction, ns: , asm: Assembly-CSharp}
+      data:
+        mode: 2
+        waitSeconds: 1.5
