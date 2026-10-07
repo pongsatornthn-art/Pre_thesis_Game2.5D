@@ -28,6 +28,17 @@ public abstract class StoryInteractableBase : MonoBehaviour
         if (col != null) col.isTrigger = true;
     }
 
+    protected virtual void Awake()
+    {
+        // กันตั้งผิด: ลาก object ตัวเอง (หรือ object แม่) มาใส่ช่องป้าย → ซ่อนป้าย = ซ่อนตัวเองหายไปถาวร
+        // (2026-10-06 เจอจริงที่ Key_Test)
+        if (interactPrompt != null && transform.IsChildOf(interactPrompt.transform))
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}' ช่อง Interact Prompt ชี้มาที่ตัวเอง — ต้องใส่ UI ป้าย 'กด F' แยกต่างหาก (หรือเว้นว่าง) · ปิดการใช้ป้ายให้ก่อน", this);
+            interactPrompt = null;
+        }
+    }
+
     protected virtual void OnDisable()
     {
         isPlayerNear = false;

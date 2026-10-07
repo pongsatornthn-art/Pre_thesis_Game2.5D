@@ -11,4 +11,7 @@ public class StoryCounterId : ScriptableObject
 {
     [Tooltip("รหัสถาวร ห้ามแก้หลังใช้งานแล้ว เพราะระบบเซฟอ้างอิงค่านี้")]
     public string counterId;
+
+    /// <summary>รหัสที่ระบบใช้จริง — ช่อง Counter Id ว่าง = ใช้ชื่อไฟล์แทน (เหตุผลเดียวกับ StoryFlagId.Id)</summary>
+    public string Id => string.IsNullOrEmpty(counterId) ? name : counterId;
 }

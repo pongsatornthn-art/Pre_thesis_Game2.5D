@@ -57,8 +57,8 @@ public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISav
     /// <summary>ตรวจสอบว่าธงนี้ถูกตั้งค่าแล้วหรือไม่</summary>
     public bool Has(StoryFlagId flag)
     {
-        if (flag == null || string.IsNullOrEmpty(flag.flagId)) return false;
-        return activeFlags.Contains(flag.flagId);
+        if (flag == null || string.IsNullOrEmpty(flag.Id)) return false;
+        return activeFlags.Contains(flag.Id);
     }
 
     /// <summary>
@@ -67,12 +67,12 @@ public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISav
     /// </summary>
     public void Set(StoryFlagId flag)
     {
-        if (flag == null || string.IsNullOrEmpty(flag.flagId)) return;
+        if (flag == null || string.IsNullOrEmpty(flag.Id)) return;
 
-        if (activeFlags.Add(flag.flagId))
+        if (activeFlags.Add(flag.Id))
         {
             UpdateDebugLists();
-            Debug.Log($"<color=cyan>🚩 [WorldState] ตั้งธง: {flag.flagId}</color>");
+            Debug.Log($"<color=cyan>🚩 [WorldState] ตั้งธง: {flag.Id}</color>");
             OnChanged?.Invoke();
         }
     }
@@ -80,12 +80,12 @@ public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISav
     /// <summary>ล้างสถานะธง</summary>
     public void Clear(StoryFlagId flag)
     {
-        if (flag == null || string.IsNullOrEmpty(flag.flagId)) return;
+        if (flag == null || string.IsNullOrEmpty(flag.Id)) return;
 
-        if (activeFlags.Remove(flag.flagId))
+        if (activeFlags.Remove(flag.Id))
         {
             UpdateDebugLists();
-            Debug.Log($"<color=yellow>🏳️ [WorldState] ล้างธง: {flag.flagId}</color>");
+            Debug.Log($"<color=yellow>🏳️ [WorldState] ล้างธง: {flag.Id}</color>");
             OnChanged?.Invoke();
         }
     }
@@ -96,8 +96,8 @@ public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISav
 
     public int Get(StoryCounterId counter)
     {
-        if (counter == null || string.IsNullOrEmpty(counter.counterId)) return 0;
-        return counters.TryGetValue(counter.counterId, out int value) ? value : 0;
+        if (counter == null || string.IsNullOrEmpty(counter.Id)) return 0;
+        return counters.TryGetValue(counter.Id, out int value) ? value : 0;
     }
 
     public void Add(StoryCounterId counter, int amount = 1)
@@ -108,14 +108,14 @@ public class StoryFlagService : MonoBehaviour, IStoryFlags, IStoryCounters, ISav
 
     public void Set(StoryCounterId counter, int value)
     {
-        if (counter == null || string.IsNullOrEmpty(counter.counterId)) return;
+        if (counter == null || string.IsNullOrEmpty(counter.Id)) return;
 
         value = Mathf.Max(0, value);
         if (Get(counter) == value) return;
 
-        counters[counter.counterId] = value;
+        counters[counter.Id] = value;
         UpdateDebugLists();
-        Debug.Log($"<color=cyan>🔢 [WorldState] ตัวนับ {counter.counterId} = {value}</color>");
+        Debug.Log($"<color=cyan>🔢 [WorldState] ตัวนับ {counter.Id} = {value}</color>");
         OnChanged?.Invoke();
     }
 
