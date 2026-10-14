@@ -24,5 +24,5 @@ MonoBehaviour:
   equippedSprite: {fileID: 0}
   itemNameKey: KEYITEM_PAINTING_KEY
   descriptionKey: KEYITEM_PAINTING_KEY_DESC
-  targetDoorID: 
+  targetDoorID: Key_Q3
   consumeOnUse: 1
