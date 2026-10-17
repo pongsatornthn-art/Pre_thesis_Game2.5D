@@ -173,7 +173,10 @@ public class PlayerMovement : MonoBehaviour
         // (ไม่ว่าจะถือปืน ดาบ หรือมือเปล่า) ต่างกันแค่ "แบบไหน" หันตอนถือปืน (raw ลื่น) กับตอนไม่ถือ (snap 8 ทิศ)
         Vector3 aimDirection = Vector3.zero;
         Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
-        Plane groundPlane = new Plane(Vector3.up, new Vector3(0, transform.position.y, 0));
+        // ตัดระนาบที่ "ความสูงลำตัว" (AimAnchor) ไม่ใช่ที่เท้า — เมาส์ชี้ตัวมอนบนจอแล้วทิศฟันตรงตัวมันจริง
+        // (ถ้าตัดที่เท้า กล้องเอียง 45° ทำให้จุดเล็งเลยไปด้านหลังมอน ฟันพลาดทั้งที่บนจอดูตรงกัน)
+        float aimHeight = aimAnchor != null ? aimAnchor.position.y : transform.position.y;
+        Plane groundPlane = new Plane(Vector3.up, new Vector3(0, aimHeight, 0));
 
         if (groundPlane.Raycast(ray, out float rayDistance))
         {
