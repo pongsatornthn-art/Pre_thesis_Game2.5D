@@ -6,7 +6,11 @@ public class MeleeHitbox : MonoBehaviour
     [Header("Hitbox Properties")]
     [Tooltip("ความกว้างของพัด (Arc Angle)")]
     [Range(0, 360)] public float arcAngle = 70f;
+    [Tooltip("ระยะฟันไกลสุด (เมตร จากตัวผู้เล่นถึงขอบตัวศัตรู) — ตัวตัดสินจริง + ใช้วาดกรวยใน Scene")]
     public float hitRadius = 1.5f;
+
+    [Tooltip("ระยะประชิด (เมตร) — ศัตรูอยู่ใกล้กว่านี้ ฟันโดนเสมอไม่สนมุม (ตัวติดกันแล้วมุมเพี้ยนง่าย)")]
+    public float pointBlankRange = 0.8f;
 
     public Transform playerTransform; // ลากตัว Player ตัวแม่มาใส่ตรงนี้
 
@@ -43,15 +47,24 @@ public class MeleeHitbox : MonoBehaviour
         {
             if (hitEnemies.Contains(other)) return;
 
-            Vector3 directionToTarget = (other.transform.position - playerTransform.position).normalized;
-            directionToTarget.y = 0;
+            Vector3 toTarget = other.bounds.center - playerTransform.position;
+            toTarget.y = 0;
+            float distance = toTarget.magnitude;
+            Vector3 directionToTarget = distance > 0.001f ? toTarget / distance : transform.forward;
 
             // วัดมุมการฟันดาบ โดยอ้างอิงจากทิศทางที่ก้อนนี้หันหน้าอยู่ (ซึ่งจะหันตามเมาส์ตลอดเวลา)
             Vector3 currentFacingDirection = transform.forward;
             float angleToTarget = Vector3.Angle(currentFacingDirection, directionToTarget);
 
-            // ถ้าศัตรูอยู่ในองศาของพัด
-            if (angleToTarget <= arcAngle / 2f)
+            // นับ "ขอบตัว" ศัตรูด้วย ไม่ใช่แค่จุดกลาง — ส่วนไหนของตัวอยู่ในพัดก็โดน (ยิ่งใกล้ ยิ่งได้มุมเผื่อมาก)
+            float bodyRadius = Mathf.Max(other.bounds.extents.x, other.bounds.extents.z);
+            float bodyAngle = distance > 0.001f ? Mathf.Atan2(bodyRadius, distance) * Mathf.Rad2Deg : 180f;
+
+            // ไกลเกินระยะฟัน → ไม่โดน (ตัวชนทรงกลมของ hitbox ใหญ่กว่านี้ ใช้แค่ "จับ" ศัตรูมาเช็ค)
+            if (distance - bodyRadius > hitRadius) return;
+
+            // ถ้าศัตรูอยู่ในองศาของพัด หรือประชิดตัว
+            if (distance <= pointBlankRange || angleToTarget <= arcAngle / 2f + bodyAngle)
             {
                 damageable.TakeDamage(currentDamage, currentKnockback, currentIsHeavy);
                 hitEnemies.Add(other);

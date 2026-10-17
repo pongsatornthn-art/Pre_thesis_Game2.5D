@@ -10,6 +10,9 @@ Shader "Custom/SpriteLitShadow"
         [MainColor] _Color ("Tint", Color) = (1,1,1,1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _Wrap ("Wrap Lighting (0 = พื้น, 0.5 = ตัวละคร)", Range(0, 1)) = 0
+        [Header(Glow)]
+        _GlowThreshold ("Glow Threshold (ความสว่างในรูปเกินเท่านี้ = เรือง · 1 = ปิด)", Range(0, 1)) = 1
+        _GlowStrength ("Glow Strength (0 = ปิด)", Range(0, 2)) = 0
     }
 
     SubShader
@@ -28,6 +31,8 @@ Shader "Custom/SpriteLitShadow"
             half4 _Color;
             half _Cutoff;
             half _Wrap;
+            half _GlowThreshold;
+            half _GlowStrength;
         CBUFFER_END
 
         // สไปรท์/ไทล์ไม่มี normal ในโมเดล → ใช้ "ด้านหน้าของแผ่น" (แกน -Z ของ object) แทน
@@ -122,6 +127,12 @@ Shader "Custom/SpriteLitShadow"
 
                 half3 ambient = SampleSH(n);
                 half3 rgb = col.rgb * (lighting + ambient);
+
+                // เรืองแสง: พิกเซลที่สว่างในรูป (เช่น หน้าขาวของมอน) สว่างเองแม้อยู่ในที่มืด
+                half luma = dot(col.rgb, half3(0.299, 0.587, 0.114));
+                half glowMask = smoothstep(_GlowThreshold, _GlowThreshold + 0.15, luma);
+                rgb += col.rgb * glowMask * _GlowStrength;
+
                 rgb = MixFog(rgb, i.fogFactor);
                 return half4(rgb, 1);
             }
