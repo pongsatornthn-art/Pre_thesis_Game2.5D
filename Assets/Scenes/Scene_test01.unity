@@ -2272,6 +2272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!212 &52201096
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -7384,8 +7385,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 148809901}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: -4.1879997, y: 13.89, z: -14.748}
+  m_LocalRotation: {x: 0.42261827, y: 0, z: 0, w: 0.9063079}
+  m_LocalPosition: {x: -4.1879997, y: 21.89, z: -18.748}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15906,6 +15907,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 0.3
 --- !u!212 &366357900
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -15914,7 +15916,7 @@ SpriteRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 366357897}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 2
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -16062,6 +16064,7 @@ MonoBehaviour:
   - {fileID: 699481309}
   - {fileID: 1290871859}
   - {fileID: 970433323}
+  - {fileID: 699481309}
   fadeAlpha: 0.2
 --- !u!114 &368803681
 MonoBehaviour:
@@ -24309,6 +24312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!212 &502048678
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -33973,6 +33977,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!1 &675470719
 GameObject:
   m_ObjectHideFlags: 0
@@ -37320,6 +37325,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!114 &746318609
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -49727,7 +49733,7 @@ MonoBehaviour:
   - {fileID: 2104871601}
   - {fileID: 727400447}
   - {fileID: 666366189}
-  fadeAlpha: 0.2
+  fadeAlpha: 0
 --- !u!114 &999090542
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50391,6 +50397,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!212 &1018170326
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -51294,6 +51301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!114 &1036872522
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69653,7 +69661,7 @@ MonoBehaviour:
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
-  FollowOffset: {x: 0, y: 13, z: -13}
+  FollowOffset: {x: 0, y: 21, z: -17}
 --- !u!114 &1354282951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69705,13 +69713,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1354282949}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: -4.1879997, y: 13.89, z: -14.748}
+  m_LocalRotation: {x: 0.42261827, y: 0, z: 0, w: 0.9063079}
+  m_LocalPosition: {x: -4.1879997, y: 21.89, z: -18.748}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 50, y: 0, z: 0}
 --- !u!95 &1354282953
 Animator:
   serializedVersion: 7
@@ -100216,6 +100224,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!212 &1618465649
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -102541,6 +102550,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!114 &1673461043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103999,6 +104009,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!212 &1715830968
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -111684,6 +111695,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!95 &1893953054
 Animator:
   serializedVersion: 7
@@ -116018,6 +116030,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!114 &1983191336
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -118006,6 +118019,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!212 &2025856376
 SpriteRenderer:
   m_ObjectHideFlags: 0
