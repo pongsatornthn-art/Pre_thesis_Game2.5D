@@ -126,31 +126,26 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        // [เพิ่มโดย Claude 2026-09-19] เกมหยุดอยู่ (เมนู Pause / เปิดสมุด) = ห้ามทำอะไรทั้งนั้น
-        // บั๊กเดิม: FaceMouseCursor() ข้างล่างยังทำงานตอนหยุดเกม สไปรท์เลยหันตามเมาส์ต่อ
-        // และคลิกซ้ายยังยิงได้ด้วย เพราะ Time.time ไม่เดินตอน timeScale = 0 คูลดาวน์เลยผ่านตลอด
-        // (ใช้รูปแบบเดียวกับที่ PlayerMovement.Update() ป้องกันไว้อยู่แล้ว)
+        // เกมหยุดอยู่ (เมนู Pause / เปิดสมุด) = ห้ามทำอะไรทั้งนั้น
         if (Time.timeScale == 0f) return;
 
         if (isReloading) return;
 
         ItemData weapon = GetEquippedWeapon();
 
+        // 🌟 แก้จุดที่ 1: ย้ายคำสั่งหันหน้าตามเมาส์มาไว้ตรงนี้! 
+        // เพื่อให้ตัวละครอัปเดตทิศทาง AimX, AimZ ส่งให้ Animator ตลอดเวลา ไม่ว่าจะถือปืน, ท่อ, หรือมือเปล่า
+        FaceMouseCursor();
+
         if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
         {
-            // 🌟 คลิกขวาค้าง = "นิ่งขึ้น" (แคบกรวย + เดินช้า) ไม่ใช่กดเพื่อให้ยิงได้อีกต่อไป
             isAiming = Input.GetMouseButton(1);
-
             if (animator != null)
             {
                 animator.SetBool("IsAiming", isAiming);
             }
 
-            // 🌟 ถือปืนคือหันตามเมาส์ตลอดเวลา ไม่ต้องกดคลิกขวาก่อน
-            FaceMouseCursor();
-
             HandleCrosshairFocus(weapon as RangedWeaponData);
-
 
             if (Input.GetKeyDown(KeyCode.R) && weapon is RangedWeaponData gunData && currentAmmoInMag < gunData.magazineSize)
             {
@@ -163,9 +158,9 @@ public class PlayerCombat : MonoBehaviour
             isAiming = false;
         }
 
-        if (weapon == null || weapon.itemType == ItemType.MeleeWeapon || weapon.itemType == ItemType.General)
+        // ระบบของอาวุธประชิด (ท่อ / กระบอง)
+        if (weapon != null && weapon.itemType == ItemType.MeleeWeapon)
         {
-            // ระบบง้างฟัน (Melee Charge) - ป้องกันการสแปมตีเบารัวๆ ด้วยการเช็คคูลดาวน์ก่อนเริ่มง้าง
             if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
             {
                 isChargingMelee = true;
@@ -184,9 +179,9 @@ public class PlayerCombat : MonoBehaviour
                 }
             }
         }
-        else if (weapon.itemType == ItemType.RangedWeapon)
+        // 🌟 แก้จุดที่ 2: เติม weapon != null เข้าไปดักบั๊ก NullReferenceException ตอนเดินมือเปล่า
+        else if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
         {
-            // 🌟 ระบบยิงปืนแบบ Alien Shooter: ถือปืนคือยิงได้เลย ไม่ต้องกดคลิกขวาก่อน
             if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
             {
                 PerformRangeAttack(weapon as RangedWeaponData);
@@ -273,14 +268,21 @@ public class PlayerCombat : MonoBehaviour
             playerMovement.ApplyAttackPause(attackMovementPause);
         }
 
-        // 🌟 [ทาง B] ไม่สั่งเปลี่ยนท่าแอนิเมชันตอนฟันแล้ว
-        // เหตุผล: state "Test_Attack" / "Heavy_Attack" ใน Animator เป็น "คลิปเดี่ยว" ที่วาดท่าหันหลังไว้
-        // ไม่สนใจ AimX/AimZ เลย -> กดฟันทีไรตัวละครหันหลังทุกที (และเด้งไปกวนตอนยิงปืนด้วย)
-        // ตอนนี้ปล่อยให้ตัวละครคงท่าเดิม (blend tree 8 ทิศ หันตามเมาส์) แล้วสื่อการฟันด้วย VFX รอยดาบแทน
+        // 🌟 เพิ่มคำสั่งเล่นอนิเมชันตรงนี้ครับ
+        if (animator != null)
+        {
+            if (isHeavy)
+            {
+                animator.SetTrigger("HeavyAttack"); // เล่นท่าตีหนัก
+            }
+            else
+            {
+                animator.SetTrigger("Attack"); // เล่นท่าตีเบา
+            }
+        }
+
         Debug.Log(isHeavy ? "<color=magenta>💪 ฟันหนัก (Heavy)</color>" : "<color=cyan>🔪 ฟันเบา (Light)</color>");
 
-        // เดิม hitbox เปิด/ปิดด้วย Animation Event ที่ฝังในคลิปท่าฟัน
-        // พอไม่เล่นคลิปนั้นแล้ว ต้องเปิด/ปิดเองด้วยโค้ด ไม่งั้นฟันไม่โดนอะไรเลย
         StartCoroutine(MeleeSwingRoutine());
     }
 

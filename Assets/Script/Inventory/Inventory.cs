@@ -29,6 +29,9 @@ public class Inventory : MonoBehaviour
 
     public ItemData currentEquippedItem { get; private set; }
 
+    // 🌟 เพิ่มตัวแปรสำหรับจดจำ Base Animator (ท่ามือเปล่า) เพื่อให้ตอนถอดอาวุธกลับมายืนปกติได้
+    private RuntimeAnimatorController defaultAnimatorController;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -53,11 +56,6 @@ public class Inventory : MonoBehaviour
         }
         else
         {
-            // [แก้โดย Claude 2026-09-19] เดิมเช็คแค่ i == null ทำให้เก็บของไม่ได้เลยทั้งเกม
-            // สาเหตุ: Unity เก็บ List<InventoryItem> ที่เป็นคลาสธรรมดาไว้ไม่ได้ในสภาพ null
-            // พอมันซีเรียลไลซ์รอบใหม่ (เช่นตอนกางดู Inspector ระหว่างเล่น) ช่องว่างที่เป็น null
-            // จะกลายเป็น object เปล่า ๆ ที่ไม่ null → หาช่องว่างไม่เจอ → ขึ้น "กระเป๋าเต็ม!" ทั้งที่ว่าง 15 ช่อง
-            // ช่องว่างจริง ๆ คือ "ไม่มี itemData" ต้องเช็คแบบนี้ (เมธอดอื่นในไฟล์นี้ก็เช็คแบบนี้อยู่แล้ว)
             int emptyIndex = items.FindIndex(i => i == null || i.itemData == null);
             if (emptyIndex == -1)
             {
@@ -131,12 +129,44 @@ public class Inventory : MonoBehaviour
     public void EquipItem(ItemData itemToEquip)
     {
         currentEquippedItem = itemToEquip;
+
+        // 🌟 โค้ดดึง Animator มาสวมทับเมื่อกดสวมใส่อาวุธ
+        PlayerCombat playerCombat = FindObjectOfType<PlayerCombat>();
+        if (playerCombat != null && playerCombat.animator != null)
+        {
+            // บันทึกท่ามือเปล่าต้นฉบับเก็บไว้ก่อน
+            if (defaultAnimatorController == null)
+            {
+                defaultAnimatorController = playerCombat.animator.runtimeAnimatorController;
+            }
+
+            // เช็กว่าเป็นอาวุธประชิด (MeleeWeapon) และตั้งค่า Override (ท่าท่อแป๊ป) ไว้ในไฟล์ไอเทมหรือไม่
+            if (itemToEquip is MeleeWeaponData meleeWeapon && meleeWeapon.weaponAnimatorOverride != null)
+            {
+                // ถ้ามี สั่งเปลี่ยนไปใช้แอนิเมชันอาวุธชิ้นนั้นทันที!
+                playerCombat.animator.runtimeAnimatorController = meleeWeapon.weaponAnimatorOverride;
+            }
+            else
+            {
+                // ถ้าไม่ใช่ หรือเป็นไอเทมที่ไม่มี Override ให้กลับไปใช้ท่ามือเปล่า
+                playerCombat.animator.runtimeAnimatorController = defaultAnimatorController;
+            }
+        }
+
         OnEquipChanged?.Invoke(itemToEquip);
     }
 
     public void Unequip()
     {
         currentEquippedItem = null;
+
+        // 🌟 โค้ดรีเซ็ตกลับเป็นท่ามือเปล่าเมื่อผู้เล่นถอดอาวุธเก็บ
+        PlayerCombat playerCombat = FindObjectOfType<PlayerCombat>();
+        if (playerCombat != null && playerCombat.animator != null && defaultAnimatorController != null)
+        {
+            playerCombat.animator.runtimeAnimatorController = defaultAnimatorController;
+        }
+
         OnEquipChanged?.Invoke(null);
     }
 
