@@ -54,3 +54,6 @@ QUEST_02_PIECES_OBJ1;รวบรวมชิ้นส่วนรูปภา�
 QUEST_03_DELIVER_TITLE;นำชิ้นส่วนไปส่ง;Deliver the Pieces
 QUEST_03_DELIVER_DESC;นำชิ้นส่วนทั้งหมดไปประกอบคืนที่จุดส่งเควส;Bring all the pieces back to be reassembled
 QUEST_03_DELIVER_OBJ1;นำเศษรูปไปประกอบคืนที่ขาตั้งวาดรูป;Reassemble the scraps at the easel
+safezone_locked;โซนไม่ปลอดภัย (ติดคูลดาวน์);Unsafe Zone (On Cooldown)
+safezone_new;Safe Zone ย้ายไปยังห้องใหม่!;Safe Zone relocated to a new room!
+safezone_panic;ตกใจสุดขีด! ไม่สามารถสงบสติอารมณ์ได้;Extreme panic! Unable to calm down.
