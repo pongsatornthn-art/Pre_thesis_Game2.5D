@@ -1,0 +1,83 @@
+Shader "Custom/BoxBlurShader"
+{
+    Properties
+    {
+        _Blur ("Blur Size", Int) = 2
+        _Scale ("Scale", Range(1, 5)) = 2
+    }
+
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" "Queue"="Transparent" }
+        LOD 100
+
+        Pass
+        {
+            Blend SrcAlpha OneMinusSrcAlpha
+            ZWrite Off
+
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS   : POSITION;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS   : SV_POSITION;
+                float4 screenPos    : TEXCOORD0;
+            };
+
+            TEXTURE2D(_CameraOpaqueTexture);
+            SAMPLER(sampler_CameraOpaqueTexture);
+
+            CBUFFER_START(UnityPerMaterial)
+                int _Blur;
+                float _Scale;
+            CBUFFER_END
+
+            Varyings vert(Attributes input)
+            {
+                Varyings output;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.screenPos = ComputeScreenPos(output.positionCS);
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_Target
+            {
+                // แปลงพิกเซลจอภาพ
+                float2 screenUV = input.screenPos.xy / input.screenPos.w;
+                
+                // คำนวณขนาดพิกเซล
+                float2 texelSize = _Scale / _ScreenParams.xy;
+                
+                int blurSize = _Blur > 0 ? _Blur : 1;
+                half4 sum = 0;
+                int count = 0;
+
+                // วนลูปเก็บพิกเซลรอบข้างมาเฉลี่ยกัน (Box Blur)
+                for (int i = -blurSize; i <= blurSize; i++)
+                {
+                    for (int j = -blurSize; j <= blurSize; j++)
+                    {
+                        float2 offset = float2(i, j) * texelSize;
+                        sum += SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, screenUV + offset);
+                        count++;
+                    }
+                }
+
+                half4 finalColor = sum / count;
+
+                // ดึงค่าความโปร่งใส (Alpha) จาก Sprite Renderer มารองรับสคริปต์เฟดห้อง
+                // เราจะใช้วิธีเช็กสีผ่าน Vertex Color ถ้าสคริปต์สั่งจาง แผ่นนี้ก็จะจางตาม
+                return finalColor;
+            }
+            ENDHLSL
+        }
+    }
+}
