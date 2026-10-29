@@ -52684,7 +52684,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minigame: {fileID: 1324309306}
   charger: {fileID: 215916160}
-  zones: []
+  zones:
+  - {fileID: 1337689641}
   cooldownSeconds: 30
   relocateMinDistance: 10
   relocateMaxDistance: 25
