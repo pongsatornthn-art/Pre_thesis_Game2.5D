@@ -5,6 +5,9 @@ Shader "Custom/BoxBlurShader"
         [IntRange] _Blur ("Blur Size", Range(1, 6)) = 2
         _Scale ("Scale", Range(1, 5)) = 2
         _BlurAlpha ("Blur Alpha", Range(0, 1)) = 1
+        
+        // เพิ่มช่องให้เลือกปรับสีได้ (ค่าเริ่มต้นคือสีขาว = ไม่ย้อมสี)
+        _Color ("Tint Color", Color) = (1, 1, 1, 1) 
     }
 
     SubShader
@@ -41,6 +44,7 @@ Shader "Custom/BoxBlurShader"
                 float _Blur;
                 float _Scale;
                 float _BlurAlpha;
+                half4 _Color; // ประกาศตัวแปรสีให้ระบบรู้จัก
             CBUFFER_END
 
             Varyings vert(Attributes input)
@@ -73,7 +77,10 @@ Shader "Custom/BoxBlurShader"
                     }
                 }
 
-                return half4((sum / count).rgb, _BlurAlpha);
+                half4 finalBlur = sum / count;
+                
+                // เอาภาพที่เบลอแล้ว มาคูณผสมกับสีที่เราตั้งค่าไว้ใน Material
+                return half4(finalBlur.rgb * _Color.rgb, _BlurAlpha * _Color.a);
             }
             ENDHLSL
         }
