@@ -30,7 +30,7 @@ public class CameraObstacleFader : MonoBehaviour
 
         hitsThisFrame.Clear();
 
-        // 🌟 ตัดระยะเรดาร์ลง (castRadius + 0.5f) ป้องกันบั๊กเรดาร์ทะลุไปชนกำแพงด้านหลังผู้เล่น
+        // ตัดระยะเรดาร์กันทะลุไปโดนกำแพงหลังตัวละคร
         Vector3 direction = player.position - transform.position;
         float distance = direction.magnitude - (castRadius + 0.5f);
         if (distance < 0) distance = 0.1f;
@@ -53,8 +53,8 @@ public class CameraObstacleFader : MonoBehaviour
                         currentTargetAlpha = targetAlpha
                     };
 
-                    // 🌟 เมื่อเริ่มโดนบัง สั่งสลับ Material ชิ้นนี้ให้เป็น Transparent ทันที
-                    SetMaterialMode(mr.material, true);
+                    // เรียกใช้ฟังก์ชันเปลี่ยนโหมดแบบใหม่
+                    SetMaterialTransparentSafely(mr.material);
 
                     activeWalls.Add(hit.collider, fw);
                 }
@@ -81,14 +81,13 @@ public class CameraObstacleFader : MonoBehaviour
             currentColor.a = Mathf.Lerp(currentColor.a, fw.currentTargetAlpha, fadeSpeed * Time.deltaTime);
             SetMaterialColor(fw.renderer.material, currentColor);
 
-            // 🌟 เมื่อกำแพงพ้นจากการบัง และสีเฟดกลับมาทึบ 100% แล้ว
             if (!hitsThisFrame.Contains(col) && Mathf.Abs(currentColor.a - fw.originalColor.a) < 0.01f)
             {
                 currentColor.a = fw.originalColor.a;
                 SetMaterialColor(fw.renderer.material, currentColor);
 
-                // สลับ Material ชิ้นนี้กลับไปเป็น Opaque เพื่อแก้ปัญหาภาพทะลุกัน
-                SetMaterialMode(fw.renderer.material, false);
+                // คืนค่าเป็นกำแพงทึบปกติ
+                SetMaterialOpaqueSafely(fw.renderer.material);
 
                 keysToRemove.Add(col);
             }
@@ -113,24 +112,35 @@ public class CameraObstacleFader : MonoBehaviour
         else if (mat.HasProperty("_Color")) mat.color = newColor;
     }
 
-    // ฟังก์ชันสำหรับสลับโหมด Opaque <-> Transparent แบบ Real-time สำหรับ URP
-    private void SetMaterialMode(Material mat, bool isTransparent)
+    // ฟังก์ชันสำหรับแปลงกำแพงให้โปร่งใสแบบปลอดภัยใน URP
+    private void SetMaterialTransparentSafely(Material mat)
     {
-        if (isTransparent)
-        {
-            mat.SetFloat("_Surface", 1); // 1 = โหมด Transparent
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            mat.SetInt("_ZWrite", 0);     // ปิดคำนวณความลึกชั่วคราวให้โปร่งใสได้
-            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-        }
-        else
-        {
-            mat.SetFloat("_Surface", 0); // 0 = โหมด Opaque
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
-            mat.SetInt("_ZWrite", 1);     // เปิดคำนวณความลึกกลับมา (แก้บั๊กภาพทะลุ)
-            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
-        }
+        mat.SetFloat("_Surface", 1);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+
+        // 🔥 ไฮไลต์ 1: เปิด ZWrite ทิ้งไว้เสมอ แก้ปัญหากำแพงหลังทะลุมาด้านหน้า
+        mat.SetInt("_ZWrite", 1);
+
+        // 🔥 ไฮไลต์ 2: ย้ายคิวไปที่ 3001 ให้สูงกว่า 3000 ของ Shader เบลอ จะได้ไม่โดนกลืนหายไป
+        mat.renderQueue = 3001;
+
+        // บังคับให้ระบบแสง URP รู้จักความโปร่งใส (แก้อาการกำแพงดำ)
+        mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+    }
+
+    // ฟังก์ชันคืนค่ากำแพงให้ทึบสนิทเหมือนเดิม
+    private void SetMaterialOpaqueSafely(Material mat)
+    {
+        mat.SetFloat("_Surface", 0);
+        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+        mat.SetInt("_ZWrite", 1);
+        mat.renderQueue = 2000;
+
+        // ปิด Keyword ระบบโปร่งใส
+        mat.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
     }
 }
