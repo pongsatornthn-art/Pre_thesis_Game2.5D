@@ -72,6 +72,12 @@ public class WorldLighting : MonoBehaviour
     [Tooltip("ตอนกระพริบ 'ดับ' เหลือความสว่างเท่าไหร่ (0 = ดับสนิท)")]
     [SerializeField, Range(0f, 1f)] private float flickerDimLevel = 0.05f;
 
+    [Header("เงา (กันเงาเบลอ/ลอย)")]
+    [Tooltip("ให้แค่ไฟที่ใกล้ตัวนี้ที่สุดสร้างเงา (ปกติ = ผู้เล่น) — ไฟสร้างเงาพร้อมกันเยอะ แผนที่เงาต้องแบ่งกัน เงาจะเบลอ+ลอยห่างเท้า · เว้นว่าง = ทุกดวงสร้างเงาตามที่ตั้ง")]
+    [SerializeField] private Transform shadowFocus;
+    [Tooltip("จำนวนไฟใกล้สุดที่สร้างเงาได้พร้อมกัน")]
+    [SerializeField, Min(1)] private int maxShadowLamps = 3;
+
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly Color GlowOffColor = new Color(0.08f, 0.08f, 0.08f, 1f);
 
@@ -82,6 +88,7 @@ public class WorldLighting : MonoBehaviour
         public float baseIntensity;
         public Color baseColor;
         public Color glowBaseColor;
+        public LightShadows baseShadows;
 
         public float level, fromLevel;          // ความสว่างตามโลก (ยังไม่รวมกระพริบ)
         public Color color, fromColor;
@@ -108,7 +115,7 @@ public class WorldLighting : MonoBehaviour
         foreach (Light l in lampsRoot.GetComponentsInChildren<Light>(true))
         {
             if (l == mainLight) continue;
-            var lamp = new Lamp { light = l, tag = l.GetComponent<WorldLamp>(), baseIntensity = l.intensity, baseColor = l.color };
+            var lamp = new Lamp { light = l, tag = l.GetComponent<WorldLamp>(), baseIntensity = l.intensity, baseColor = l.color, baseShadows = l.shadows };
             Renderer glow = lamp.tag != null ? lamp.tag.glowVisual : null;
             lamp.glowBaseColor = glow != null && glow.sharedMaterial != null && glow.sharedMaterial.HasProperty(BaseColorId)
                 ? glow.sharedMaterial.GetColor(BaseColorId) : Color.white;
@@ -193,6 +200,24 @@ public class WorldLighting : MonoBehaviour
         if (current != WorldMode.Real) PickRandomFlicker();
         TickFlicker(Time.deltaTime);
         Render();
+        UpdateShadowBudget();
+    }
+
+    private float nextShadowPick;
+    private readonly List<Lamp> shadowCandidates = new List<Lamp>();
+
+    // เปิดเงาเฉพาะไฟที่ใกล้ Shadow Focus ที่สุด (เช็คทุก 0.25 วิ)
+    private void UpdateShadowBudget()
+    {
+        if (shadowFocus == null || Time.time < nextShadowPick) return;
+        nextShadowPick = Time.time + 0.25f;
+        Vector3 p = shadowFocus.position;
+        shadowCandidates.Clear();
+        foreach (Lamp lamp in lamps)
+            if (lamp.light != null && lamp.baseShadows != LightShadows.None) shadowCandidates.Add(lamp);
+        shadowCandidates.Sort((a, b) => (a.light.transform.position - p).sqrMagnitude.CompareTo((b.light.transform.position - p).sqrMagnitude));
+        for (int i = 0; i < shadowCandidates.Count; i++)
+            shadowCandidates[i].light.shadows = i < maxShadowLamps ? shadowCandidates[i].baseShadows : LightShadows.None;
     }
 
     private void PickRandomFlicker()

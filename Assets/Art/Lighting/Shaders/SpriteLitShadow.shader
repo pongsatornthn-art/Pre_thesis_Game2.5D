@@ -100,7 +100,10 @@ Shader "Custom/SpriteLitShadow"
                 half4 col = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv) * i.color;
                 clip(col.a - _Cutoff);
 
-                float3 n = isFront ? i.normalWS : -i.normalWS;   // มองจากด้านหลังแผ่นก็ยังสว่างถูกด้าน
+                // ทิศหน้าแผ่นคำนวณจากรูปทรงจริงตรงพิกเซลนี้ — Unity รวมพื้น Tilemap/สไปรท์เป็นก้อนเดียวในพิกัดโลก
+                // ทำให้ค่า object matrix ใน i.normalWS ผิด (พื้นถูกนับเป็นหันทิศใต้ → ไฟส่องพื้นได้แค่ฝั่งเหนือของหลอด)
+                float3 n = normalize(cross(ddy(i.positionWS), ddx(i.positionWS)));
+                if (dot(n, GetCameraPositionWS() - i.positionWS) < 0) n = -n;   // หันเข้าหากล้องเสมอ (มองด้านหลังแผ่นก็สว่างถูกด้าน)
 
                 float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
                 half3 lighting = Shade(GetMainLight(shadowCoord), n);
