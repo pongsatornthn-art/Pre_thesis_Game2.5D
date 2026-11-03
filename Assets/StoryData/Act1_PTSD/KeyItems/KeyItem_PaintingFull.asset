@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: cc7c2be5893e40648cb3fe557aeb3453
   itemName: Painting Full
-  icon: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
+  icon: {fileID: 21300000, guid: 4e83e35910c2b9d41ae282c0cb0e33c5, type: 3}
   description: 
-  descriptionImage: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
+  descriptionImage: {fileID: 21300000, guid: 4e83e35910c2b9d41ae282c0cb0e33c5, type: 3}
   isStackable: 0
   maxStack: 1
   itemType: 6

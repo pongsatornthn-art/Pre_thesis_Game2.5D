@@ -42,9 +42,10 @@ SAVE_BLOCKED_PTSD;บันทึกเกมไม่ได้ในตอน�
 MINIGAME_ASSEMBLY_HINT;ลากเศษรูปจากช่องขวาไปวางบนกระดาน · R หมุน · คลิกขวาเอาคืน;Drag pieces from the right onto the board · R rotate · Right-click to take back
 COMIC_HINT_NEXT;Space / F ไปหน้าถัดไป · Tab ข้าม;Space / F next page · Tab skip
 KEYITEM_PAINTING_FULL;รูปวาดที่ถูกประกอบคืน;The Restored Painting
-KEYITEM_PAINTING_FULL_DESC;รูปวาดที่ประกอบจากเศษกระดาษจนสมบูรณ์ (ข้อความทดสอบ);The painting, pieced back together (placeholder)
-KEYITEM_PAINTING_KEY;กุญแจหลังรูปวาด;Key Behind the Painting
-KEYITEM_PAINTING_KEY_DESC;กุญแจที่ซ่อนอยู่หลังรูปวาดบนขาตั้ง (ข้อความทดสอบ);A key hidden behind the painting on the easel (placeholder)
+KEYITEM_PAINTING_FULL_DESC;รูปวาดที่ประกอบจากเศษกระดาษจนสมบูรณ์ มีตัวเลขเขียนไว้ว่า 1234;The painting, pieced back together. Numbers are written on it: 1234
+KEYITEM_PAINTING_KEY;กุญแจจากตู้เซฟ;Key from the Safe
+KEYITEM_PAINTING_KEY_DESC;กุญแจที่เก็บไว้ในตู้เซฟ (ข้อความทดสอบ);A key kept inside the safe (placeholder)
+SAFE_LOCKED;ดูเหมือนต้องหารหัสก่อน;Looks like I need to find the code first.
 DOC_KEY_NOTE_TITLE;โน้ตที่ถูกทิ้งไว้;A Note Left Behind
 DOC_KEY_NOTE_BODY;ผมได้กุญแจห้องเอกสารอันใหม่ไว้ให้คุณหญิงแล้วนะครับ ผมจะเก็บไว้ในตู้ห้องนอนคนใช้ครับ ส่วนกุญแจล็อกตู้ผมซ่อนไว้หลังกรอบรูปนะครับ;Madam, I have the new key to the document room ready for you. I will keep it in the cabinet in the servants' bedroom. As for the key to the cabinet lock, I have hidden it behind the picture frame.
 QUEST_01_EXPLORE_TITLE;สำรวจโถงทางเดินชั้น 1;Explore the 1st Floor Hallway

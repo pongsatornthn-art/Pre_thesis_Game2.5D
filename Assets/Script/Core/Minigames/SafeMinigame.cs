@@ -13,6 +13,16 @@ public class SafeMinigame : MonoBehaviour
     public string correctPasscode = "1234";
     public KeyItemData rewardKey;
 
+    [Header("เงื่อนไขเนื้อเรื่อง")]
+    [Tooltip("ต้องครบก่อนถึงจะใส่รหัสได้ เช่น มีรูปวาดในคีย์ไอเทม (เว้นว่าง = กดได้เสมอ)")]
+    [SerializeReference, SubclassPicker] private IStoryCondition unlockWhen;
+    [Tooltip("ฉากที่เล่นตอนกดแล้วยังไม่ครบเงื่อนไข เช่น บทพูด 'ดูเหมือนต้องหารหัสก่อน'")]
+    [SerializeField] private StorySequence onLocked;
+    [Tooltip("ธงจำว่าเปิดแล้ว — โหลดเซฟแล้วตู้ไม่กลับมากดได้อีก")]
+    [SerializeField] private StoryFlagId openedFlag;
+
+    private GameObject nearPlayer;
+
     [Header("ระบบ UI มินิเกม")]
     public RectTransform dialImage;
 
@@ -31,7 +41,7 @@ public class SafeMinigame : MonoBehaviour
     {
         if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !isMinigameActive)
         {
-            OpenSafeMinigame();
+            TryOpen();
         }
 
         if (isMinigameActive && Input.GetKeyDown(KeyCode.Escape))
@@ -42,7 +52,30 @@ public class SafeMinigame : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player")) isPlayerNear = true;
+        if (other.CompareTag("Player"))
+        {
+            isPlayerNear = true;
+            nearPlayer = other.gameObject;
+        }
+    }
+
+    // กดที่ตู้: เปิดแล้ว = ไม่ทำอะไร · ยังไม่ครบเงื่อนไข = เล่นบทพูด · ครบ = เข้ามินิเกม
+    private void TryOpen()
+    {
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return;
+        StoryDirector director = StoryDirector.Instance;
+        if (director != null && director.IsPlaying) return;
+
+        IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
+        if (openedFlag != null && flags != null && flags.Has(openedFlag)) return;
+
+        if (unlockWhen != null && !unlockWhen.IsMet(StoryContext.Create(this, nearPlayer)))
+        {
+            if (onLocked != null && director != null) director.Play(onLocked);
+            return;
+        }
+
+        OpenSafeMinigame();
     }
 
     private void OnTriggerExit(Collider other)
@@ -126,6 +159,8 @@ public class SafeMinigame : MonoBehaviour
             {
                 rewardKey.Collect();
             }
+
+            if (openedFlag != null) ServiceLocator.GetOptional<IStoryFlags>()?.Set(openedFlag);
 
             CloseSafeMinigame();
 
