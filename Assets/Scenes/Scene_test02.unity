@@ -14914,6 +14914,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -6171409447793408352, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -6171409447793408352, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 2f9d597105e23e641ae1e2c56bb9b965, type: 2}
@@ -58224,6 +58228,10 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 1947470363416656263, guid: 3be5f703a27788546b2c1539650009d0, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947470363416656263, guid: 3be5f703a27788546b2c1539650009d0, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 5a2d869f3328ca9438369ff98c007d7e, type: 2}
@@ -61204,6 +61212,10 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
       propertyPath: m_ConstrainProportionsScale
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6171409447793408352, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -6171409447793408352, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -92334,8 +92346,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.08, y: 2, z: 1.62}
-  m_Center: {x: 0, y: 0.2, z: 0}
+  m_Size: {x: 1.9663849, y: 2, z: 1.995862}
+  m_Center: {x: -0.93722534, y: 0.20000005, z: -0.030465603}
 --- !u!1 &1231173574
 GameObject:
   m_ObjectHideFlags: 0
@@ -95282,6 +95294,10 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
       propertyPath: m_ConstrainProportionsScale
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6171409447793408352, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -6171409447793408352, guid: 198a45ae38be33e4095aa887c24c2a89, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -101761,6 +101777,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 3be5f703a27788546b2c1539650009d0, type: 3}
       propertyPath: m_Layer
       value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1947470363416656263, guid: 3be5f703a27788546b2c1539650009d0, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1947470363416656263, guid: 3be5f703a27788546b2c1539650009d0, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
