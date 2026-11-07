@@ -13,6 +13,9 @@ public class MonsterSpawner : MonoBehaviour
     public PatrolRoute linkedRoute;
 
     [Min(1)] public int spawnCount = 1;
+
+    [Tooltip("[เพิ่มโดย Claude 2026-11-08] ติ๊ก = เกิดทุกครั้งที่เข้า PTSD (แบบเดิม)\nไม่ติ๊ก = เกิดเฉพาะเมื่อ PtsdMonsterLayout ที่เป็นแม่สั่ง (ผังมอนแยกตาม PTSD แต่ละแบบ)")]
+    public bool spawnOnAnyPtsd = true;
     public float spawnRadius = 2f;
 
     [HideInInspector]
@@ -41,6 +44,18 @@ public class MonsterSpawner : MonoBehaviour
     {
         if (isPTSDActive)
         {
+            if (spawnOnAnyPtsd) SpawnNow();
+        }
+        else
+        {
+            DespawnAll();
+        }
+    }
+
+    /// <summary>เกิดมอนทันที (ถ้ายังไม่มีตัวที่เกิดอยู่) — PtsdMonsterLayout เรียก</summary>
+    public void SpawnNow()
+    {
+        {
             if (remainingCount <= 0) return;
 
             if (monsterPrefabToSpawn != null && spawnedMonsters.Count == 0)
@@ -61,14 +76,16 @@ public class MonsterSpawner : MonoBehaviour
                 }
             }
         }
-        else
+    }
+
+    /// <summary>ลบมอนที่เกิดจากจุดนี้ทั้งหมด (ตอนออกจาก PTSD)</summary>
+    public void DespawnAll()
+    {
+        foreach (var monster in spawnedMonsters)
         {
-            foreach (var monster in spawnedMonsters)
-            {
-                if (monster != null) Destroy(monster);
-            }
-            spawnedMonsters.Clear();
+            if (monster != null) Destroy(monster);
         }
+        spawnedMonsters.Clear();
     }
 
     private void HandleMonsterDeath(GameObject deadMonster)

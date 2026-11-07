@@ -89,7 +89,9 @@ public class StalkerStateKill : IStalkerState
         // เนื่องจาก PlayerMovement.TakeRawDamage() มีเช็ค Die() อยู่แล้ว 
         // เราแค่เช็คว่าเกมรัน Die ไปหรือยัง (สมมติให้ดูจาก player.currentHealth < 0 ไม่ได้เพราะเป็น private)
         // แต่ถ้าผู้เล่นตายไปแล้ว ตัว player มักจะโดน Destroy หรือปิด Script
-        if (!player.gameObject.activeInHierarchy || player.maxHealth == 0) // สมมติว่าตายแล้วหาย
+        // [แก้โดย Claude 2026-11-08] เดิมเช็ค maxHealth == 0 ซึ่งไม่มีวันจริง → เลือดหมดแล้วยังนับต่อจนครบเวลา = "รอด" บอสวาร์ปหนี แล้วค่อยโหลดตายทีหลัง
+        // ตอนนี้: เลือดหมดเมื่อไหร่จบมินิเกมทันที → ระบบตาย (DeathHandler) จัดการต่อ
+        if (!player.gameObject.activeInHierarchy || player.CurrentHealth <= 0)
         {
             EndMinigame(ai, false);
             return;

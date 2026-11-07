@@ -58,3 +58,26 @@ QUEST_03_DELIVER_OBJ1;นำเศษรูปไปประกอบคืน�
 safezone_locked;โซนไม่ปลอดภัย (ติดคูลดาวน์);Unsafe Zone (On Cooldown)
 safezone_new;Safe Zone ย้ายไปยังห้องใหม่!;Safe Zone relocated to a new room!
 safezone_panic;ตกใจสุดขีด! ไม่สามารถสงบสติอารมณ์ได้;Extreme panic! Unable to calm down.
+FP1_EXIT_1;ตั้งสติ Rowan หายใจเข้าลึก ๆ แกทำได้;Pull yourself together, Rowan. Breathe. You can do this.
+FP1_EXIT_2;...เดี๋ยวนะ;...Wait.
+FP1_MAP_1;นี่อะไร? ผังของบ้านงั้นหรอ;What's this? A floor plan of the house?
+FP1_MAP_2;ดูเหมือนจะมีห้องแปลก ๆ หลังห้องเอกสาร มันคือห้องอะไรนะ ทำไมฉันถึงไม่มีความทรงจำเกี่ยวกับห้องลับนั้นเลย;There's a strange room behind the archive room. What is it? Why don't I remember any secret room?
+FP1_MAP_3;งั้นคงต้องเริ่มจากที่ห้องนั้นก่อนแล้ว;Then I should start with that room.
+ITEM_MANSION_MAP;แผนผังคฤหาสน์;Mansion Floor Plan
+ITEM_MANSION_MAP_DESC;ผังของบ้านหลังนี้ มีทางลับกับห้องที่ยังไม่เคยสำรวจ · ด้านหลังห้องเอกสารมีห้องแปลก ๆ ที่ฉันจำไม่ได้;A floor plan of this house, with secret passages and unexplored rooms. There's a strange room behind the archive room I can't remember.
+PROMPT_PICKUP_F;กด [F] เก็บของ;Press [F] to pick up
+OFFICE_LOCKED_1;ล็อคงั้นหรอ คงต้องหากุญแจสักที่นึง;It's locked? I'll have to find a key somewhere.
+OFFICE_LOCKED_2;ต้องเริ่มหาเบาะแสจากห้องอื่น ๆ ดูก่อน;I should look for clues in the other rooms first.
+OFFICE_BASE_1;ห้องนี้เหมาะเป็นฐานเลย;This room would make a good base, actually.
+OFFICE_BASE_2;บนโต๊ะนั่นมีอะไรบ้างนะ... สมุดโน้ตหรอ คงใช้จดบันทึกได้อยู่... วิทยุนั่นเหมือนจะใช้ได้นะ;What's on the desk...? A notebook? I could use it to take notes... That radio looks like it still works.
+RADIO_REACT_1;อะไรกัน นั่นมันคืออะไร เหมือนกับเหตุการณ์นั้นเลย;What was that? It sounded just like that incident...
+PROMPT_SAVE_F;กด [F] บันทึกเกม;Press [F] to save
+LOC_OFFICE;ห้องทำงาน;Study
+PIPE_PICK_1;ท่อเหล็กนี่หนักดี... น่าจะใช้ทุบของที่ขวางทางได้;This iron pipe is heavy... I could use it to smash through that blockage.
+GUN_PICK_1;ปืน...? ทำไมมันมาอยู่ตรงนี้ เก็บไว้ก่อนแล้วกัน เผื่อต้องใช้;A gun...? Why is this here? I'd better keep it, just in case.
+DEBRIS_BLOCK_1;ทางถูกขวางไว้... ตอนวิ่งหนีมันคงพังลงมา;The way is blocked... It must have collapsed while I was running.
+DEBRIS_BLOCK_2;ต้องหาอะไรหนักๆ มาทุบให้พัง;I need something heavy to smash through this.
+DEBRIS_WRONG_1;ยิงไปก็ไม่ได้ผล... ต้องใช้อะไรทุบ;Shooting it won't work... I need something to smash it.
+PADLOCK_HINT_1;ประตูถูกล็อกด้วยแม่กุญแจ...;The door is locked with a padlock...
+PADLOCK_HINT_2;แม่กุญแจแบบนี้ ถ้ามีปืนคงยิงให้หลุดได้;If I had a gun, I could probably shoot this padlock off.
+PADLOCK_WRONG_1;ตีไม่หลุด... ต้องยิงมัน;It won't break... I'll have to shoot it.

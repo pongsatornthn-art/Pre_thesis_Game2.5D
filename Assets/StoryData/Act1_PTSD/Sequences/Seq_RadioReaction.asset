@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ee9df5b87bdad44d966a1b9c076cf88, type: 3}
+  m_Name: Seq_RadioReaction
+  m_EditorClassIdentifier: 
+  lockPlayer: 0
+  actions:
+  - rid: 398983252227129425
+  - rid: 398983252227129426
+  references:
+    version: 2
+    RefIds:
+    - rid: 398983252227129425
+      type: {class: WaitAction, ns: , asm: Assembly-CSharp}
+      data:
+        duration: 4
+    - rid: 398983252227129426
+      type: {class: ShowDialogueAction, ns: , asm: Assembly-CSharp}
+      data:
+        dialogueData: {fileID: 0}
+        textKey: RADIO_REACT_1
+        duration: 4

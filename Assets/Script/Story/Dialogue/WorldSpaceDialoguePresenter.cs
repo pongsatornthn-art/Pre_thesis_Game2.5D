@@ -21,6 +21,9 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
     [SerializeField] private TMP_Text dialogueText;
     [SerializeField] private Canvas worldCanvas;
 
+    [Tooltip("Shader ที่วาดทับทุกอย่าง (ไม่สนกำแพง) — ลาก 'TMP_SDF Overlay' (Assets/TextMesh Pro/Shaders) มาใส่\nSorting Order อย่างเดียวกันกำแพง 3D ไม่ได้ เพราะกำแพงยังบังด้วยความลึก")]
+    [SerializeField] private Shader overlayShader;
+
     [Header("การจางเข้า-ออก")]
     [SerializeField] private float fadeDuration = 0.25f;
 
@@ -82,6 +85,7 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
         {
             dialogueText.text = text;
             if (loc != null) dialogueText.font = loc.GetFont(FontCategory.Dialog);
+            ApplyOverlay();   // เปลี่ยนฟอนต์แล้ววัสดุถูกเปลี่ยนตาม → ตั้งใหม่ทุกครั้ง
         }
 
         // 1. Fade In (ใช้ unscaledDeltaTime เพื่อรองรับกรณี Pause/TimeScale = 0)
@@ -120,6 +124,17 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
         }
         if (canvasGroup != null) canvasGroup.alpha = 0f;
         AttachToSpeaker(null);
+    }
+
+    // ข้อความโดนกำแพงบัง (แก้ 2026-11-08): ให้วัสดุตัวหนังสือวาดแบบไม่เช็คความลึก (ZTest Always)
+    // ใช้ fontMaterial = สำเนาเฉพาะกล่องนี้ ไม่แก้ไฟล์วัสดุของฟอนต์ที่ UI อื่นใช้ร่วม
+    private void ApplyOverlay()
+    {
+        if (dialogueText == null) return;
+        Shader s = overlayShader != null ? overlayShader : Shader.Find("TextMeshPro/Distance Field Overlay");
+        if (s == null) return;
+        Material m = dialogueText.fontMaterial;
+        if (m.shader != s) m.shader = s;
     }
 
     private void AttachToSpeaker(string speakerId)

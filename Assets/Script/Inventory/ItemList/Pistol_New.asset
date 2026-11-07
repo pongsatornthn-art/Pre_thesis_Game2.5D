@@ -24,7 +24,7 @@ MonoBehaviour:
   equippedSprite: {fileID: 0}
   itemNameKey: 
   descriptionKey: 
-  damage: 10
+  damage: 30
   attackRange: 20
   lightAttackCooldown: 0.5
   knockback: 1

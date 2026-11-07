@@ -23,6 +23,8 @@ public class PTSDManager : MonoBehaviour
     [Header("Player Tracking")]
     public GameObject player;
     private Vector3 savedPlayerPosition;
+    [Tooltip("[แก้โดย Claude 2026-11-07 ตามที่เจ้าของสั่ง] ติ๊ก = ออกจาก PTSD แล้ววาร์ปกลับจุดที่เข้า (ระบบเดิม)\nไม่ติ๊ก = ออกตรงไหนก็อยู่ตรงนั้น (ExitPTSD_AndWarp ที่ส่งจุดเกิดมายังวาร์ปเหมือนเดิม)")]
+    public bool returnToEntryOnExit = false;
 
     [Header("PTSD Effects (เสียง, ภาพ, จอสั่น)")]
     public GameObject[] ptsdEffectsObjects;
@@ -151,7 +153,7 @@ public class PTSDManager : MonoBehaviour
                     player.transform.position = newRespawnPoint.position;
                     player.transform.rotation = newRespawnPoint.rotation;
                 }
-                else
+                else if (returnToEntryOnExit)
                 {
                     // ถ้าไม่มี ให้ดึงกลับจุดเดิมที่จำไว้ตอนเข้าโหมด
                     player.transform.position = savedPlayerPosition;

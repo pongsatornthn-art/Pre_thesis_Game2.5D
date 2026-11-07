@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ee9df5b87bdad44d966a1b9c076cf88, type: 3}
+  m_Name: Seq_PickupMansionMap
+  m_EditorClassIdentifier: 
+  lockPlayer: 1
+  actions:
+  - rid: 398983252227129416
+  - rid: 398983252227129417
+  - rid: 398983252227129418
+  - rid: 398983252227129419
+  references:
+    version: 2
+    RefIds:
+    - rid: 398983252227129416
+      type: {class: GiveItemAction, ns: , asm: Assembly-CSharp}
+      data:
+        items:
+        - {fileID: 11400000, guid: a1ca1abac34ea0343acb6b90160b8533, type: 2}
+        amount: 1
+    - rid: 398983252227129417
+      type: {class: ShowDialogueAction, ns: , asm: Assembly-CSharp}
+      data:
+        dialogueData: {fileID: 0}
+        textKey: FP1_MAP_1
+        duration: 2.5
+    - rid: 398983252227129418
+      type: {class: ShowDialogueAction, ns: , asm: Assembly-CSharp}
+      data:
+        dialogueData: {fileID: 0}
+        textKey: FP1_MAP_2
+        duration: 5
+    - rid: 398983252227129419
+      type: {class: ShowDialogueAction, ns: , asm: Assembly-CSharp}
+      data:
+        dialogueData: {fileID: 0}
+        textKey: FP1_MAP_3
+        duration: 3

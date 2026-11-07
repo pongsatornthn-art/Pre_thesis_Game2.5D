@@ -348,6 +348,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!1 &3359115249735845229
 GameObject:
   m_ObjectHideFlags: 0
@@ -762,6 +763,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1
 --- !u!1 &7907362035102914217
 GameObject:
   m_ObjectHideFlags: 0
@@ -847,7 +849,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.8749343
+  m_Radius: 1.3424981
   m_Height: 5.3699923
   m_Direction: 1
   m_Center: {x: 0, y: 2.6849961, z: 0.09321797}
@@ -885,8 +887,8 @@ MonoBehaviour:
   dieSound: {fileID: 0}
   hitVFXPrefab: {fileID: 8562666531403948772, guid: e792e175ed40c374284017567d90f6d3, type: 3}
   heavyHitVFXPrefab: {fileID: 5948675084870369029, guid: 859e7fdfa802f46429d469d8d3da4901, type: 3}
-  patrolSpeed: 2
-  chaseSpeed: 2
+  patrolSpeed: 1.5
+  chaseSpeed: 2.8
   chaseLeashDistance: 20
   debugStateText: {fileID: 525566195878521248}
 --- !u!195 &-2008810806356263695

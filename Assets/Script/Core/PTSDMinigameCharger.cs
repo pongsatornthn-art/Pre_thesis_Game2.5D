@@ -135,6 +135,9 @@ public class PTSDMinigameCharger : MonoBehaviour
     {
         currentCharge = 0f;
         hasTriggeredMinigame = false;
+        // [แก้โดย Claude 2026-11-08] ห้องปลอดภัยถูกปิด (SetActive false) ตอนผู้เล่นยืนอยู่ข้างใน → OnTriggerExit ไม่ทำงาน ค่านี้ค้าง true
+        // → เข้า PTSD รอบหน้า (เช่น โต๊ะวาดรูป Type B) ป้าย "Hold [SPACE]" โผล่ทั้งที่ไม่ได้อยู่ห้องปลอดภัย · ล้างทิ้งทุกครั้งที่อยู่โลกปกติ
+        isPlayerInSafeZone = false;
         UpdateUI();
     }
 }

@@ -68,6 +68,15 @@ public class PlayerAnimationController : MonoBehaviour
         }
         // ------------------------------------------------------------------
 
+        // [แก้โดย Claude 2026-11-08] กำลังเล่นท่าตีท่อ (PlayerCombat สั่ง Trigger Attack/HeavyAttack → Any State)
+        // → ห้ามสั่ง Play ทับ ปล่อยให้ท่าตีเล่นจบ (มีทางกลับไป Idle เองตอนจบคลิป)
+        // ล้าง currentAnim ไว้ → ตีจบแล้วเฟรมถัดไปสั่งท่ายืน/เดินที่ถูกต้องใหม่ (เดิมค้างท่าตีจนกว่าจะเปลี่ยนจากยืนเป็นเดิน)
+        if (animator != null && IsInAttackState())
+        {
+            currentAnim = null;
+            return;
+        }
+
         // ----- ลำดับความสำคัญในการเล่นแอนิเมชัน -----
         if (isHoldingGun)
         {
@@ -97,6 +106,18 @@ public class PlayerAnimationController : MonoBehaviour
                 ChangeAnimation("Idle");
             }
         }
+    }
+
+    private bool IsInAttackState()
+    {
+        AnimatorStateInfo now = animator.GetCurrentAnimatorStateInfo(0);
+        if (now.IsName("Test_Attack") || now.IsName("Heavy_Attack")) return true;
+        if (animator.IsInTransition(0))
+        {
+            AnimatorStateInfo next = animator.GetNextAnimatorStateInfo(0);
+            if (next.IsName("Test_Attack") || next.IsName("Heavy_Attack")) return true;
+        }
+        return false;
     }
 
     public void ChangeAnimation(string newAnim)
