@@ -7,6 +7,7 @@ public class RadioTapeSystem : MonoBehaviour
     [Header("Audio")]
     public AudioSource radioAudioSource;
     public AudioClip[] tapes;
+    [Tooltip("เทปเฉลยต้องปิดไว้ ไม่งั้นเทปไม่จบและมินิเกมไม่ออก")]
     public bool loopTape = false;
     [Range(0f, 1f)] public float volume = 1f;
 
@@ -25,6 +26,8 @@ public class RadioTapeSystem : MonoBehaviour
     public UnityEvent onPuzzleTapeSelected;
 
     public int CurrentTapeIndex { get; private set; } = -1;
+    public bool IsPlaying => radioAudioSource != null && radioAudioSource.isPlaying;
+
     private bool isPaused;
 
     private void Awake()
@@ -63,10 +66,11 @@ public class RadioTapeSystem : MonoBehaviour
             return;
         }
 
-        // กดม้วนเดิมซ้ำ: ถ้าพักอยู่ให้เล่นต่อ ถ้าเล่นอยู่ก็ไม่ต้องทำอะไร
+        // กดม้วนเดิมซ้ำ: พักอยู่ให้เล่นต่อ / เล่นจบแล้วให้เล่นใหม่ / กำลังเล่นอยู่ไม่ต้องทำอะไร
         if (index == CurrentTapeIndex)
         {
             if (isPaused) TogglePlayStop();
+            else if (!radioAudioSource.isPlaying) radioAudioSource.Play();
             return;
         }
 

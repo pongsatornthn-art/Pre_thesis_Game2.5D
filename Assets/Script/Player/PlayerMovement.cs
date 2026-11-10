@@ -23,11 +23,18 @@ public class PlayerMovement : MonoBehaviour
     public float baseSpeed = 5f;
     public float acceleration = 20f;
     public float deceleration = 25f;
-    
+
     [Header("Sneak Settings (ย่องเบา)")]
     public float sneakSpeedMultiplier = 0.5f;
     [HideInInspector] public bool isSneaking = false;
-    
+
+    [Header("Backward Settings (ถอยหลังช้าลง)")]
+    [Tooltip("ความเร็วตอนถอยหลังตรงๆ เทียบกับปกติ (0.6 = เหลือ 60%)")]
+    [Range(0.1f, 1f)] public float backwardSpeedMultiplier = 0.6f;
+    [Tooltip("เดินสวนทิศเล็งเกินค่านี้ถึงเริ่มนับว่าถอย (dot product) ใช้ค่าเดียวกับแอนิเมชันถอย")]
+    public float backwardStartDot = -0.2f;
+    private float backwardFactor = 0f; // 0 = เดินหน้า/ข้าง, 1 = ถอยตรงๆ
+
     private Vector3 currentVelocity;
     private Vector3 moveInput;
 
@@ -129,7 +136,7 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         if (isDashing) return;
-        
+
         if (isStunned || isAttackPaused)
         {
             rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
@@ -138,7 +145,7 @@ public class PlayerMovement : MonoBehaviour
 
         // คำนวณความเร็ว (ถ้าย่องอยู่ ให้คูณตัวลดความเร็ว)
         float currentMaxSpeed = isSneaking ? (baseSpeed * sneakSpeedMultiplier) : baseSpeed;
-        
+
         // ถ้ากำลังชาร์จฟันดาบ ให้เดินช้าลง (ดึงค่าจาก PlayerCombat)
         if (combatScript != null && combatScript.isChargingMelee)
         {
@@ -150,6 +157,9 @@ public class PlayerMovement : MonoBehaviour
         {
             currentMaxSpeed *= combatScript.steadyAimSpeedMultiplier;
         }
+
+        // 🌟 ถอยหลัง = เดินช้าลง (ถอยตรงๆ ช้าสุด เดินเฉียงหลังช้าลงตามสัดส่วน)
+        currentMaxSpeed *= Mathf.Lerp(1f, backwardSpeedMultiplier, backwardFactor);
 
         Vector3 targetVelocity = moveInput * currentMaxSpeed;
 
@@ -187,6 +197,18 @@ public class PlayerMovement : MonoBehaviour
         aimDirection.y = 0f;
         if (aimDirection.sqrMagnitude > 0.001f) aimDirection.Normalize();
 
+        // 🌟 คำนวณระดับ "ถอยหลัง" ไว้ใช้ลดความเร็วใน FixedUpdate
+        if (moveInput.sqrMagnitude > 0.01f && aimDirection.sqrMagnitude > 0.001f)
+        {
+            float dot = Vector3.Dot(moveInput.normalized, aimDirection);
+            // 0 ที่ dot = backwardStartDot, 1 ที่ dot = -1 (ถอยตรงๆ)
+            backwardFactor = Mathf.InverseLerp(backwardStartDot, -1f, dot);
+        }
+        else
+        {
+            backwardFactor = 0f;
+        }
+
         if (aimAnchor != null)
         {
             aimAnchor.forward = aimDirection;
@@ -217,7 +239,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 float dotProduct = Vector3.Dot(moveInput.normalized, aimDirection.normalized);
 
-                if (dotProduct < -0.2f)
+                if (dotProduct < backwardStartDot)
                 {
                     animator.SetFloat("AnimSpeed", -1f); // ถอยหลัง
                 }
@@ -230,7 +252,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 animator.SetFloat("AnimSpeed", 1f);
             }
-            
+
             // 🐛 DEBUG LOG: เช็คว่าหลังฟันแล้ว โค้ดยังส่งค่าให้ Animator หรือเปล่า?
             // (ถ้าตัวเลขยังขยับตามเมาส์ แปลว่าโค้ดทำงานปกติ 100% บัคอยู่ที่ Animator)
             // (ถ้าตัวเลขหยุดนิ่ง แปลว่ามีโค้ดบางบรรทัดค้างหรือพัง)
@@ -328,7 +350,7 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator AttackPauseRoutine(float duration)
     {
         isAttackPaused = true;
-        
+
         if (animator != null)
         {
             animator.SetFloat("Speed", 0f);
@@ -342,7 +364,7 @@ public class PlayerMovement : MonoBehaviour
     {
         isStunned = true;
         Debug.Log($"<color=red>ผู้เล่นติดสตันเป็นเวลา {duration} วินาที!</color>");
-        
+
         if (animator != null)
         {
             // ถ้ามีแอนิเมชัน Stun ค่อยไปตั้งค่า Trigger
@@ -351,7 +373,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         yield return new WaitForSeconds(duration);
-        
+
         isStunned = false;
         Debug.Log("ผู้เล่นหายสตันแล้ว");
     }

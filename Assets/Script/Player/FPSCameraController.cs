@@ -1,25 +1,54 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class FPSCameraController : MonoBehaviour
 {
     [Header("Camera Limits")]
     public float mouseSensitivity = 150f;
-    public float clampAnglePitch = 30f; // ก้ม-เงย (ขึ้นลง) +- 30 องศา
-    public float clampAngleYaw = 60f;   // หันซ้าย-ขวา +- 60 องศา
-    public float interactDistance = 10f; // ระยะยิงเลเซอร์ตรวจจับวัตถุ
+    public float clampAnglePitch = 30f;
+    public float clampAngleYaw = 60f;
+    public float interactDistance = 10f;
+
+    [Header("Controls")]
+    [Tooltip("ต้องคลิกขวาค้างถึงจะหันกล้องได้ (กล้องไม่ส่ายตอนเอาเมาส์ไปกด UI)")]
+    public bool holdRightClickToLook = true;
 
     private float rotX = 0f;
     private float rotY = 0f;
     private Vector3 startRotation;
+    private Quaternion initialLocalRot;
 
     private MiniGameInteractable currentTarget;
+    private Camera cam; // 🔥 เปลี่ยนมาดึงกล้องของตัวเองแทน
+    private bool initialized;
 
     void Start()
     {
-        // บันทึกมุมเริ่มต้นของกล้อง FPS ที่ตั้งไว้ใน Scene
-        startRotation = transform.localEulerAngles;
+        cam = GetComponent<Camera>(); // ดึงจากออบเจกต์ที่สคริปต์นี้แปะอยู่ (FPS Camera)
+
+        initialLocalRot = transform.localRotation;
+
+        Vector3 angles = transform.localEulerAngles;
+        rotX = angles.x > 180 ? angles.x - 360 : angles.x;
+        rotY = angles.y > 180 ? angles.y - 360 : angles.y;
+        startRotation = new Vector3(rotX, rotY, 0f);
+
+        initialized = true;
+    }
+
+    void OnEnable()
+    {
+        cam = GetComponent<Camera>();
+
+        if (!initialized) return;
         rotX = startRotation.x;
         rotY = startRotation.y;
+        transform.localRotation = initialLocalRot;
+    }
+
+    void OnDisable()
+    {
+        ClearTarget();
     }
 
     void Update()
@@ -30,13 +59,14 @@ public class FPSCameraController : MonoBehaviour
 
     private void HandleCameraRotation()
     {
+        if (holdRightClickToLook && !Input.GetMouseButton(1)) return;
+
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
         rotY += mouseX;
         rotX -= mouseY;
 
-        // ล็อกองศากล้องไม่ให้หันเกินกำหนด
         rotX = Mathf.Clamp(rotX, startRotation.x - clampAnglePitch, startRotation.x + clampAnglePitch);
         rotY = Mathf.Clamp(rotY, startRotation.y - clampAngleYaw, startRotation.y + clampAngleYaw);
 
@@ -45,16 +75,24 @@ public class FPSCameraController : MonoBehaviour
 
     private void HandleInteraction()
     {
-        Ray ray = new Ray(transform.position, transform.forward);
-        RaycastHit hit;
+        if (cam == null) cam = GetComponent<Camera>();
+        if (cam == null) return;
 
-        // ยิง Raycast ออกไปตรงกลางจอ (เป้าเล็ง)
-        if (Physics.Raycast(ray, out hit, interactDistance))
+        // ป้องกันคลิกทะลุ UI
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
-            MiniGameInteractable interactable = hit.collider.GetComponent<MiniGameInteractable>();
+            ClearTarget();
+            return;
+        }
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+
+        // ไม่ชน Trigger (กันโต๊ะที่เป็น Trigger บังวิทยุ)
+        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            MiniGameInteractable interactable = hit.collider.GetComponentInParent<MiniGameInteractable>();
             if (interactable != null)
             {
-                // ถ้าชี้โดนเป้าหมายใหม่ ให้เปิดแสง Glow
                 if (currentTarget != interactable)
                 {
                     if (currentTarget != null) currentTarget.OnHoverExit();
@@ -62,7 +100,6 @@ public class FPSCameraController : MonoBehaviour
                     currentTarget.OnHoverEnter();
                 }
 
-                // ถ้ากดคลิกซ้าย
                 if (Input.GetMouseButtonDown(0))
                 {
                     currentTarget.OnClick();
