@@ -1,23 +1,26 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class RadioMiniGameManager : MonoBehaviour
 {
+    public static bool IsActive { get; private set; }
+
     [Header("Cameras & HUD")]
-    public GameObject mainCamera;
+    public GameObject mainCameraGroup;
     public GameObject fpsCamera;
     public GameObject mainHUD;
 
     [Header("Radio UI")]
     public GameObject radioMinigameUI;
     public GameObject interactPrompt;
+    public GameObject crosshair; // 🔥 เปลี่ยนเป็น GameObject ให้ใส่ง่ายๆ
 
-    [Header("Crosshair")]
-    public CrosshairUI crosshair;
+    [Header("Audio System")]
+    public RadioTapeSystem tapeSystem;
 
-    [Header("Radio Audio")]
-    [Tooltip("MiniGameInteractable ของวิทยุ (ใช้เล่นเสียงทันทีตอนเข้ามินิเกม)")]
-    public MiniGameInteractable radioInteractable;
-    public bool playSoundOnEnter = true;
+    [Header("Player Positioning")]
+    public Transform playerStandPoint;
+    public bool returnToOriginalPosition = true;
 
     [Header("Controllers (ปิดตอนเล่นมินิเกม)")]
     public MonoBehaviour playerController;
@@ -25,26 +28,26 @@ public class RadioMiniGameManager : MonoBehaviour
     public MonoBehaviour playerCombat;
     public MonoBehaviour cameraAimScript;
 
+    [Header("Exit")]
+    public KeyCode exitKey = KeyCode.Escape;
+
     [Header("Story Integration")]
     public StoryFlagId onCompleteFlag;
-
-    [Header("Minigame Raycast")]
-    public float raycastDistance = 10f;
 
     private bool isPlayerNear = false;
     private bool inMiniGame = false;
     private bool hasPlayed = false;
 
-    private Camera fpsCam;
-    private MiniGameInteractable currentHover;
+    private Vector3 playerReturnPos;
+    private Quaternion playerReturnRot;
+
+    private Rigidbody playerRb;
+    private bool rbWasKinematic;
 
     private void Start()
     {
         if (fpsCamera != null)
         {
-            fpsCam = fpsCamera.GetComponentInChildren<Camera>(true);
-
-            // กันเคสไม่มี AudioListener พอปิดกล้องหลักแล้วเสียงหาย
             if (fpsCamera.GetComponentInChildren<AudioListener>(true) == null)
             {
                 fpsCamera.AddComponent<AudioListener>();
@@ -56,6 +59,11 @@ public class RadioMiniGameManager : MonoBehaviour
         if (interactPrompt != null) interactPrompt.SetActive(false);
     }
 
+    private void OnDisable()
+    {
+        IsActive = false;
+    }
+
     private void Update()
     {
         if (isPlayerNear && !inMiniGame && !hasPlayed && Input.GetKeyDown(KeyCode.E))
@@ -63,132 +71,144 @@ public class RadioMiniGameManager : MonoBehaviour
             EnterMiniGame();
         }
 
-        if (inMiniGame)
+        if (inMiniGame && Input.GetKeyDown(exitKey))
         {
-            HandleMiniGameMouse();
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                ExitMiniGame();
-            }
+            ExitMiniGame();
         }
     }
 
-    // เปลี่ยนเป็น public เพื่อให้เรียกจาก UnityEvent / สคริปต์อื่นได้
     public void EnterMiniGame()
     {
         if (inMiniGame || hasPlayed) return;
         inMiniGame = true;
+        IsActive = true;
 
         if (interactPrompt != null) interactPrompt.SetActive(false);
-        if (crosshair != null) crosshair.SetVisible(false);
+        if (crosshair != null) crosshair.SetActive(false);
+        if (mainHUD != null) mainHUD.SetActive(false);
 
         if (playerController != null)
         {
-            Rigidbody rb = playerController.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
+            Transform p = playerController.transform;
+            playerReturnPos = p.position;
+            playerReturnRot = p.rotation;
+
             playerController.enabled = false;
+
+            playerRb = playerController.GetComponent<Rigidbody>();
+            if (playerRb != null)
+            {
+                rbWasKinematic = playerRb.isKinematic;
+                if (!playerRb.isKinematic)
+                {
+                    playerRb.linearVelocity = Vector3.zero;
+                    playerRb.angularVelocity = Vector3.zero;
+                }
+                playerRb.isKinematic = true;
+            }
+
+            CharacterController cc = playerController.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+
+            if (playerStandPoint != null)
+            {
+                p.SetPositionAndRotation(playerStandPoint.position, playerStandPoint.rotation);
+            }
+            Physics.SyncTransforms();
         }
 
         if (playerInteraction != null) playerInteraction.enabled = false;
         if (playerCombat != null) playerCombat.enabled = false;
         if (cameraAimScript != null) cameraAimScript.enabled = false;
 
-        if (mainHUD != null) mainHUD.SetActive(false);
-        if (fpsCamera != null) fpsCamera.SetActive(true);   // เปิดก่อน จะได้มี AudioListener ตลอด
-        if (mainCamera != null) mainCamera.SetActive(false);
+        if (fpsCamera != null) fpsCamera.SetActive(true);
+        if (mainCameraGroup != null) mainCameraGroup.SetActive(false);
 
-        if (radioMinigameUI != null) radioMinigameUI.SetActive(true);
+        // 🔥 เอาคำสั่ง radioMinigameUI.SetActive(true) ออกจากตรงนี้แล้ว
+        // UI จะไม่เปิดเองจนกว่าเราจะคลิกที่วิทยุ
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+    }
 
-        // เล่นเสียงทันที
-        if (playSoundOnEnter && radioInteractable != null)
+    public void ExitMiniGame()
+    {
+        if (!inMiniGame) return;
+        inMiniGame = false;
+        IsActive = false;
+        StopAllCoroutines();
+
+        if (tapeSystem != null) tapeSystem.StopTape();
+
+        // 🔥 สั่งปิด UI ตรงนี้ ถ้าช่อง Inspector ใส่ถูก ยังไงก็หายชัวร์
+        if (radioMinigameUI != null) radioMinigameUI.SetActive(false);
+
+        if (fpsCamera != null) fpsCamera.SetActive(false);
+        if (mainCameraGroup != null) mainCameraGroup.SetActive(true);
+
+        if (mainHUD != null) mainHUD.SetActive(true);
+        if (crosshair != null) crosshair.SetActive(true);
+
+        if (playerController != null)
         {
-            radioInteractable.PlaySound();
+            Transform p = playerController.transform;
+            CharacterController cc = p.GetComponent<CharacterController>();
+
+            if (returnToOriginalPosition)
+            {
+                if (cc != null) cc.enabled = false;
+                p.SetPositionAndRotation(playerReturnPos, playerReturnRot);
+                Physics.SyncTransforms();
+            }
+
+            if (cc != null) cc.enabled = true;
+            if (playerRb != null) playerRb.isKinematic = rbWasKinematic;
+            playerController.enabled = true;
+        }
+
+        if (playerInteraction != null) playerInteraction.enabled = true;
+        if (playerCombat != null) playerCombat.enabled = true;
+        if (cameraAimScript != null) cameraAimScript.enabled = true;
+
+        StartCoroutine(RelockCursor());
+
+        if (isPlayerNear && !hasPlayed && interactPrompt != null)
+        {
+            interactPrompt.SetActive(true);
         }
     }
 
-    // ใช้จัดการ hover / คลิกของ MiniGameInteractable ตอนอยู่ในมินิเกม
-    private void HandleMiniGameMouse()
+    private IEnumerator RelockCursor()
     {
-        if (fpsCam == null) return;
-
-        Ray ray = fpsCam.ScreenPointToRay(Input.mousePosition);
-        RaycastHit[] hits = Physics.RaycastAll(ray, raycastDistance, ~0, QueryTriggerInteraction.Collide);
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-        MiniGameInteractable found = null;
-        foreach (var h in hits)
-        {
-            found = h.collider.GetComponentInParent<MiniGameInteractable>();
-            if (found != null) break;
-        }
-
-        if (found != currentHover)
-        {
-            if (currentHover != null) currentHover.OnHoverExit();
-            currentHover = found;
-            if (currentHover != null) currentHover.OnHoverEnter();
-        }
-
-        if (currentHover != null && Input.GetMouseButtonDown(0))
-        {
-            currentHover.OnClick();
-        }
+        yield return null;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public void SolvePuzzleAndExit()
     {
+        if (hasPlayed) return;
         hasPlayed = true;
+
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
 
         if (onCompleteFlag != null)
         {
             IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
-            if (flags != null)
-            {
-                flags.Set(onCompleteFlag);
-            }
+            if (flags != null) flags.Set(onCompleteFlag);
         }
 
-        ExitMiniGame();
+        StartCoroutine(ExitAfterTape());
     }
 
-    public void ExitMiniGame()
+    private IEnumerator ExitAfterTape()
     {
-        inMiniGame = false;
+        yield return null;
+        while (inMiniGame && tapeSystem != null && tapeSystem.IsPlaying)
+            yield return null;
 
-        if (currentHover != null)
-        {
-            currentHover.OnHoverExit();
-            currentHover = null;
-        }
-
-        if (radioMinigameUI != null) radioMinigameUI.SetActive(false);
-
-        if (mainCamera != null) mainCamera.SetActive(true);
-        if (fpsCamera != null) fpsCamera.SetActive(false);
-        if (mainHUD != null) mainHUD.SetActive(true);
-        if (crosshair != null) crosshair.SetVisible(true);
-
-        if (playerController != null) playerController.enabled = true;
-        if (playerInteraction != null) playerInteraction.enabled = true;
-        if (playerCombat != null) playerCombat.enabled = true;
-        if (cameraAimScript != null) cameraAimScript.enabled = true;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
-        if (isPlayerNear && !hasPlayed && interactPrompt != null)
-        {
-            interactPrompt.SetActive(true);
-        }
+        ExitMiniGame();
     }
 
     private void OnTriggerEnter(Collider other)

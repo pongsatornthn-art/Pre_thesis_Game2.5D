@@ -19,53 +19,48 @@ public class StalkerAI : MonoBehaviour, IDamageable
     [Range(0f, 1f)] public float screamVolume = 1f;
 
     [Header("Director AI (การเดินซุ่มรอบๆ ผู้เล่น)")]
-    [Tooltip("ระยะใกล้สุดที่บอสจะเดินวนรอบๆ ตัวผู้เล่น (เมตร)")]
     public float lurkMinRadius = 10f;
-    [Tooltip("ระยะไกลสุดที่บอสจะเดินวนรอบๆ ตัวผู้เล่น (เมตร)")]
     public float lurkMaxRadius = 20f;
-    [Tooltip("รัศมีการได้ยินเสียงมินเนี่ยนร้องเรียกบอส (เมตร)")]
     public float minionShoutHearRadius = 50f;
-    [Tooltip("ค่าความสงสัยขั้นต่ำที่จะเพิ่มให้บอส (เมื่อมินเนี่ยนอยู่ไกลขอบรัศมีสุดๆ)")]
     public float minShoutSuspicion = 20f;
-    [Tooltip("ค่าความสงสัยขั้นสูงที่จะเพิ่มให้บอส (เมื่อมินเนี่ยนอยู่ใกล้บอสมาก)")]
     public float maxShoutSuspicion = 100f;
 
     [Header("Jumpscare Minigame")]
-    public float minigameDuration = 5f;
-    public float baseHpDrainRate = 25f;
-    public float drainReductionPerPress = 1.5f;
+    public StalkerJumpscareUI jumpscareUI; // ลาก Canvas UI มินิเกมมาใส่ช่องนี้
+    public int jumpscareDamage = 40; // ดาเมจที่โดนถ้าหลอดหมด
+    public float baseHpDrainRate = 25f; // ความเร็วที่หลอดลดลง
+    [Tooltip("ค่าความแรงในการคลิกแต่ละครั้ง (แนะนำ 10-15 สำหรับหลอด 100)")]
+    public float drainReductionPerPress = 10f;
     public KeyCode requiredInputButton = KeyCode.E;
     public float postEscapeTeleportRadius = 15f;
 
     [Header("Sensors (Vision & Sound)")]
     public float sightRadius = 8f;
     public float sightAngle = 60f;
-    public float soundSenseRadius = 18f; // ระยะได้ยินเสียงวิ่ง/ปืน
+    public float soundSenseRadius = 18f;
     public LayerMask obstacleMask;
+
+    [Header("Jumpscare Minigame")]
+    public float minigameDuration = 5f;
 
     public NavMeshAgent Agent { get; private set; }
     public Transform PlayerTransform { get; private set; }
     public AwarenessSystem Awareness { get; private set; }
     private IStalkerState currentState;
 
-    /// <summary>
-    /// [เพิ่มโดย Claude 2026-09-19] เปิดให้ระบบอื่นอ่านสถานะปัจจุบันได้ (อ่านอย่างเดียว เปลี่ยนค่าไม่ได้)
-    /// จำเป็นสำหรับ StalkerHearing ที่ต้องเช็คก่อนว่ากำลังจับผู้เล่น/โดนสตันอยู่ไหม
-    /// จะได้ไม่ถูกเสียงปืนดึงออกจากสถานะนั้นกลางคัน
-    /// </summary>
     public IStalkerState CurrentState => currentState;
 
-    [Header("Debug UI (ข้อความลอยบนหัว)")]
+    [Header("Debug UI")]
     public TMPro.TMP_Text debugStateText;
+
+    private bool isInMinigame = false;
 
     private void Awake()
     {
         Agent = GetComponent<NavMeshAgent>();
         Awareness = GetComponent<AwarenessSystem>();
         if (Awareness == null) Awareness = gameObject.AddComponent<AwarenessSystem>();
-        
-        // Custom Awareness settings for Stalker based on GDD
-        Awareness.fillRateBase = 80f; // LOS Detection Speed = 80%/s
+        Awareness.fillRateBase = 80f;
     }
 
     private void Start()
@@ -73,47 +68,90 @@ public class StalkerAI : MonoBehaviour, IDamageable
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null) PlayerTransform = player.transform;
 
+
+        if (jumpscareUI == null)
+            jumpscareUI = FindFirstObjectByType<StalkerJumpscareUI>();
+
         ChangeState(new StalkerStateLurk());
-        
-        // รับสัญญาณตอน Minion ตะโกนเรียก (Director AI system)
-        PTSDMonsterAI.OnMinionShout += HandleMinionShout;
-    }
-
-    private void OnDestroy()
-    {
-        PTSDMonsterAI.OnMinionShout -= HandleMinionShout;
-    }
-
-    private void HandleMinionShout(Vector3 minionPos)
-    {
-        // เช็คระยะห่างว่ามินเนี่ยนที่ร้อง อยู่ในรัศมีการได้ยินหรือไม่
-        float distance = Vector3.Distance(transform.position, minionPos);
-        if (distance <= minionShoutHearRadius)
-        {
-            float distanceFactor = 1f - (distance / minionShoutHearRadius); 
-            float suspicionLevel = Mathf.Lerp(minShoutSuspicion, maxShoutSuspicion, distanceFactor);
-            
-            Debug.Log($"🦇 Stalker ได้ยินเสียง! (ระยะ {distance:F1}m) ความสงสัย: {suspicionLevel:F0}% กำลังเดินไปสำรวจ...");
-            
-            // เพิ่ม AG สะสมไว้เผื่อหลอดเต็ม
-            Awareness.AddAwareness(suspicionLevel);
-            
-            // ไม่ว่าความสงสัยจะเท่าไหร่ ก็ให้หันหน้าเดินไปสำรวจจุดนั้นเสมอ (แต่จะเดินช้าหรือเร็วขึ้นอยู่กับค่า suspicion)
-            ChangeState(new StalkerStateAlert(minionPos, suspicionLevel));
-        }
-        else
-        {
-            Debug.Log($"🦇 Stalker ไม่ได้ยินเสียง Minion (ระยะ {distance:F1}m ไกลเกินรัศมี {minionShoutHearRadius}m)");
-        }
+        // PTSDMonsterAI.OnMinionShout += HandleMinionShout;
     }
 
     private void Update()
     {
+        if (isInMinigame) return; // ถ้ากำลังยื้อยุดอยู่ บอสจะหยุดทำงานชั่วคราว
+
         currentState?.UpdateState(this);
+        CheckJumpscareDistance(); // เช็กระยะว่าบอสถึงตัวผู้เล่นหรือยัง
+    }
+
+    // ----- ระบบเข้าหน้ายื้อยุด -----
+    private void CheckJumpscareDistance()
+    {
+        if (PlayerTransform == null || isInMinigame) return;
+
+        // ถ้าผู้เล่นอยู่ในระยะฆ่า (killDistance) ให้เข้ามินิเกม
+        float dist = Vector3.Distance(transform.position, PlayerTransform.position);
+        if (dist <= killDistance && jumpscareUI != null)
+        {
+            StartJumpscare();
+        }
+    }
+
+    private void StartJumpscare()
+    {
+        isInMinigame = true;
+        Agent.isStopped = true; // หยุดเดิน
+
+        Debug.Log("🦇 Stalker จับตัวผู้เล่นได้! เข้าสู่หน้า Jumpscare ยื้อยุด!");
+        jumpscareUI.StartMinigame(this);
+
+        // คุณพงศธรสามารถเรียกอนิเมเตอร์ "มือผี" ตรงนี้ได้เลยครับ
+        // anim.SetTrigger("Jumpscare");
+    }
+
+    // รับผลลัพธ์หลังจากมินิเกมจบ
+    public void OnJumpscareEnd(bool isWin)
+    {
+        isInMinigame = false;
+
+        if (isWin)
+        {
+            Debug.Log("🎉 ผู้เล่นคลิกรัวชนะ! รอดตาย เลือดไม่ลด");
+        }
+        else
+        {
+            Debug.Log("💀 ผู้เล่นคลิกไม่ทัน หลอดหมด! โดนดาเมจเต็มๆ");
+            // ดึง PlayerMovement ของผู้เล่นมาเพื่อหักเลือด
+            PlayerMovement playerHealth = PlayerTransform.GetComponent<PlayerMovement>();
+            if (playerHealth != null)
+            {
+                // ใช้ TakeRawDamage ตามสคริปต์ของ PlayerMovement
+                playerHealth.TakeRawDamage(jumpscareDamage);
+            }
+        }
+
+        TeleportAway();
+        ChangeState(new StalkerStateLurk());
+    }
+
+    private void TeleportAway()
+    {
+        if (PlayerTransform == null) return;
+
+        // สุ่มหาตำแหน่งด้านหลังหรือรอบๆ ผู้เล่นที่อยู่ไกลออกไป
+        Vector2 randomDir = Random.insideUnitCircle.normalized * postEscapeTeleportRadius;
+        Vector3 randomPos = PlayerTransform.position + new Vector3(randomDir.x, 0, randomDir.y);
+
+        if (NavMesh.SamplePosition(randomPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+        {
+            Agent.Warp(hit.position);
+            Agent.isStopped = false;
+        }
     }
 
     public void ChangeState(IStalkerState newState)
     {
+        if (isInMinigame) return; // ห้ามเปลี่ยนสถานะตอนโดนจับ
         currentState?.ExitState(this);
         currentState = newState;
         currentState?.EnterState(this);
@@ -122,14 +160,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
     public void UpdateDetection()
     {
         if (PlayerTransform == null) return;
-        
+
         float distToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
-        
-        // 1. ตรวจจับด้วยสายตารูปกรวย (Cone Vision) -> เจอแล้วเกจพุ่ง 100% ทันที ตาม GDD
+
         if (distToPlayer <= sightRadius)
         {
             Vector3 dirToPlayer = (PlayerTransform.position - transform.position);
-            dirToPlayer.y = 0; 
+            dirToPlayer.y = 0;
             Vector3 forward = transform.forward;
             forward.y = 0;
 
@@ -144,38 +181,36 @@ public class StalkerAI : MonoBehaviour, IDamageable
                     if (hit.collider.transform == PlayerTransform || hit.collider.transform.root == PlayerTransform.root)
                     {
                         Awareness.ForceMaxAwareness();
-                        return; // เจอตัวแล้ว จบเลย
+                        return;
                     }
                 }
-                else 
+                else
                 {
                     Awareness.ForceMaxAwareness();
                     return;
                 }
             }
         }
-        
-        // 2. ตรวจจับเสียงผู้เล่นวิ่ง (ถ้าไม่ได้ย่องเบา)
+
         PlayerMovement pm = PlayerTransform.GetComponent<PlayerMovement>();
         if (pm != null && !pm.isSneaking && pm.GetComponent<Rigidbody>().linearVelocity.sqrMagnitude > 1f)
         {
             if (distToPlayer <= soundSenseRadius)
             {
-                Awareness.FillAwareness(); // เสียงวิ่งทำให้หลอดเกจขึ้น
+                Awareness.FillAwareness();
                 return;
             }
         }
 
-        Awareness.DecayAwareness(); // ถ้าไม่เห็นไม่ได้ยิน เกจลด
+        Awareness.DecayAwareness();
     }
 
-    // อัปเดตให้ตรงกับ Interface IDamageable ของเพื่อน
     public void TakeDamage(int damageAmount, float knockback, bool isHeavyAttack = false)
     {
-        TakeDamage(damageAmount, isHeavyAttack); // เรียกใช้ฟังก์ชันเดิม
+        TakeDamage(damageAmount, isHeavyAttack);
     }
 
-    public void Die() { } // บอสอมตะ ไม่ตาย
+    public void Die() { }
 
     public void TakeDamage(int attackDamage, bool isHeavyAttack = false)
     {
@@ -183,14 +218,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
         {
             if (hasSuperArmor)
             {
-                Debug.Log("<color=magenta>🦇 Stalker มี Super Armor อยู่! ยิงซ้ำไม่สะทกสะท้าน!</color>");
+                Debug.Log("<color=magenta>🦇 Stalker มี Super Armor อยู่!</color>");
             }
             else
             {
-                Debug.Log("<color=purple>🦇 Stalker อมตะ! กระสุนทำอะไรไม่ได้ ทำได้แค่ชะงัก (Stun)</color>");
-                ChangeState(new StalkerStateStun(stunDuration));
-                
-                // ให้ Super Armor 5 วินาทีหลังจากโดนยิง เพื่อไม่ให้ผู้เล่นยิงสแปมจนบอสเดินไม่ได้
+                Debug.Log("<color=purple>🦇 Stalker อมตะ! โดน Stun</color>");
+                // ChangeState(new StalkerStateStun(stunDuration)); // ปลดคอมเมนต์ถ้ามีสคริปต์นี้
+
                 if (superArmorCoroutine != null) StopCoroutine(superArmorCoroutine);
                 superArmorCoroutine = StartCoroutine(SuperArmorRoutine(5f));
             }
@@ -210,22 +244,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
     {
         if (debugStateText != null)
         {
-            if (string.IsNullOrEmpty(key))
-            {
-                debugStateText.text = "";
-            }
-            else
-            {
-                var loc = ServiceLocator.Get<ILocalizationService>();
-                debugStateText.text = loc != null ? loc.GetText(key) : key;
-            }
+            debugStateText.text = key;
             debugStateText.color = color;
         }
     }
 
     private void OnDrawGizmos()
     {
-        // วาดรูปพัดสายตา
         Vector3 forward = transform.forward * sightRadius;
         Quaternion leftRayRotation = Quaternion.AngleAxis(-sightAngle / 2f, Vector3.up);
         Quaternion rightRayRotation = Quaternion.AngleAxis(sightAngle / 2f, Vector3.up);
@@ -235,12 +260,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
         Gizmos.DrawRay(transform.position, leftRayDirection);
         Gizmos.DrawRay(transform.position, rightRayDirection);
 
-        // วาดวงกลมการได้ยินเสียงฝีเท้าผู้เล่น
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, soundSenseRadius);
 
-        // วาดวงกลมรัศมีการได้ยินเสียงมินเนี่ยนร้องเรียก (วงใหญ่สุด)
-        Gizmos.color = new Color(0.8f, 0f, 1f, 0.3f); // สีม่วงอ่อนๆ จะได้ไม่แย่งซีนวงอื่น
+        Gizmos.color = new Color(0.8f, 0f, 1f, 0.3f);
         Gizmos.DrawWireSphere(transform.position, minionShoutHearRadius);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, killDistance); // วาดรัศมีการโดนจับ
     }
 }
