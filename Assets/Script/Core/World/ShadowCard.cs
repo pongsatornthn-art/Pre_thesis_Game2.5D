@@ -21,6 +21,9 @@ public class ShadowCard : MonoBehaviour
     [Tooltip("ความสูงแผ่นเงาเทียบตัวจริง (1 = สูงเท่าตัว) — ไฟในบ้านอยู่ต่ำ เงาเต็มความสูงจะยาวเกินตัว · ลดค่านี้ = เงาสั้นลง (ยังติดเท้าเหมือนเดิม)")]
     [SerializeField, Range(0.3f, 1f)] private float heightScale = 0.75f;
 
+    [Tooltip("ความกว้างแผ่นเงาเทียบตัวจริง (1 = กว้างเท่าตัว) — แผ่นเงาหันหาไฟ แต่ขาในรูปกางซ้าย-ขวาตามกล้อง · ไฟมาด้านข้าง = ขาเงากางคนละทิศกับขาที่เห็น ดูไม่ตรงกัน · ลดค่านี้ = เงาผอมลง ขาเงาชิดกัน รอยต่อที่เท้าดูเนียนขึ้น · ปรับสดได้ตอนกดเล่น")]
+    [SerializeField, Range(0.3f, 1f)] private float widthScale = 0.65f;
+
     [Tooltip("พื้นอยู่ต่ำกว่าจุดกลางตัวละคร (ตัวแม่) กี่เมตร — ผู้เล่นยืนที่ y 0.35 บนพื้น y 0 = -0.35")]
     [SerializeField] private float groundOffset = -0.35f;
 
@@ -61,7 +64,7 @@ public class ShadowCard : MonoBehaviour
         // แผ่นตั้งตรง หันหน้าเข้าหาไฟ (หมุนแค่แกนตั้ง)
         Quaternion target = Quaternion.LookRotation(toLight, Vector3.up);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, target, turnSpeed * Time.deltaTime);
-        transform.localScale = new Vector3(baseScale.x, baseScale.y * heightScale, baseScale.z);
+        transform.localScale = new Vector3(baseScale.x * widthScale, baseScale.y * heightScale, baseScale.z);
 
         // วางให้เท้าในรูปแตะพื้นตรงจุดที่เท้าตัวจริงอยู่ — ตัวจริงเอียงเข้ากล้อง แผ่นเงาตั้งตรง
         // ถ้าเท้าแผ่นเงาลอยเหนือพื้น เงาจะเริ่มห่างจากเท้า (ยิ่งไฟไกลยิ่งห่าง)
