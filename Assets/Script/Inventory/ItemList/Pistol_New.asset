@@ -24,7 +24,7 @@ MonoBehaviour:
   equippedSprite: {fileID: 0}
   itemNameKey: 
   descriptionKey: 
-  damage: 30
+  damage: 15
   attackRange: 20
   lightAttackCooldown: 0.5
   knockback: 1
@@ -42,9 +42,9 @@ MonoBehaviour:
   steadySpreadMultiplier: 0.35
   steadyFocusSpeedMultiplier: 2
   aimAssistRadius: 0.6
-  fireSfx: {fileID: 0}
+  fireSfx: {fileID: 8300000, guid: 8fa8334fd9027804bac43a614696b8f6, type: 3}
   emptySfx: {fileID: 0}
   reloadSfx: {fileID: 0}
-  shotLoudness: 1
+  shotLoudness: 8
   impactWallPrefab: {fileID: 0}
   impactFleshPrefab: {fileID: 0}

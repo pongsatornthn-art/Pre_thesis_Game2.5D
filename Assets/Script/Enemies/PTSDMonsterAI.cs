@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
 public class PTSDMonsterAI : MonoBehaviour, IDamageable
@@ -12,8 +12,16 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
 
     [Header("Detection Settings")]
     public float hearingRadius = 5f; 
+    [Tooltip("[Claude 2026-11-12 ต้าขอ] ผู้เล่นวิ่ง (Shift) = เสียงดัง ได้ยินไกลถึงรัศมีนี้ ทะลุกำแพง")]
+    public float runNoiseRadius = 12f;
+    [Tooltip("ผู้เล่นย่อง = วงได้ยินใกล้ตัวหดเหลือกี่เท่า (0.5 = ครึ่งเดียว)")]
+    [Range(0.1f, 1f)] public float sneakHearingMultiplier = 0.5f;
     public float sightRadius = 15f; 
-    [Range(0, 360)] public float sightAngle = 90f; 
+    [Range(0, 360)] public float sightAngle = 90f;
+    [Tooltip("[งานข้อ 10] ผู้เล่นเข้าใกล้กว่านี้ (เมตร) = รู้ตัวเต็มหลอดทันที แม้อยู่ข้างหลัง (ต้องไม่มีกำแพงกั้น)")]
+    public float instantNoticeRadius = 1.5f;
+    [Tooltip("[งานข้อ 10] ในวงได้ยิน (Hearing Radius) ยิ่งใกล้หลอดยิ่งขึ้นเร็ว: ขอบวง x1 → ชิดตัว x ค่านี้")]
+    public float closeRangeMultiplier = 4f;
     public LayerMask obstacleMask; 
     public LayerMask playerMask; 
 
@@ -52,6 +60,46 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
 
     // --- State Machine ---
     private IMonsterState currentState;
+
+    // ===== [Claude 2026-11-12] สัญญาณเตือน "กำลังกรีดร้องเรียกบอส" + ขัดด้วยตีหนัก =====
+    [Header("กรีดร้องเรียกบอส (สัญญาณเตือน)")]
+    [Tooltip("เสียงสูดหายใจ/เกร็งตัวก่อนกรีดร้อง (เว้นว่างได้ — ยังมีตัวสั่น+แดงเตือน)")]
+    public AudioClip screamChargeSound;
+    [Tooltip("สีตัวตอนชาร์จกรีดร้อง")]
+    public Color screamTellColor = new Color(1f, 0.45f, 0.45f);
+    [Tooltip("ความแรงตัวสั่น (เมตร)")]
+    public float screamShakeAmount = 0.06f;
+
+    private SpriteRenderer tellSprite;
+    private Color tellBaseColor;
+    private Vector3 tellBasePos;
+    private bool tellActive;
+
+    public void BeginScreamTell()
+    {
+        if (tellSprite == null) tellSprite = GetComponentInChildren<SpriteRenderer>();
+        if (tellSprite == null) return;
+        if (!tellActive) { tellBaseColor = tellSprite.color; tellBasePos = tellSprite.transform.localPosition; }
+        tellActive = true;
+        if (screamChargeSound != null) ServiceLocator.GetOptional<IAudioService>()?.PlaySFX(screamChargeSound, transform.position, 1f, false);
+    }
+
+    public void EndScreamTell()
+    {
+        if (!tellActive) return;
+        tellActive = false;
+        if (tellSprite == null) return;
+        tellSprite.color = tellBaseColor;
+        tellSprite.transform.localPosition = tellBasePos;
+    }
+
+    private void LateUpdate()
+    {
+        if (!tellActive || tellSprite == null) return;
+        float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 18f);
+        tellSprite.color = Color.Lerp(tellBaseColor, screamTellColor, 0.4f + 0.6f * pulse);
+        tellSprite.transform.localPosition = tellBasePos + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)) * screamShakeAmount;
+    }
     public string CurrentStateName => currentState != null ? currentState.GetType().Name : "None";
 
     // --- References ---
@@ -181,7 +229,15 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
         }
         else
         {
-            if (hasSuperArmor)
+            // [Claude 2026-11-12] ตีหนักโดนตอนกำลังชาร์จกรีดร้อง = ขัดได้ (ไม่เรียกบอส + ติดสตัน) — ทะลุ Super Armor เฉพาะกรณีนี้
+            if (isHeavyAttack && currentState is StateAttack charging && charging.IsChargingScream)
+            {
+                Debug.Log($"<color=cyan>{gameObject.name} โดนตีหนักขัดเสียงกรีดร้อง! ไม่ได้เรียกบอส</color>");
+                ChangeState(new StateStun(2.5f));
+                if (superArmorCoroutine != null) StopCoroutine(superArmorCoroutine);
+                superArmorCoroutine = StartCoroutine(SuperArmorRoutine(superArmorDuration));
+            }
+            else if (hasSuperArmor)
             {
                 Debug.Log($"<color=magenta>{gameObject.name} โดนตี {damage} ดาเมจ! แต่มี Super Armor! ไม่ชะงัก!</color>");
             }
@@ -201,6 +257,14 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
                 {
                     Debug.Log($"<color=orange>{gameObject.name} โดนตีเบา {damage} ดาเมจ! (ไม่ติดสตัน)</color>");
                 }
+            }
+
+            // [เพิ่มโดย Claude 2026-11-11 งานข้อ 10] โดนตี/ยิง = รู้ตัวเต็มหลอดทันที แล้วหันมาไล่ (ไม่ต้องรอหลอดค่อยๆ ขึ้น)
+            // ตีหนักติดสตันอยู่ → ปล่อยให้สตันจบก่อน (StateStun จะสั่งไล่เอง)
+            Awareness.ForceMaxAwareness();
+            if (!(currentState is StateStun) && !(currentState is StateChase) && !(currentState is StateAttack))
+            {
+                ChangeState(new StateChase());
             }
 
             // 🎵 [AAA Audio Service] เล่นเสียงโดนตีแบบ 3D
@@ -306,54 +370,72 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
         
         float distToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
         bool canSeeOrHear = false;
-        
-        // 1. ตรวจจับระยะใกล้ (วงกลมสีเหลือง) - ไม่ทะลุกำแพง
-        if (distToPlayer <= hearingRadius)
+
+        // [Claude 2026-11-12] ทุกการรับรู้ต้องไม่มีกำแพงคั่น (เดิมได้ยิน/มองทะลุกำแพงบางชิ้น ดูเอ๋อ)
+        Vector3 eye = transform.position + Vector3.up * 1f;
+        Vector3 target = PlayerTransform.position + Vector3.up * 1f;
+        bool clear = distToPlayer <= Mathf.Max(runNoiseRadius, Mathf.Max(hearingRadius, sightRadius)) && !WallBetween(eye, target);
+
+        // วิ่ง = เสียงดัง ได้ยินไกล · ย่อง = วงได้ยินหด
+        PlayerMovement pmv = PlayerTransform.GetComponent<PlayerMovement>();
+        bool playerRunning = pmv != null && pmv.IsRunning;
+        float hearNow = pmv != null && pmv.isSneaking ? hearingRadius * sneakHearingMultiplier : hearingRadius;
+
+        if (clear)
         {
-            Vector3 origin = transform.position + Vector3.up * 1f;
-            Vector3 target = PlayerTransform.position + Vector3.up * 1f;
-            Vector3 rayDir = (target - origin).normalized;
-            
-            if (Physics.Raycast(origin, rayDir, out RaycastHit hit, hearingRadius, obstacleMask))
+            // 1. ได้ยินคนวิ่ง (ไกล)
+            if (playerRunning && distToPlayer <= runNoiseRadius) canSeeOrHear = true;
+            // 2. ระยะใกล้ (วงกลมสีเหลือง)
+            else if (distToPlayer <= hearNow) canSeeOrHear = true;
+            // 3. สายตา (รูปพัดสีแดง)
+            else if (distToPlayer <= sightRadius)
             {
-                if (hit.collider.transform == PlayerTransform || hit.collider.transform.root == PlayerTransform.root) 
-                    canSeeOrHear = true;
-            }
-            else canSeeOrHear = true; // ทางโล่ง
-        }
-
-        // 2. ตรวจจับด้วยสายตา (รูปพัดสีแดง)
-        if (!canSeeOrHear && distToPlayer <= sightRadius)
-        {
-            Vector3 dirToPlayer = (PlayerTransform.position - transform.position);
-            dirToPlayer.y = 0; 
-            Vector3 forward = transform.forward;
-            forward.y = 0;
-
-            if (Vector3.Angle(forward, dirToPlayer) <= sightAngle / 2f)
-            {
-                Vector3 origin = transform.position + Vector3.up * 1f;
-                Vector3 target = PlayerTransform.position + Vector3.up * 1f;
-                Vector3 rayDir = (target - origin).normalized;
-
-                if (Physics.Raycast(origin, rayDir, out RaycastHit hit, distToPlayer, obstacleMask))
-                {
-                    if (hit.collider.transform == PlayerTransform || hit.collider.transform.root == PlayerTransform.root)
-                        canSeeOrHear = true;
-                }
-                else canSeeOrHear = true;
+                Vector3 dirToPlayer = PlayerTransform.position - transform.position; dirToPlayer.y = 0;
+                Vector3 forward = transform.forward; forward.y = 0;
+                if (Vector3.Angle(forward, dirToPlayer) <= sightAngle / 2f) canSeeOrHear = true;
             }
         }
         
         // อัปเดตลงหลอดเกจ (ถ้าเห็นให้เพิ่ม ถ้าไม่เห็นให้ลด)
         if (canSeeOrHear)
         {
-            Awareness.FillAwareness();
+            // [แก้โดย Claude 2026-11-11 งานข้อ 10] ยิ่งยืนใกล้ ยิ่งรู้ตัวไว — แม้อยู่ข้างหลัง (ไม่ต้องอยู่ในพัดสายตา)
+            // ระยะประชิด (Instant Notice Radius) = รู้ตัวทันที · ในวงได้ยิน = เร็วขึ้นตามความใกล้ (ขอบวง x1 → ชิดตัว x Close Range Multiplier)
+            if (distToPlayer <= instantNoticeRadius)
+            {
+                Awareness.ForceMaxAwareness();
+            }
+            else if (distToPlayer <= hearingRadius)
+            {
+                float closeness = 1f - Mathf.InverseLerp(instantNoticeRadius, hearingRadius, distToPlayer);
+                Awareness.FillAwareness(Mathf.Lerp(1f, closeRangeMultiplier, closeness));
+            }
+            else
+            {
+                Awareness.FillAwareness();
+            }
         }
         else
         {
             Awareness.DecayAwareness();
         }
+    }
+
+    // [Claude 2026-11-12] เช็คกำแพงคั่น — นับทั้ง Obstacle Mask + เลเยอร์ Default (กำแพงในแมพ 22 ชิ้นอยู่ Default → เดิมมองทะลุ)
+    // ข้ามตัวเอง/ตัวผู้เล่น/Trigger
+    public bool WallBetween(Vector3 from, Vector3 to)
+    {
+        int mask = obstacleMask.value | (1 << 0);
+        Vector3 dir = to - from; float dist = dir.magnitude;
+        if (dist < 0.01f) return false;
+        foreach (RaycastHit h in Physics.RaycastAll(from, dir / dist, dist, mask, QueryTriggerInteraction.Ignore))
+        {
+            Transform r = h.collider.transform.root;
+            if (r == transform.root || (PlayerTransform != null && r == PlayerTransform.root)) continue;
+            if (h.collider.GetComponentInParent<UnityEngine.AI.NavMeshAgent>() != null) continue;   // มอนตัวอื่นไม่นับเป็นกำแพง
+            return true;
+        }
+        return false;
     }
 
     private void OnDrawGizmos()

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -62,7 +62,16 @@ public class WorldLighting : MonoBehaviour
     [Tooltip("วินาทีที่ใช้ค่อยๆ เปลี่ยน (0 = เปลี่ยนทันที)")]
     [SerializeField, Min(0f)] private float fadeSeconds = 0.6f;
 
-    [Header("กระพริบ (โลก PTSD เท่านั้น)")]
+    [Header("กระพริบ (โลก PTSD เท่านั้น) — [Claude 2026-11-12] กระพริบ = สัญญาณบอส")]
+    [Tooltip("เพลย์เทส: กระพริบหลายแบบพร้อมกัน ผู้เล่นดูไม่ออกว่าอันไหนคือบอสมา → ปิดไว้ ให้กระพริบเฉพาะตอนบอสใกล้")]
+    [SerializeField] private bool randomFlickerEnabled = false;
+    [Tooltip("ดวงที่ตั้ง PTSD State = Flicker ให้กระพริบตลอดไหม (ปิด = ทำตัวเหมือนดวงแดงปกติ)")]
+    [SerializeField] private bool steadyFlickerLampsEnabled = false;
+    [Tooltip("บอสใกล้: ไฟติดนานกี่วินาที (ไกล → ใกล้)")]
+    [SerializeField] private Vector2 bossOnSeconds = new Vector2(0.9f, 0.35f);
+    [Tooltip("บอสใกล้: ไฟดับนานกี่วินาที (ไกล → ใกล้) — ดับนานๆ ให้เห็นชัด")]
+    [SerializeField] private Vector2 bossOffSeconds = new Vector2(0.3f, 0.7f);
+
     [Tooltip("สุ่มดวงแดงมากระพริบทุกกี่วินาที (ต่ำสุด–สูงสุด)")]
     [SerializeField] private Vector2 randomFlickerEvery = new Vector2(2f, 6f);
     [Tooltip("ดวงที่โดนสุ่มกระพริบนานกี่วินาที (ต่ำสุด–สูงสุด)")]
@@ -197,7 +206,7 @@ public class WorldLighting : MonoBehaviour
     private void Update()
     {
         if (lamps.Count == 0) return;
-        if (current != WorldMode.Real) PickRandomFlicker();
+        if (current != WorldMode.Real && randomFlickerEnabled) PickRandomFlicker();
         TickFlicker(Time.deltaTime);
         Render();
         UpdateShadowBudget();
@@ -243,7 +252,7 @@ public class WorldLighting : MonoBehaviour
         bool shock = inPtsd && Time.time < shockUntil;
         foreach (Lamp lamp in lamps)
         {
-            bool steady = lamp.State == WorldLamp.PtsdState.Flicker;
+            bool steady = steadyFlickerLampsEnabled && lamp.State == WorldLamp.PtsdState.Flicker;
             bool burst = shock || Time.time < lamp.burstUntil;
             float near = inPtsd ? DisturbanceAt(lamp) : 0f;   // 0 = ไม่มีตัวรบกวนใกล้ · 1 = อยู่ใต้ไฟพอดี
             if (!inPtsd || (!steady && !burst && near <= 0f)) { lamp.flickOn = true; lamp.flickTimer = 0f; continue; }
@@ -252,7 +261,13 @@ public class WorldLighting : MonoBehaviour
             if (lamp.flickTimer > 0f) continue;
             lamp.flickOn = !lamp.flickOn;
             // ตัวรบกวน (บอส) ใกล้ = รัว ยิ่งใกล้ยิ่งดับนาน · กระพริบรัว (สุ่ม/ช็อก) = สั้นๆ ถี่ๆ · ดวง Flicker ตลอด = ติดนานกว่า ดูเป็นหลอดเสีย
-            if (near > 0f) lamp.flickTimer = lamp.flickOn ? UnityEngine.Random.Range(0.03f, 0.05f + 0.4f * (1f - near)) : UnityEngine.Random.Range(0.03f, 0.08f + 0.2f * near);
+            // บอสใกล้ = จังหวะช้า ดับนาน (เดิมรัวเร็ว ผู้เล่นไม่ทันสังเกต) · ยิ่งใกล้ยิ่งดับนาน ติดสั้น
+            if (near > 0f)
+            {
+                float on = Mathf.Lerp(bossOnSeconds.x, bossOnSeconds.y, near);
+                float off = Mathf.Lerp(bossOffSeconds.x, bossOffSeconds.y, near);
+                lamp.flickTimer = (lamp.flickOn ? on : off) * UnityEngine.Random.Range(0.85f, 1.15f);
+            }
             else if (burst) lamp.flickTimer = lamp.flickOn ? UnityEngine.Random.Range(0.03f, 0.12f) : UnityEngine.Random.Range(0.03f, 0.1f);
             else lamp.flickTimer = lamp.flickOn ? UnityEngine.Random.Range(0.1f, 1.2f) : UnityEngine.Random.Range(0.04f, 0.25f);
         }

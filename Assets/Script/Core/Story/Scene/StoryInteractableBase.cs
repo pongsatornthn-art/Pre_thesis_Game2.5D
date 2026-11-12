@@ -49,7 +49,7 @@ public abstract class StoryInteractableBase : MonoBehaviour
     {
         if (!isPlayerNear) return;
 
-        bool canInteract = CanInteractNow();
+        bool canInteract = CanInteractNow() && !GameplayInputGate.Blocked;   // [Claude 2026-11-11] นั่งโต๊ะ = ไม่ขึ้นป้าย/กดไม่ได้
         SetPrompt(canInteract);
 
         if (canInteract && InteractInput.Pressed)

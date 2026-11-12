@@ -96,13 +96,14 @@ public class InventoryUI : MonoBehaviour
         // ปิดสวิตช์นี้เมื่อใช้ระบบสมุด (JournalController) เป็นคนคุมปุ่มแทน
         if (handleOwnInput)
         {
-            if (Input.GetKeyDown(KeyCode.I))
+            if (Input.GetKeyDown(KeyCode.I) && !GameplayInputGate.Blocked)   // [Claude 2026-11-11] นั่งโต๊ะ = ห้ามเปิด
             {
                 ToggleInventory();
             }
 
             if (inventoryPanel != null && inventoryPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
             {
+                EscapeGuard.MarkHandled(); // [Claude 2026-11-11] ใช้ ESC แล้ว → เมนูหยุดเกมไม่เด้งซ้อน
                 ToggleInventory();
             }
         }

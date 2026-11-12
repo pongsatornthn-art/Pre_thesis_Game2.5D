@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class StalkerJumpscareUI : MonoBehaviour
@@ -23,6 +23,8 @@ public class StalkerJumpscareUI : MonoBehaviour
     private StalkerAI currentBoss;
     private bool isMinigameActive = false;
     private float currentValue;
+    private CursorLockMode savedLock = CursorLockMode.Confined;
+    private bool savedVisible = true;
 
     void Start()
     {
@@ -40,6 +42,10 @@ public class StalkerJumpscareUI : MonoBehaviour
         jumpscareCanvas.SetActive(true);
         isMinigameActive = true;
 
+        // [แก้โดย Claude 2026-11-11] จำสถานะเมาส์ก่อนเข้า → จบแล้วคืนค่าเดิม
+        // เดิมจบแล้วล็อกเมาส์กลางจอ + ซ่อน → เกมนี้เล็งด้วยเมาส์ เล็ง/ยิงไม่ได้หลังโดนจับ
+        savedLock = Cursor.lockState;
+        savedVisible = Cursor.visible;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -98,8 +104,8 @@ public class StalkerJumpscareUI : MonoBehaviour
         isMinigameActive = false;
         jumpscareCanvas.SetActive(false);
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        Cursor.lockState = savedLock;
+        Cursor.visible = savedVisible;
 
         currentBoss.OnJumpscareEnd(isWin);
     }

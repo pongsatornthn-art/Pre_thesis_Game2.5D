@@ -348,7 +348,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pitchTiltAmount: 1
+  pitchTiltAmount: 0
 --- !u!1 &3359115249735845229
 GameObject:
   m_ObjectHideFlags: 0
@@ -868,9 +868,13 @@ MonoBehaviour:
   defaultBehavior: 0
   assignedZone: {fileID: 0}
   assignedRoute: {fileID: 0}
-  hearingRadius: 1.64
+  hearingRadius: 4
+  runNoiseRadius: 12
+  sneakHearingMultiplier: 0.5
   sightRadius: 2.73
   sightAngle: 34
+  instantNoticeRadius: 1.5
+  closeRangeMultiplier: 4
   obstacleMask:
     serializedVersion: 2
     m_Bits: 64
@@ -878,18 +882,21 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   attackDistance: 1.5
-  attackDamage: 20
+  attackDamage: 35
   attackCooldown: 2
   maxHealth: 100
   hasSuperArmor: 0
-  superArmorDuration: 3
-  hitSound: {fileID: 0}
+  superArmorDuration: 10
+  hitSound: {fileID: 8300000, guid: c6344f359ac303c45baf256ea58e625e, type: 3}
   dieSound: {fileID: 0}
   hitVFXPrefab: {fileID: 8562666531403948772, guid: e792e175ed40c374284017567d90f6d3, type: 3}
   heavyHitVFXPrefab: {fileID: 5948675084870369029, guid: 859e7fdfa802f46429d469d8d3da4901, type: 3}
   patrolSpeed: 1.5
   chaseSpeed: 2.8
   chaseLeashDistance: 20
+  screamChargeSound: {fileID: 0}
+  screamTellColor: {r: 1, g: 0.45, b: 0.45, a: 1}
+  screamShakeAmount: 0.06
   debugStateText: {fileID: 525566195878521248}
 --- !u!195 &-2008810806356263695
 NavMeshAgent:

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 
 /// <summary>ชนิดป้ายแจ้งเตือน — ตัวแสดงผลเอาไปเลือกหน้าตา/สีเองได้</summary>
 public enum NotificationKind
@@ -9,6 +9,7 @@ public enum NotificationKind
     ObjectiveCompleted,  // ขีดฆ่า 1 ข้อ
     QuestCompleted,      // ขีดฆ่าทั้งเควส
     GameSaved,
+    ItemObtained,        // [Claude 2026-11-12] ได้ของสำคัญ เช่น กุญแจจากตู้เซฟ
     SaveBlocked
 }
 

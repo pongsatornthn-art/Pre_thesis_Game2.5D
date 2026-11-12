@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
 public class StalkerAI : MonoBehaviour, IDamageable
@@ -17,6 +17,11 @@ public class StalkerAI : MonoBehaviour, IDamageable
     [Header("Audio")]
     public AudioClip screamClip;
     [Range(0f, 1f)] public float screamVolume = 1f;
+    [Header("[Claude 2026-11-12] เสียงตอนไล่ (ต้าบอกขาด 2 อัน — ใส่ไฟล์แล้วทำงานเลย)")]
+    [Tooltip("เสียงคำรามตอนเห็นผู้เล่นแล้วเริ่มไล่ (เล่นครั้งเดียวตอนเข้าช่วงคำราม)")]
+    public AudioClip chaseRoarClip;
+    [Tooltip("AudioSource บนตัวบอสที่ใส่คลิปเสียงวิ่ง (Loop) — เปิดเองตอนวิ่งไล่ ปิดเองตอนเลิกไล่ · เว้นว่างได้")]
+    public AudioSource chaseRunLoop;
 
     [Header("Director AI (การเดินซุ่มรอบๆ ผู้เล่น)")]
     public float lurkMinRadius = 10f;
@@ -38,6 +43,8 @@ public class StalkerAI : MonoBehaviour, IDamageable
     public float sightRadius = 8f;
     public float sightAngle = 60f;
     public float soundSenseRadius = 18f;
+    [Tooltip("[Claude 2026-11-12] วงในรอบตัว: ผู้เล่นเข้าใกล้กว่านี้ (เมตร) = รู้ตัวทันที ไม่สนทิศที่หัน (ยกเว้นมีกำแพงคั่น)")]
+    public float instantNoticeRadius = 2f;
     public LayerMask obstacleMask;
 
     [Header("Jumpscare Minigame")]
@@ -73,7 +80,30 @@ public class StalkerAI : MonoBehaviour, IDamageable
             jumpscareUI = FindFirstObjectByType<StalkerJumpscareUI>();
 
         ChangeState(new StalkerStateLurk());
-        // PTSDMonsterAI.OnMinionShout += HandleMinionShout;
+
+        // [คืนโดย Claude 2026-11-11 เจ้าของสั่ง] รับสัญญาณตอนมินเนียนตะโกนเรียก (Director AI) — ปอเคยคอมเมนต์ปิดไว้
+        PTSDMonsterAI.OnMinionShout += HandleMinionShout;
+    }
+
+    private void OnDestroy()
+    {
+        PTSDMonsterAI.OnMinionShout -= HandleMinionShout;
+    }
+
+    private void HandleMinionShout(Vector3 minionPos)
+    {
+        if (isInMinigame) return;
+
+        // เช็คระยะห่างว่ามินเนี่ยนที่ร้อง อยู่ในรัศมีการได้ยินหรือไม่
+        float distance = Vector3.Distance(transform.position, minionPos);
+        if (distance > minionShoutHearRadius) return;
+
+        float distanceFactor = 1f - (distance / minionShoutHearRadius);
+        float suspicionLevel = Mathf.Lerp(minShoutSuspicion, maxShoutSuspicion, distanceFactor);
+        Debug.Log($"🦇 Stalker ได้ยินเสียง! (ระยะ {distance:F1}m) ความสงสัย: {suspicionLevel:F0}% กำลังเดินไปสำรวจ...");
+
+        Awareness.AddAwareness(suspicionLevel);
+        ChangeState(new StalkerStateAlert(minionPos, suspicionLevel));
     }
 
     private void Update()
@@ -81,20 +111,19 @@ public class StalkerAI : MonoBehaviour, IDamageable
         if (isInMinigame) return; // ถ้ากำลังยื้อยุดอยู่ บอสจะหยุดทำงานชั่วคราว
 
         currentState?.UpdateState(this);
-        CheckJumpscareDistance(); // เช็กระยะว่าบอสถึงตัวผู้เล่นหรือยัง
     }
 
     // ----- ระบบเข้าหน้ายื้อยุด -----
-    private void CheckJumpscareDistance()
+    /// <summary>
+    /// [แก้โดย Claude 2026-11-11] จุดเดียวที่ "จับผู้เล่น" — StalkerStateChase เรียกเมื่อถึงระยะ killDistance
+    /// เดิมมี 2 ทาง (เช็คระยะทุกเฟรมของปอ + Chase → StalkerStateKill กด E เดิม) → มินิเกมซ้อนกัน / จับตอนบอสยังไม่ได้ไล่
+    /// ตอนนี้: มีหน้ามือผี (jumpscareUI) = ใช้ของปอ · ไม่มี = ใช้มินิเกมกด E เดิม (StalkerStateKill)
+    /// </summary>
+    public void CatchPlayer()
     {
-        if (PlayerTransform == null || isInMinigame) return;
-
-        // ถ้าผู้เล่นอยู่ในระยะฆ่า (killDistance) ให้เข้ามินิเกม
-        float dist = Vector3.Distance(transform.position, PlayerTransform.position);
-        if (dist <= killDistance && jumpscareUI != null)
-        {
-            StartJumpscare();
-        }
+        if (isInMinigame) return;
+        if (jumpscareUI != null) StartJumpscare();
+        else ChangeState(new StalkerStateKill());
     }
 
     private void StartJumpscare()
@@ -130,23 +159,46 @@ public class StalkerAI : MonoBehaviour, IDamageable
             }
         }
 
+        Awareness.ForceZeroAwareness();   // [คืนโดย Claude] หลุดแล้วบอสลืมเรา ค่อยย่องตามใหม่ (แบบเดิม)
         TeleportAway();
         ChangeState(new StalkerStateLurk());
     }
 
+    /// <summary>
+    /// [แก้โดย Claude 2026-11-11] วาร์ปหนีไปรอบตัวผู้เล่น — คืนการเช็คแบบเดิม: จุดต้อง "เดินถึงได้จริง" (PathComplete)
+    /// ไม่งั้นสุ่มได้จุดนอกบ้าน/อีกฝั่งกำแพงที่ไม่มีทางเชื่อม แล้วบอสค้างอยู่ตรงนั้น
+    /// </summary>
     private void TeleportAway()
     {
         if (PlayerTransform == null) return;
 
-        // สุ่มหาตำแหน่งด้านหลังหรือรอบๆ ผู้เล่นที่อยู่ไกลออกไป
-        Vector2 randomDir = Random.insideUnitCircle.normalized * postEscapeTeleportRadius;
-        Vector3 randomPos = PlayerTransform.position + new Vector3(randomDir.x, 0, randomDir.y);
-
-        if (NavMesh.SamplePosition(randomPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+        bool warped = false;
+        for (int i = 0; i < 15 && !warped; i++)
         {
-            Agent.Warp(hit.position);
-            Agent.isStopped = false;
+            Vector2 randomDir = Random.insideUnitCircle.normalized * postEscapeTeleportRadius;
+            Vector3 randomPos = PlayerTransform.position + new Vector3(randomDir.x, 0, randomDir.y);
+
+            if (NavMesh.SamplePosition(randomPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                NavMeshPath path = new NavMeshPath();
+                Agent.CalculatePath(hit.position, path);
+                if (path.status == NavMeshPathStatus.PathComplete)
+                {
+                    Agent.Warp(hit.position);
+                    warped = true;
+                }
+            }
         }
+
+        // หาจุดดีๆ ไม่ได้ → ถอยไปหลังผู้เล่นใกล้ๆ แทนการโยนออกนอกโลก
+        if (!warped)
+        {
+            Vector3 backupPos = PlayerTransform.position - (PlayerTransform.forward * 5f);
+            if (NavMesh.SamplePosition(backupPos, out NavMeshHit backupHit, 10f, NavMesh.AllAreas))
+                Agent.Warp(backupHit.position);
+        }
+
+        Agent.isStopped = false;
     }
 
     public void ChangeState(IStalkerState newState)
@@ -157,11 +209,41 @@ public class StalkerAI : MonoBehaviour, IDamageable
         currentState?.EnterState(this);
     }
 
+    // [Claude 2026-11-12] เช็คกำแพงคั่น — นับทั้ง Obstacle Mask + เลเยอร์ Default (กำแพงในแมพ 22 ชิ้นอยู่ Default → เดิมมองทะลุ)
+    // ข้ามตัวเอง/ตัวผู้เล่น/Trigger
+    public bool WallBetween(Vector3 from, Vector3 to)
+    {
+        int mask = obstacleMask.value | (1 << 0);
+        Vector3 dir = to - from; float dist = dir.magnitude;
+        if (dist < 0.01f) return false;
+        foreach (RaycastHit h in Physics.RaycastAll(from, dir / dist, dist, mask, QueryTriggerInteraction.Ignore))
+        {
+            Transform r = h.collider.transform.root;
+            if (r == transform.root || (PlayerTransform != null && r == PlayerTransform.root)) continue;
+            if (h.collider.GetComponentInParent<UnityEngine.AI.NavMeshAgent>() != null) continue;   // มอนตัวอื่นไม่นับเป็นกำแพง
+            return true;
+        }
+        return false;
+    }
+
     public void UpdateDetection()
     {
         if (PlayerTransform == null) return;
 
         float distToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
+
+        // [Claude 2026-11-12 เพลย์เทส] วงในรอบตัว — เข้าใกล้กว่านี้ = รู้ตัวทันที แม้อยู่ข้างหลัง (เดิมเดินผ่านหลังติดตัวแล้วบอสไม่รู้ ดูโง่)
+        // ยกเว้นมีกำแพงคั่น (อยู่คนละห้องแต่ใกล้ผนัง)
+        if (distToPlayer <= instantNoticeRadius)
+        {
+            Vector3 o = transform.position + Vector3.up * 1f;
+            Vector3 t = PlayerTransform.position + Vector3.up * 1f;
+            if (!WallBetween(o, t))
+            {
+                Awareness.ForceMaxAwareness();
+                return;
+            }
+        }
 
         if (distToPlayer <= sightRadius)
         {
@@ -174,17 +256,7 @@ public class StalkerAI : MonoBehaviour, IDamageable
             {
                 Vector3 origin = transform.position + Vector3.up * 1f;
                 Vector3 target = PlayerTransform.position + Vector3.up * 1f;
-                Vector3 rayDir = (target - origin).normalized;
-
-                if (Physics.Raycast(origin, rayDir, out RaycastHit hit, distToPlayer, obstacleMask))
-                {
-                    if (hit.collider.transform == PlayerTransform || hit.collider.transform.root == PlayerTransform.root)
-                    {
-                        Awareness.ForceMaxAwareness();
-                        return;
-                    }
-                }
-                else
+                if (!WallBetween(origin, target))   // [Claude 2026-11-12] นับกำแพงเลเยอร์ Default ด้วย
                 {
                     Awareness.ForceMaxAwareness();
                     return;
@@ -193,9 +265,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
         }
 
         PlayerMovement pm = PlayerTransform.GetComponent<PlayerMovement>();
+        // [Claude 2026-11-12] วิ่ง = ได้ยินเต็มรัศมี · เดิน = 40% ของรัศมี · ย่อง = ไม่ได้ยิน
         if (pm != null && !pm.isSneaking && pm.GetComponent<Rigidbody>().linearVelocity.sqrMagnitude > 1f)
         {
-            if (distToPlayer <= soundSenseRadius)
+            float hearRadius = pm.IsRunning ? soundSenseRadius : soundSenseRadius * 0.4f;
+            // [Claude 2026-11-12] กำแพงคั่น = ได้ยินแค่ครึ่งระยะ (เสียงลอดได้บ้าง แต่ไม่ใช่รู้ทะลุทั้งบ้าน)
+            if (distToPlayer <= hearRadius && WallBetween(transform.position + Vector3.up, PlayerTransform.position + Vector3.up)) hearRadius *= 0.5f;
+            if (distToPlayer <= hearRadius)
             {
                 Awareness.FillAwareness();
                 return;
@@ -223,7 +299,8 @@ public class StalkerAI : MonoBehaviour, IDamageable
             else
             {
                 Debug.Log("<color=purple>🦇 Stalker อมตะ! โดน Stun</color>");
-                // ChangeState(new StalkerStateStun(stunDuration)); // ปลดคอมเมนต์ถ้ามีสคริปต์นี้
+                // [คืนโดย Claude 2026-11-11] ยิง/ตีบอสแล้วบอสชะงัก (StalkerStateStun มีอยู่แล้ว) — ช่วงยื้อยุด ChangeState ถูกกันไว้อยู่แล้ว
+                ChangeState(new StalkerStateStun(stunDuration));
 
                 if (superArmorCoroutine != null) StopCoroutine(superArmorCoroutine);
                 superArmorCoroutine = StartCoroutine(SuperArmorRoutine(5f));
@@ -244,7 +321,13 @@ public class StalkerAI : MonoBehaviour, IDamageable
     {
         if (debugStateText != null)
         {
-            debugStateText.text = key;
+            // [คืนโดย Claude] key เป็นรหัสข้อความ → แปลผ่านระบบภาษา (ไม่มีในตาราง = โชว์รหัสตรงๆ เหมือนเดิม)
+            if (string.IsNullOrEmpty(key)) debugStateText.text = "";
+            else
+            {
+                ILocalizationService loc = ServiceLocator.GetOptional<ILocalizationService>();
+                debugStateText.text = loc != null ? loc.GetText(key) : key;
+            }
             debugStateText.color = color;
         }
     }

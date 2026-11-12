@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -62,6 +62,7 @@ public class QuestNotifier : MonoBehaviour
         GameEventBus.Subscribe<QuestCompletedEvent>(OnQuestCompleted);
         GameEventBus.Subscribe<GameSavedEvent>(OnGameSaved);
         GameEventBus.Subscribe<SaveBlockedEvent>(OnSaveBlocked);
+        GameEventBus.Subscribe<KeyItemCollectedEvent>(OnKeyItemCollected);
     }
 
     private void OnDisable()
@@ -72,6 +73,7 @@ public class QuestNotifier : MonoBehaviour
         GameEventBus.Unsubscribe<ObjectiveCompletedEvent>(OnObjectiveCompleted);
         GameEventBus.Unsubscribe<QuestCompletedEvent>(OnQuestCompleted);
         GameEventBus.Unsubscribe<GameSavedEvent>(OnGameSaved);
+        GameEventBus.Unsubscribe<KeyItemCollectedEvent>(OnKeyItemCollected);
         GameEventBus.Unsubscribe<SaveBlockedEvent>(OnSaveBlocked);
 
         // เคลียร์คิวค้าง — กลับมาเปิดใหม่จะได้ไม่เด้งของเก่ารัวๆ
@@ -111,6 +113,13 @@ public class QuestNotifier : MonoBehaviour
     private void OnGameSaved(GameSavedEvent e)
     {
         if (notifySave) Enqueue(NotificationKind.GameSaved, Text(gameSavedKey), null);
+    }
+
+    // [Claude 2026-11-12] ได้กุญแจ/ของสำคัญ → "ได้รับ: กุญแจห้องเอกสาร"
+    private void OnKeyItemCollected(KeyItemCollectedEvent e)
+    {
+        if (e.Item == null) return;
+        Enqueue(NotificationKind.ItemObtained, Format("NOTIFY_ITEM_OBTAINED", e.Item.DisplayName), progressSound);
     }
 
     private void OnSaveBlocked(SaveBlockedEvent e)

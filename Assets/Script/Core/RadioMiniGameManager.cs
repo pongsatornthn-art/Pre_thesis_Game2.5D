@@ -37,6 +37,8 @@ public class RadioMiniGameManager : MonoBehaviour
     private bool isPlayerNear = false;
     private bool inMiniGame = false;
     private bool hasPlayed = false;
+    private CursorLockMode savedLock = CursorLockMode.Confined;
+    private bool savedVisible = true;
 
     private Vector3 playerReturnPos;
     private Quaternion playerReturnRot;
@@ -66,21 +68,41 @@ public class RadioMiniGameManager : MonoBehaviour
 
     private void Update()
     {
-        if (isPlayerNear && !inMiniGame && !hasPlayed && Input.GetKeyDown(KeyCode.E))
+        if (isPlayerNear && !inMiniGame && !entering && Input.GetKeyDown(KeyCode.E)) // [Claude 2026-11-11 งานข้อ 8] เล่นวิทยุจบแล้วยังเข้าโต๊ะได้ (มาเซฟที่สมุด)
         {
-            EnterMiniGame();
+            StartCoroutine(EnterAfterThumbnail());
         }
 
-        if (inMiniGame && Input.GetKeyDown(exitKey))
+        // [Claude 2026-11-11] ESC ออกได้เสมอ (นอกจากปุ่ม Exit Key ที่ตั้งใน Inspector — ในซีนตั้งเป็น Q)
+        if (inMiniGame && (Input.GetKeyDown(exitKey) || Input.GetKeyDown(KeyCode.Escape)))
         {
-            ExitMiniGame();
+            // หน้าเลือกช่องเซฟ / อนิเมชั่นสมุดกำลังทำงาน = ปล่อยให้มันจัดการ ESC เอง
+            if (EscapeGuard.HandledThisFrame || SaveSlotPickerUI.IsOpen || DeskSaveNotebook.IsBusy) return;
+
+            EscapeGuard.MarkHandled(); // ใช้ ESC แล้ว → เมนูหยุดเกมไม่เด้งซ้อน
+
+            // ปุ่มเทปเปิดอยู่ → ปิดแค่ปุ่มเทป กลับไปเล็งกลางจอ (กดอีกทีค่อยออกจากโต๊ะ)
+            if (radioMinigameUI != null && radioMinigameUI.activeSelf) radioMinigameUI.SetActive(false);
+            else ExitMiniGame();
         }
+    }
+
+    // [Claude 2026-11-11 งานข้อ 8] ถ่ายฉากก่อนเปลี่ยนเป็นมุมโต๊ะ → ใช้เป็นรูปบนการ์ดช่องเซฟ (ไม่งั้นได้รูปโต๊ะทุกช่อง)
+    private bool entering;
+    private IEnumerator EnterAfterThumbnail()
+    {
+        entering = true;
+        yield return SaveThumbnail.Capture();
+        entering = false;
+        EnterMiniGame();
     }
 
     public void EnterMiniGame()
     {
-        if (inMiniGame || hasPlayed) return;
+        if (inMiniGame) return;
         inMiniGame = true;
+        savedLock = Cursor.lockState;   // [Claude 2026-11-11] จำสถานะเมาส์ไว้คืนตอนออก
+        savedVisible = Cursor.visible;
         IsActive = true;
 
         if (interactPrompt != null) interactPrompt.SetActive(false);
@@ -172,7 +194,7 @@ public class RadioMiniGameManager : MonoBehaviour
 
         StartCoroutine(RelockCursor());
 
-        if (isPlayerNear && !hasPlayed && interactPrompt != null)
+        if (isPlayerNear && interactPrompt != null)
         {
             interactPrompt.SetActive(true);
         }
@@ -181,8 +203,9 @@ public class RadioMiniGameManager : MonoBehaviour
     private IEnumerator RelockCursor()
     {
         yield return null;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // [แก้โดย Claude 2026-11-11] เดิมล็อกเมาส์กลางจอ + ซ่อน → เกมนี้เล็งปืนด้วยเมาส์ เล็งไม่ได้หลังออกจากโต๊ะ
+        Cursor.lockState = savedLock;
+        Cursor.visible = savedVisible;
     }
 
     public void SolvePuzzleAndExit()
@@ -190,8 +213,7 @@ public class RadioMiniGameManager : MonoBehaviour
         if (hasPlayed) return;
         hasPlayed = true;
 
-        Collider col = GetComponent<Collider>();
-        if (col != null) col.enabled = false;
+        // [Claude 2026-11-11 งานข้อ 8] ไม่ปิดโต๊ะแล้ว — ผู้เล่นต้องกลับมาเซฟที่สมุดบนโต๊ะนี้ได้เสมอ
 
         if (onCompleteFlag != null)
         {
@@ -213,7 +235,7 @@ public class RadioMiniGameManager : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") && !hasPlayed)
+        if (other.CompareTag("Player"))
         {
             isPlayerNear = true;
             if (interactPrompt != null && !inMiniGame) interactPrompt.SetActive(true);

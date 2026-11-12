@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// จำ "จุดเริ่มใหม่" ของโลก PTSD — ถ่ายสำเนาสถานะทั้งเกม (ในหน่วยความจำ) ตอนก้าวเข้าโลก PTSD
@@ -24,8 +24,53 @@ public class PtsdCheckpoint : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    private void OnEnable() => GameEventBus.Subscribe<WorldModeChangedEvent>(OnWorldModeChanged);
-    private void OnDisable() => GameEventBus.Unsubscribe<WorldModeChangedEvent>(OnWorldModeChanged);
+    // [Claude 2026-11-12 ต้าตกลง] ยาที่กินไประหว่างอยู่ใน PTSD "ไม่คืน" ตอนตายแล้วเริ่มใหม่ — ตายมีต้นทุน
+    // static เพราะซีนถูกโหลดใหม่ตอนเริ่มใหม่ (ตัวนี้ตายไปพร้อมซีนเก่า)
+    private static readonly System.Collections.Generic.Dictionary<ItemData, int> consumedInPtsd = new System.Collections.Generic.Dictionary<ItemData, int>();
+    private static bool trackingConsumption;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() { consumedInPtsd.Clear(); trackingConsumption = false; }
+
+    private void OnEnable()
+    {
+        GameEventBus.Subscribe<WorldModeChangedEvent>(OnWorldModeChanged);
+        GameEventBus.Subscribe<ConsumableUsedEvent>(OnConsumableUsed);
+        GameEventBus.Subscribe<GameLoadedEvent>(OnGameLoaded);
+    }
+
+    private void OnDisable()
+    {
+        GameEventBus.Unsubscribe<WorldModeChangedEvent>(OnWorldModeChanged);
+        GameEventBus.Unsubscribe<ConsumableUsedEvent>(OnConsumableUsed);
+        GameEventBus.Unsubscribe<GameLoadedEvent>(OnGameLoaded);
+    }
+
+    private void OnConsumableUsed(ConsumableUsedEvent e)
+    {
+        if (!trackingConsumption || e.Item == null) return;
+        consumedInPtsd.TryGetValue(e.Item, out int n);
+        consumedInPtsd[e.Item] = n + 1;
+    }
+
+    private void OnGameLoaded(GameLoadedEvent e)
+    {
+        if (!e.FromCheckpoint) { consumedInPtsd.Clear(); trackingConsumption = false; return; }
+
+        // กลับมาจุดเริ่ม PTSD แล้ว (ของคืนตามสำเนา) → หักยาที่กินไปแล้วออก
+        if (Inventory.Instance != null)
+        {
+            foreach (var kv in consumedInPtsd)
+            {
+                int have = Inventory.Instance.GetItemCount(kv.Key);
+                int take = Mathf.Min(have, kv.Value);
+                if (take > 0) Inventory.Instance.RemoveItem(kv.Key, take);
+                if (take > 0) Debug.Log($"<color=orange>[PtsdCheckpoint] ตายแล้วเริ่มใหม่ — {kv.Key.itemName} ที่กินไป {take} ชิ้นไม่คืน</color>");
+            }
+        }
+        // ยังอยู่ใน PTSD รอบใหม่ — ยาที่กินรอบนี้ก็นับต่อ (ยังไม่ล้าง)
+        trackingConsumption = true;
+    }
 
     private void OnWorldModeChanged(WorldModeChangedEvent e)
     {
@@ -45,11 +90,15 @@ public class PtsdCheckpoint : MonoBehaviour
                 EntrySnapshot.resumeActionIndex = director.CurrentActionIndex;
             }
 
+            consumedInPtsd.Clear();
+            trackingConsumption = true;
             Debug.Log("<color=magenta>📍 [PtsdCheckpoint] จำจุดเริ่มใหม่ของโลก PTSD แล้ว</color>");
         }
         else if (e.ExitedPtsd)
         {
             EntrySnapshot = null;
+            consumedInPtsd.Clear();
+            trackingConsumption = false;
         }
     }
 }

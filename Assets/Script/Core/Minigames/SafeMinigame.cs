@@ -46,6 +46,7 @@ public class SafeMinigame : MonoBehaviour
 
         if (isMinigameActive && Input.GetKeyDown(KeyCode.Escape))
         {
+            EscapeGuard.MarkHandled(); // [Claude 2026-11-11] ใช้ ESC แล้ว → เมนูหยุดเกมไม่เด้งซ้อน
             CloseSafeMinigame();
         }
     }
@@ -87,9 +88,18 @@ public class SafeMinigame : MonoBehaviour
         }
     }
 
+    /// <summary>[Claude 2026-11-12] ตู้เซฟเปิดอยู่ — ตัวกั้นปุ่มลัดใช้เช็ค (ห้ามถือปืนตี/ยิงระหว่างหมุนรหัส)</summary>
+    public static bool AnyActive { get; private set; }
+
+    // โหลดซีนใหม่/ปิด object ตอนเปิดตู้อยู่ → ไม่ให้ค่าค้าง (ไม่งั้นปุ่มลัดทั้งเกมโดนกั้นถาวร)
+    private void OnDestroy() { if (isMinigameActive) AnyActive = false; }
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => AnyActive = false;
+
     public void OpenSafeMinigame()
     {
         isMinigameActive = true;
+        AnyActive = true;
         if (safeCanvasUI != null) safeCanvasUI.SetActive(true);
         currentInput = "";
         currentDialNumber = 0;
@@ -100,6 +110,7 @@ public class SafeMinigame : MonoBehaviour
     public void CloseSafeMinigame()
     {
         isMinigameActive = false;
+        AnyActive = false;
         if (safeCanvasUI != null) safeCanvasUI.SetActive(false);
     }
 

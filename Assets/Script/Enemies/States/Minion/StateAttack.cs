@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class StateAttack : IMonsterState
 {
@@ -14,6 +14,9 @@ public class StateAttack : IMonsterState
     private float lungeSpeed = 12f; 
     private bool hasHitPlayer = false;
     private bool hasLunged = false; // บัครอบก่อนมันไม่ยอมพุ่ง เพราะไปเช็ค timer == 0f
+
+    /// <summary>[Claude 2026-11-12] กำลังชาร์จกรีดร้องเรียกบอส — ตีหนักโดนตอนนี้ = ขัดได้</summary>
+    public bool IsChargingScream => currentPhase == AttackPhase.CallBoss;
 
     public void EnterState(PTSDMonsterAI ai)
     {
@@ -32,6 +35,7 @@ public class StateAttack : IMonsterState
             currentPhase = AttackPhase.CallBoss;
             ai.hasSuperArmor = true; // ได้รับ Super Armor ทันทีตอนง้างตะโกน
             ai.ShowDebugText("CHARGING SCREAM!", Color.magenta);
+            ai.BeginScreamTell();   // [Claude 2026-11-12] สัญญาณเตือนผู้เล่น: ตัวสั่น + แดง + เสียงสูดหายใจ
             Debug.Log($"<color=magenta>{ai.gameObject.name} กำลังชาร์จเสียงกรีดร้องเรียกบอส! (2.5 วิ)</color>");
         }
         else
@@ -71,6 +75,7 @@ public class StateAttack : IMonsterState
                 }
                 
                 ai.ShoutForStalker(); 
+                ai.EndScreamTell();
                 ai.ChangeState(new StateChase());
             }
         }
@@ -159,6 +164,7 @@ public class StateAttack : IMonsterState
 
     public void ExitState(PTSDMonsterAI ai)
     {
+        ai.EndScreamTell();   // [Claude 2026-11-12] ออกจากท่ากลางคัน (โดนขัด/ตาย) = คืนสีและตำแหน่งภาพ
         ai.hasSuperArmor = false; // เผื่อกรณีโดนขัดจังหวะ จะได้ลบ Super Armor ทิ้ง
         
         if (ai.Agent.isOnNavMesh)

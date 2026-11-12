@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
@@ -25,8 +25,47 @@ public class PlayerMovement : MonoBehaviour
     public float deceleration = 25f;
 
     [Header("Sneak Settings (ย่องเบา)")]
+    [Tooltip("[Claude 2026-11-12] ความเร็วย่อง = ความเร็วเดิน x ค่านี้")]
     public float sneakSpeedMultiplier = 0.5f;
     [HideInInspector] public bool isSneaking = false;
+
+    // [Claude 2026-11-12 งานเพลย์เทส ข้อ 7] เดิน / วิ่ง / ย่อง — ความเร็ว Base Speed เดิม = "วิ่ง"
+    [Header("Walk / Run (เดิน / วิ่ง)")]
+    [Tooltip("กดค้างเพื่อวิ่ง (ใช้สตามิน่า)")]
+    public KeyCode runKey = KeyCode.LeftShift;
+    [Tooltip("ความเร็วเดินปกติ = Base Speed x ค่านี้ (Base Speed = ความเร็ววิ่ง)")]
+    [Range(0.2f, 1f)] public float walkSpeedMultiplier = 0.6f;
+    [Tooltip("วิ่งใช้สตามิน่ากี่หน่วยต่อวินาที")]
+    public float runStaminaPerSecond = 20f;
+    [Tooltip("ใช้สตามิน่าแล้ว (วิ่ง/ตี/แดช) รอกี่วินาทีถึงเริ่มฟื้น")]
+    public float staminaRegenDelay = 0.8f;
+    [Tooltip("สตามิน่าหมด = เหนื่อย วิ่งไม่ได้จนกว่าจะฟื้นถึงกี่ %")]
+    [Range(0f, 1f)] public float exhaustedRecoverRatio = 0.3f;
+
+    public bool IsRunning { get; private set; }
+    /// <summary>สตามิน่าหมดจนเหนื่อยหอบ (วิ่งไม่ได้จนกว่าจะฟื้นถึง Exhausted Recover Ratio)</summary>
+    public bool IsExhausted { get; private set; }
+    public float CurrentStamina => currentStamina;
+    public float StaminaRatio => maxStamina > 0f ? currentStamina / maxStamina : 0f;
+    public float HealthRatio => maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
+    private float lastStaminaUseTime = -99f;
+
+    /// <summary>ใช้สตามิน่า (ตี/แดช) — ไม่พอ = false และไม่หัก</summary>
+    public bool TryUseStamina(float amount)
+    {
+        if (amount <= 0f) return true;
+        if (currentStamina < amount) return false;
+        SpendStamina(amount);
+        return true;
+    }
+
+    private void SpendStamina(float amount)
+    {
+        currentStamina = Mathf.Max(0f, currentStamina - amount);
+        lastStaminaUseTime = Time.time;
+        if (currentStamina <= 0.01f) IsExhausted = true;
+        if (staminaSlider != null) staminaSlider.value = currentStamina;
+    }
 
     [Header("Backward Settings (ถอยหลังช้าลง)")]
     [Tooltip("ความเร็วตอนถอยหลังตรงๆ เทียบกับปกติ (0.6 = เหลือ 60%)")]
@@ -84,8 +123,10 @@ public class PlayerMovement : MonoBehaviour
         if (Time.timeScale == 0f) return;
 
         if (isDashing || isStunned || isAttackPaused) return;
+        if (IsActionLocked) { IsRunning = false; return; }   // [Claude 2026-11-12] เก็บของ/ฉาก = นิ่งสนิท ไม่หันตามเมาส์
 
-        if (currentStamina < maxStamina)
+        // [Claude 2026-11-12] วิ่งอยู่ / เพิ่งใช้สตามิน่า = ยังไม่ฟื้น
+        if (currentStamina < maxStamina && !IsRunning && Time.time - lastStaminaUseTime >= staminaRegenDelay)
         {
             currentStamina += staminaRegenRate * Time.deltaTime;
             currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
@@ -98,6 +139,8 @@ public class PlayerMovement : MonoBehaviour
 
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveZ = Input.GetAxisRaw("Vertical");
+
+        if (IsExhausted && currentStamina >= maxStamina * exhaustedRecoverRatio) IsExhausted = false;
 
         // 🌟 Toggle ย่องเบา (Sneak)
         if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.C))
@@ -127,6 +170,12 @@ public class PlayerMovement : MonoBehaviour
 
         HandleFacingDirection();
 
+        // [Claude 2026-11-12] วิ่ง = กดค้าง + กำลังเดิน + ไม่ย่อง + ไม่เหนื่อยหอบ (กดวิ่งตอนย่อง = เลิกย่อง)
+        bool wantRun = Input.GetKey(runKey) && moveInput.magnitude > 0.1f && !IsExhausted && currentStamina > 0f;
+        if (wantRun && isSneaking) isSneaking = false;
+        IsRunning = wantRun;
+        if (IsRunning) SpendStamina(runStaminaPerSecond * Time.deltaTime);
+
         if (Input.GetKeyDown(KeyCode.Space) && canDash && moveInput.magnitude > 0.1f && currentStamina >= dashStaminaCost)
         {
             StartCoroutine(DashRoutine());
@@ -137,14 +186,15 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isDashing) return;
 
-        if (isStunned || isAttackPaused)
+        if (isStunned || isAttackPaused || IsActionLocked)
         {
             rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
             return;
         }
 
-        // คำนวณความเร็ว (ถ้าย่องอยู่ ให้คูณตัวลดความเร็ว)
-        float currentMaxSpeed = isSneaking ? (baseSpeed * sneakSpeedMultiplier) : baseSpeed;
+        // คำนวณความเร็ว — [Claude 2026-11-12] วิ่ง = Base Speed · เดิน = x Walk · ย่อง = เดิน x Sneak
+        float walkSpeed = baseSpeed * walkSpeedMultiplier;
+        float currentMaxSpeed = IsRunning ? baseSpeed : (isSneaking ? walkSpeed * sneakSpeedMultiplier : walkSpeed);
 
         // ถ้ากำลังชาร์จฟันดาบ ให้เดินช้าลง (ดึงค่าจาก PlayerCombat)
         if (combatScript != null && combatScript.isChargingMelee)
@@ -257,7 +307,8 @@ public class PlayerMovement : MonoBehaviour
             // (ถ้าตัวเลขยังขยับตามเมาส์ แปลว่าโค้ดทำงานปกติ 100% บัคอยู่ที่ Animator)
             // (ถ้าตัวเลขหยุดนิ่ง แปลว่ามีโค้ดบางบรรทัดค้างหรือพัง)
             // เปิดปิดการ Log ได้ด้วยการ comment บรรทัดล่างนี้ถ้าเทสเสร็จแล้ว
-            Debug.Log($"[Debug] useRawAim={useRawAim} | AimX={animator.GetFloat("AimX"):F2} | AimZ={animator.GetFloat("AimZ"):F2} | CurrentState={animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
+            // [Claude 2026-11-12] ปิด — พิมพ์ทุกเฟรมทำให้เกมหน่วง
+            // Debug.Log($"[Debug] useRawAim={useRawAim} | AimX={animator.GetFloat("AimX"):F2} | AimZ={animator.GetFloat("AimZ"):F2} | CurrentState={animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
         }
     }
 
@@ -267,8 +318,7 @@ public class PlayerMovement : MonoBehaviour
         isDashing = true;
         isInvincible = true;
 
-        currentStamina -= dashStaminaCost;
-        if (staminaSlider != null) staminaSlider.value = currentStamina;
+        SpendStamina(dashStaminaCost);
 
         Vector3 dashVelocity = moveInput * (baseSpeed * dashSpeedMultiplier);
         rb.linearVelocity = new Vector3(dashVelocity.x, rb.linearVelocity.y, dashVelocity.z);
@@ -341,6 +391,12 @@ public class PlayerMovement : MonoBehaviour
             StartCoroutine(StunRoutine(duration));
         }
     }
+
+    // [Claude 2026-11-12 ข้อ 4] ล็อกตัวนิ่งสนิท (ไม่เดิน ไม่หันตามเมาส์) — ใช้ตอนเก็บของ/ฉากเนื้อเรื่อง · นับซ้อนได้
+    private int actionLockCount;
+    public bool IsActionLocked => actionLockCount > 0;
+    public void PushActionLock() { actionLockCount++; moveInput = Vector3.zero; currentVelocity = Vector3.zero; if (animator != null) animator.SetFloat("Speed", 0f); }
+    public void PopActionLock() { actionLockCount = Mathf.Max(0, actionLockCount - 1); }
 
     public void ApplyAttackPause(float duration)
     {

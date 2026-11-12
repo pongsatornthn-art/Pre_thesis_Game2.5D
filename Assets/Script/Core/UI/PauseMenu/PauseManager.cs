@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 
 public class PauseManager : MonoBehaviour
@@ -15,6 +15,13 @@ public class PauseManager : MonoBehaviour
 
     public bool IsPaused { get; private set; }
 
+    /// <summary>
+    /// [Claude 2026-11-11] โหมดหน้าเมนูหลัก — ESC ไม่เปิดเมนูหยุดเกม (ใช้แค่ปิดหน้าตั้งค่า)
+    /// ปิดหน้าตั้งค่าแล้วไม่เด้งเมนูหยุดเกม แต่ประกาศ SettingsClosed ให้เมนูหลักโชว์ปุ่มกลับมา
+    /// </summary>
+    public bool MenuMode { get; set; }
+    public event System.Action SettingsClosed;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -29,13 +36,23 @@ public class PauseManager : MonoBehaviour
         if (blurVolume != null) blurVolume.weight = 0f;
     }
 
-    private void Update()
+    // [แก้โดย Claude 2026-11-11 งานข้อ 3] ย้ายมา LateUpdate = ทำหลังทุก Update → รู้ก่อนว่าหน้าต่างอื่นใช้ ESC ปิดตัวเองไปหรือยัง
+    private void LateUpdate()
     {
         // กด ESC สลับเปิด/ปิด Pause
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            if (MenuMode)
+            {
+                if (!EscapeGuard.HandledThisFrame && settingsMenu != null && settingsMenu.IsVisible) CloseSettings();
+                return;
+            }
+
             // สมุดเปิดอยู่ = ปล่อยให้สมุดจัดการ Esc เอง (ไม่งั้นเมนู Pause จะแวบขึ้นมา 1 เฟรม)
             if (JournalController.IsAnyOpen) return;
+
+            // หน้าต่างอื่น (กระเป๋า/วิทยุ/ตู้เซฟ/กล่อง/มินิเกม) ใช้ ESC ปิดตัวเองไปแล้วในเฟรมนี้ → ไม่เปิดเมนูซ้อน
+            if (EscapeGuard.HandledThisFrame) return;
 
             if (IsPaused)
                 ResumeGame();
@@ -84,7 +101,20 @@ public class PauseManager : MonoBehaviour
     public void CloseSettings()
     {
         if (settingsMenu != null) settingsMenu.Hide();
+        if (MenuMode)
+        {
+            SettingsClosed?.Invoke();
+            return;
+        }
         if (pauseMenu != null) pauseMenu.Show();
+    }
+
+    /// <summary>[Claude 2026-11-11] กลับหน้าเมนูหลัก (ความคืบหน้าที่ยังไม่เซฟหาย — ผู้เรียกถามยืนยันเอง)</summary>
+    public void GoToMainMenu(string sceneName)
+    {
+        IsPaused = false;
+        Time.timeScale = 1f;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
     }
     
     public void QuitGame()

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -73,6 +73,9 @@ public class SaveManager : MonoBehaviour
     [Tooltip("จำนวนช่องเซฟปกติ (ไม่นับช่องอัตโนมัติ)")]
     [SerializeField, Min(1)] private int manualSlotCount = 6;
 
+    [Tooltip("ใช้ช่องเซฟอัตโนมัติไหม — ปิด (เจ้าของสั่ง 2026-11-11: มีแค่เซฟที่ผู้เล่นทำเอง)\nปิดแล้ว: AutoSaveController เซฟไม่ได้ · หน้าโหลด/ปุ่มเล่นต่อ/ตายแล้วโหลด ไม่สนไฟล์เซฟอัตโนมัติเก่า")]
+    [SerializeField] private bool useAutoSlot = false;
+
     // ข้อมูลที่รอใส่คืนหลังโหลดซีนเสร็จ — static เพราะ SaveManager ตัวเดิมถูกทำลายไปพร้อมซีนเก่า
     private static GameSaveData pendingRestore;
     private static bool pendingFromCheckpoint;
@@ -135,7 +138,7 @@ public class SaveManager : MonoBehaviour
     {
         List<SaveSlotInfo> list = new List<SaveSlotInfo>();
         for (int i = 0; i < manualSlotCount; i++) list.Add(GetSlotInfo(i));
-        list.Add(GetSlotInfo(AutoSlot));
+        if (useAutoSlot) list.Add(GetSlotInfo(AutoSlot));
         return list;
     }
 
@@ -154,7 +157,7 @@ public class SaveManager : MonoBehaviour
     {
         get
         {
-            if (File.Exists(SlotPath(AutoSlot))) return true;
+            if (useAutoSlot && File.Exists(SlotPath(AutoSlot))) return true;
             for (int i = 0; i < manualSlotCount; i++) if (File.Exists(SlotPath(i))) return true;
             return false;
         }
@@ -184,6 +187,7 @@ public class SaveManager : MonoBehaviour
         {
             if (File.Exists(path)) File.Delete(path);
         }
+        SaveThumbnail.Delete(slot);
     }
 
     #endregion
@@ -204,7 +208,7 @@ public class SaveManager : MonoBehaviour
     }
 
     /// <summary>เซฟอัตโนมัติ → ช่องอัตโนมัติ</summary>
-    public bool TryAutoSave() => TrySaveToSlot(AutoSlot, SaveReason.Auto, null, null);
+    public bool TryAutoSave() => useAutoSlot && TrySaveToSlot(AutoSlot, SaveReason.Auto, null, null);
 
     /// <summary>
     /// ขอเซฟลงช่อง — ถ้าไม่อนุญาตจะประกาศ SaveBlockedEvent แล้วคืน false
@@ -240,6 +244,8 @@ public class SaveManager : MonoBehaviour
             Debug.LogError($"[SaveManager] เขียนไฟล์เซฟไม่สำเร็จ — เซฟเก่ายังอยู่\n{e}");
             return false;
         }
+
+        SaveThumbnail.WritePending(slot);   // รูปตัวอย่างบนการ์ดช่องเซฟ (ถ่ายไว้ก่อนเปิดหน้าจอเลือกช่อง)
 
         Debug.Log($"[SaveManager] 💾 เซฟสำเร็จ ช่อง {(slot == AutoSlot ? "อัตโนมัติ" : slot.ToString())} ({reason}) → {SlotPath(slot)}");
         GameEventBus.Publish(new GameSavedEvent(reason));

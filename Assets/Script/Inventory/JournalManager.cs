@@ -13,7 +13,7 @@ public class JournalManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.J))
+        if (Input.GetKeyDown(KeyCode.J) && !GameplayInputGate.Blocked)   // [Claude 2026-11-11] นั่งโต๊ะ = ห้ามเปิด
         {
             isOpen = !isOpen;
             if (journalUI != null) journalUI.SetActive(isOpen);

@@ -61,7 +61,7 @@ safezone_panic;ตกใจสุดขีด! ไม่สามารถสง
 FP1_EXIT_1;ตั้งสติ Rowan หายใจเข้าลึก ๆ แกทำได้;Pull yourself together, Rowan. Breathe. You can do this.
 FP1_EXIT_2;...เดี๋ยวนะ;...Wait.
 FP1_MAP_1;นี่อะไร? ผังของบ้านงั้นหรอ;What's this? A floor plan of the house?
-FP1_MAP_2;ดูเหมือนจะมีห้องแปลก ๆ หลังห้องเอกสาร มันคือห้องอะไรนะ ทำไมฉันถึงไม่มีความทรงจำเกี่ยวกับห้องลับนั้นเลย;There's a strange room behind the archive room. What is it? Why don't I remember any secret room?
+FP1_MAP_2;ดูเหมือนจะมีห้องแปลก ๆ หลังห้องเอกสาร มันคือห้องอะไรนะ ทำไมฉันถึงไม่มีความทรงจำ เกี่ยวกับห้องลับนั้นเลย;There's a strange room behind the archive room. What is it? Why don't I remember any secret room?
 FP1_MAP_3;งั้นคงต้องเริ่มจากที่ห้องนั้นก่อนแล้ว;Then I should start with that room.
 ITEM_MANSION_MAP;แผนผังคฤหาสน์;Mansion Floor Plan
 ITEM_MANSION_MAP_DESC;ผังของบ้านหลังนี้ มีทางลับกับห้องที่ยังไม่เคยสำรวจ · ด้านหลังห้องเอกสารมีห้องแปลก ๆ ที่ฉันจำไม่ได้;A floor plan of this house, with secret passages and unexplored rooms. There's a strange room behind the archive room I can't remember.
@@ -81,3 +81,30 @@ DEBRIS_WRONG_1;ยิงไปก็ไม่ได้ผล... ต้องใ�
 PADLOCK_HINT_1;ประตูถูกล็อกด้วยแม่กุญแจ...;The door is locked with a padlock...
 PADLOCK_HINT_2;แม่กุญแจแบบนี้ ถ้ามีปืนคงยิงให้หลุดได้;If I had a gun, I could probably shoot this padlock off.
 PADLOCK_WRONG_1;ตีไม่หลุด... ต้องยิงมัน;It won't break... I'll have to shoot it.
+MAP_NONE;ยังไม่มีแผนที่;No map yet
+SAVE_TITLE;บันทึกเกม;SAVE GAME
+SAVE_SLOT;ช่อง;Slot
+SAVE_EMPTY;ว่าง;Empty
+SAVE_PLAYTIME;เวลาเล่น;Play time
+SAVE_OVERWRITE;เขียนทับบันทึกนี้ไหม?;Overwrite this save?
+SAVE_HINT;คลิกเลือกช่องที่จะบันทึก;Choose a slot to save
+UI_YES;ใช่;Yes
+UI_NO;ไม่;No
+UI_ESC_CANCEL;ยกเลิก;Cancel
+MENU_CONTINUE;เล่นต่อ;Continue
+MENU_LOAD;โหลดเกม;Load Game
+MENU_NEWGAME;เริ่มเกมใหม่;New Game
+MENU_MAINMENU;กลับเมนูหลัก;Main Menu
+LOAD_TITLE;โหลดเกม;LOAD GAME
+LOAD_HINT;คลิกเลือกบันทึกที่จะเล่นต่อ;Choose a save to continue
+LOAD_CONFIRM;ที่ยังไม่ได้บันทึกจะหายไป โหลดไหม?;Unsaved progress will be lost. Load?
+NEWGAME_CONFIRM;เริ่มเกมใหม่ไหม? (บันทึกเดิมยังอยู่);Start a new game? (Your saves are kept)
+UI_CONFIRM_AGAIN;กดอีกครั้งเพื่อยืนยัน;Click again to confirm
+GAME_TITLE;Case No. 7: Mind Inquest;Case No. 7: Mind Inquest
+UI_PAUSED;หยุดเกม;PAUSED
+UI_ESC_RESUME;กด ESC เพื่อกลับเข้าเกม;Press ESC to resume
+OFFICE_NOT_DONE_1;เดี๋ยวก่อน... ห้องนี้ยังสำรวจไม่ครบ;Wait... I have not finished searching this room.
+OFFICE_NOT_DONE_2;ลองดูที่โต๊ะทำงานอีกที;Let me check the desk again.
+NOTIFY_ITEM_OBTAINED;ได้รับ: {0};Obtained: {0}
+ITEM_MEDICINE;ยารักษาแผล;Medicine
+ITEM_MEDICINE_DESC;ฟื้นเลือด 35 หน่วย;Restores 35 health

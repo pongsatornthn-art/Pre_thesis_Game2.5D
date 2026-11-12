@@ -35,12 +35,12 @@ public class QuestPage : JournalPage
 
     private void Reset()
     {
-        // ตั้งค่าเริ่มต้นของหน้านี้ใน Inspector อัตโนมัติ (PageId = "quest", ShortcutKey = M)
+        // ตั้งค่าเริ่มต้นของหน้านี้ใน Inspector อัตโนมัติ (PageId = "quest", ShortcutKey = J — M ย้ายไปเปิดแผนที่ 2026-11-11)
         FieldInfo idField = typeof(JournalPage).GetField("pageId", BindingFlags.NonPublic | BindingFlags.Instance);
         idField?.SetValue(this, "quest");
 
         FieldInfo keyField = typeof(JournalPage).GetField("shortcutKey", BindingFlags.NonPublic | BindingFlags.Instance);
-        keyField?.SetValue(this, KeyCode.M);
+        keyField?.SetValue(this, KeyCode.J);
     }
 
     private void OnEnable()

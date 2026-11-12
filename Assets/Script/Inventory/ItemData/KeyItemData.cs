@@ -24,6 +24,15 @@ public class KeyItemData : ItemData
         }
 
         holder.Add(this);
+        // [Claude 2026-11-12] ประกาศว่าได้ของสำคัญ → ป้ายแจ้งเตือนมุมจอ (QuestNotifier ฟังอยู่) · โหลดเซฟไม่ผ่านตรงนี้ จึงไม่เด้งตอนโหลด
+        GameEventBus.Publish(new KeyItemCollectedEvent(this));
         return true;
     }
+}
+
+/// <summary>[Claude 2026-11-12] ผู้เล่นได้ของสำคัญ (กุญแจ/รูป/เอกสารสำคัญ) — ใช้โชว์ป้าย "ได้รับ ..."</summary>
+public readonly struct KeyItemCollectedEvent
+{
+    public readonly KeyItemData Item;
+    public KeyItemCollectedEvent(KeyItemData item) { Item = item; }
 }

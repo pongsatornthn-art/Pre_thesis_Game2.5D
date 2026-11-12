@@ -21,11 +21,34 @@ public class SavePoint : StoryInteractableBase
     [Tooltip("ยังไม่มีหน้าจอเลือกช่อง → เซฟลงช่องนี้")]
     [SerializeField, Min(0)] private int fallbackSlot = 0;
 
-    protected override void OnInteract(StoryContext ctx)
+    /// <summary>
+    /// [งานข้อ 8 · Claude 2026-11-11] เซฟจากที่อื่นที่ไม่ใช่การเดินมากด F — เช่น คลิกสมุดบนโต๊ะในมุมมองบุคคลที่หนึ่ง
+    /// ไม่ถ่ายรูปตัวอย่างตอนนี้ (จอเป็นภาพโต๊ะ) — โต๊ะถ่ายไว้ให้แล้วตอนกด E เข้า
+    /// onDone: true = เซฟแล้ว · false = ยกเลิก/เซฟไม่ได้
+    /// </summary>
+    public void SaveFromDesk(System.Action<bool> onDone) => BeginSave(onDone, captureThumbnail: false);
+    public void SaveFromDesk() => SaveFromDesk(null);
+
+    protected override void OnInteract(StoryContext ctx) => BeginSave(null, captureThumbnail: true);
+
+    private void BeginSave(System.Action<bool> onDone, bool captureThumbnail)
+    {
+        if (captureThumbnail) StartCoroutine(CaptureThenSave(onDone));
+        else DoSave(onDone);
+    }
+
+    private System.Collections.IEnumerator CaptureThenSave(System.Action<bool> onDone)
+    {
+        yield return SaveThumbnail.Capture();   // ถ่ายฉากก่อนหน้าจอเลือกช่องขึ้น
+        DoSave(onDone);
+    }
+
+    private void DoSave(System.Action<bool> onDone)
     {
         if (!ServiceLocator.TryGet(out SaveManager save))
         {
             Debug.LogError("[SavePoint] ไม่พบ SaveManager — [CORE_SERVICES] อยู่ในซีนหรือเปล่า", this);
+            onDone?.Invoke(false);
             return;
         }
 
@@ -35,15 +58,22 @@ public class SavePoint : StoryInteractableBase
         if (!save.CanSave(out string blockKey))
         {
             GameEventBus.Publish(new SaveBlockedEvent(SaveReason.Manual, blockKey));
+            onDone?.Invoke(false);
             return;
         }
 
         if (ServiceLocator.TryGet(out ISaveSlotPicker picker))
         {
-            picker.OpenSavePicker(new SaveRequest(spawn, locationKey, saved => { if (saved) PlaySequence(onSaved); }));
+            picker.OpenSavePicker(new SaveRequest(spawn, locationKey, saved =>
+            {
+                if (saved) PlaySequence(onSaved);
+                onDone?.Invoke(saved);
+            }));
             return;
         }
 
-        if (save.TrySaveToSlot(fallbackSlot, SaveReason.Manual, spawn, locationKey)) PlaySequence(onSaved);
+        bool ok = save.TrySaveToSlot(fallbackSlot, SaveReason.Manual, spawn, locationKey);
+        if (ok) PlaySequence(onSaved);
+        onDone?.Invoke(ok);
     }
 }

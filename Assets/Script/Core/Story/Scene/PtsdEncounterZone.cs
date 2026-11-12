@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -30,6 +30,14 @@ public class PtsdEncounterZone : MonoBehaviour
     private string ClearedKey => saveKey + "_cleared";
 
     private bool running;
+
+    [Tooltip("[Claude 2026-11-12] ออกจาก PTSD แล้วกี่วินาทีจุดนี้ถึงทำงานได้ (กันเดินออกจาก PTSD แล้วเหยียบจุดถัดไปติดกันทันที)")]
+    [Min(0f)] public float cooldownAfterPtsd = 45f;
+
+    // เวลาที่ออกจากโลก PTSD ล่าสุด (ทุกแบบ) — ทุกจุดใช้ร่วมกัน
+    private static float lastPtsdExitTime = -999f;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => lastPtsdExitTime = -999f;
 
     private void Reset()
     {
@@ -71,6 +79,7 @@ public class PtsdEncounterZone : MonoBehaviour
 
         PTSDManager pm = PTSDManager.Instance;
         if (pm == null || pm.currentMode != PTSDMode.None) return;
+        if (Time.time - lastPtsdExitTime < cooldownAfterPtsd) return;   // เพิ่งออกจาก PTSD — พักก่อน
 
         IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
         if (flags == null || flags.HasKey(ClearedKey)) return;
@@ -85,6 +94,7 @@ public class PtsdEncounterZone : MonoBehaviour
 
     private void HandlePtsdChanged(bool inPtsd)
     {
+        if (!inPtsd) lastPtsdExitTime = Time.time;
         if (inPtsd || !running) return;
 
         // ออกจาก PTSD ได้ (ห้องเขียว + หายใจ) → ผ่านจุดนี้ถาวร

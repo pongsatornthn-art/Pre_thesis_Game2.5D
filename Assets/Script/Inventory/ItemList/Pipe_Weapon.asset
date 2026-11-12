@@ -24,12 +24,13 @@ MonoBehaviour:
   equippedSprite: {fileID: 0}
   itemNameKey: 
   descriptionKey: 
-  damage: 20
-  heavyAttackDamage: 20
+  damage: 3
+  heavyAttackDamage: 12
   attackRange: 1.5
   lightAttackCooldown: 0.5
   heavyAttackCooldown: 1
-  staminaCost: 10
+  staminaCost: 20
+  heavyStaminaCost: 90
   knockback: 3
   maxDurability: 100
   weaponAnimatorOverride: {fileID: 22100000, guid: 0ee64d4b049945546b3cacc3147aabad, type: 2}

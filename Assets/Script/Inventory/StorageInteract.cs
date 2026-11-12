@@ -16,7 +16,7 @@ public class StorageInteract : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && InteractInput.PickupPressed) // [แก้โดย Claude 2026-10-07] กลับเป็น E ตามเดิม (ปุ่มเก็บของ/เปิดปิด)
+        if (isPlayerNear && InteractInput.PickupPressed && !GameplayInputGate.Blocked) // [แก้โดย Claude 2026-10-07] กลับเป็น E ตามเดิม (ปุ่มเก็บของ/เปิดปิด)
         {
             if (boxUI.uiPanel.activeSelf)
             {
@@ -30,6 +30,7 @@ public class StorageInteract : MonoBehaviour
 
         if (boxUI.uiPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
         {
+            EscapeGuard.MarkHandled(); // [Claude 2026-11-11] ใช้ ESC แล้ว → เมนูหยุดเกมไม่เด้งซ้อน
             CloseUIs();
         }
     }

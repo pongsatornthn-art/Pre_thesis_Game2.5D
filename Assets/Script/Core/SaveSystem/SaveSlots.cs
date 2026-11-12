@@ -61,3 +61,13 @@ public interface ISaveSlotPicker
 {
     void OpenSavePicker(SaveRequest request);
 }
+
+/// <summary>
+/// หน้าจอ "เลือกช่องเพื่อโหลด" (เมนูหลัก / เมนูหยุดเกม) — SaveSlotPickerUI ทำทั้งเซฟและโหลด
+/// confirmBeforeLoad = ถามก่อนโหลด (ใช้ตอนอยู่ในเกม ความคืบหน้าที่ยังไม่เซฟจะหาย) · onClosed = ปิดโดยไม่โหลด
+/// [Claude 2026-11-11]
+/// </summary>
+public interface ISaveSlotLoader
+{
+    void OpenLoadPicker(bool confirmBeforeLoad, Action onClosed);
+}

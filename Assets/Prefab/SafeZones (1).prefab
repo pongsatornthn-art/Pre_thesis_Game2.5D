@@ -1241,9 +1241,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cc625d84957be94aaa1b31f7b776ad6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  breathingLoop: {fileID: 0}
+  breathingLoop: {fileID: 8300000, guid: 868be9c08a64b504d9d79e0372a87d46, type: 3}
   radioStaticLoop: {fileID: 0}
-  heartbeatLoop: {fileID: 0}
+  heartbeatLoop: {fileID: 8300000, guid: 618dedc38515cd646b588595a47ddf9e, type: 3}
   breathingSource: {fileID: 7846891200581756949}
   radioStaticSource: {fileID: 5617558233540251889}
   heartbeatSource: {fileID: 1257633105298643235}

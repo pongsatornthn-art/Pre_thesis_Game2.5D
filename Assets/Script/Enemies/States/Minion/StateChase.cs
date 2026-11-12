@@ -3,6 +3,7 @@ using UnityEngine;
 public class StateChase : IMonsterState
 {
     private Vector3 leashCenter;
+    private float repathTimer;
 
     public void EnterState(PTSDMonsterAI ai)
     {
@@ -37,7 +38,15 @@ public class StateChase : IMonsterState
             return;
         }
 
-        ai.Agent.SetDestination(ai.PlayerTransform.position);
+        // [แก้โดย Claude 2026-11-11 งานข้อ 1] เดิมสั่งหาทางใหม่ทุกเฟรม + ใช้ตำแหน่งผู้เล่นตรงๆ
+        // ผู้เล่นยืนตรงที่ไม่ใช่พื้นเดินได้ (ชิดโต๊ะ/ผนัง/ลัง) → ทางคำนวณไม่ทันเสร็จสักเฟรม (pathPending ค้าง) → มอนยืนนิ่ง "เอ๋อ"
+        // ตอนนี้: หาทางใหม่ทุก 0.2 วิ (หรือทันทีถ้ายังไม่มีทาง) ไปยัง "จุดพื้นเดินได้ที่ใกล้ผู้เล่นที่สุด"
+        repathTimer -= Time.deltaTime;
+        if (repathTimer <= 0f || (!ai.Agent.hasPath && !ai.Agent.pathPending))
+        {
+            repathTimer = 0.2f;
+            ai.Agent.SetDestination(ChaseTarget.OnNavMesh(ai.PlayerTransform.position));
+        }
 
         float dist = Vector3.Distance(ai.transform.position, ai.PlayerTransform.position);
         if (dist <= ai.attackDistance)

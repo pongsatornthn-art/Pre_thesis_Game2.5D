@@ -46,8 +46,13 @@ public class PTSDMinigameController : MonoBehaviour
     public UnityEvent OnPlayerEnteredSafeZone;
     public UnityEvent OnPlayerExitedSafeZone;
 
+    // [Claude 2026-11-12] ให้ตัวกั้นปุ่มลัด (GameplayInputGate) รู้ว่ามินิเกมตั้งสติเล่นอยู่ — ห้ามถือปืนตี/ยิงระหว่างเล่น
+    private static PTSDMinigameController current;
+    public static bool AnyActive => current != null && current.isMinigameActive;
+
     private void Awake()
     {
+        current = this;
         // 🌟 ตั้งค่าให้การเดินเข้า-ออกโซน ไปกระตุ้นแค่ตัว Prompt ("Hold [SPACE]") อย่างเดียว
         OnPlayerEnteredSafeZone.AddListener(() => {
             if (!isMinigameActive) OnPromptUIVisibility?.Invoke(true);
@@ -189,6 +194,7 @@ public class PTSDMinigameController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            EscapeGuard.MarkHandled(); // [Claude 2026-11-11] ใช้ ESC แล้ว → เมนูหยุดเกมไม่เด้งซ้อน
             isMinigameActive = false;
             OnMinigameCanceled?.Invoke();
             Debug.Log("ยกเลิกการตั้งสติกลางคัน! เตรียมตัววิ่งหนี");

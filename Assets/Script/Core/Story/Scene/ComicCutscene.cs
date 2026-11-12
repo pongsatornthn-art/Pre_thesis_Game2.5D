@@ -116,7 +116,8 @@ public class ComicCutscene : CutsceneBase
             while (!advanceRequested && !skipRequested)
             {
                 if (page.autoAdvanceSeconds > 0f && shown >= page.autoAdvanceSeconds) break;
-                shown += Time.unscaledDeltaTime;
+                // [Claude 2026-11-12] หยุดเกมอยู่ = ไม่นับเวลาเปลี่ยนหน้าเอง (กลับมาแล้วอ่านต่อหน้าเดิม)
+                if (PauseManager.Instance == null || !PauseManager.Instance.IsPaused) shown += Time.unscaledDeltaTime;
                 yield return null;
             }
 

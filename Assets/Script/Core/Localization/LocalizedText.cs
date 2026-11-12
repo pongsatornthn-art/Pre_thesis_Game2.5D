@@ -37,6 +37,8 @@ public class LocalizedText : MonoBehaviour
         }
     }
 
+    public string Key => localizationKey;
+
     // เผื่อต้องเปลี่ยน Key ผ่านโค้ดทีหลัง
     public void SetKey(string newKey)
     {

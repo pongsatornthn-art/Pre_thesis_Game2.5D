@@ -234,6 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 0
 --- !u!1 &5997787117002261268
 GameObject:
   m_ObjectHideFlags: 0
@@ -613,3 +614,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b30af6ee148e3a49a6405a4f20f8ab0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pitchTiltAmount: 1

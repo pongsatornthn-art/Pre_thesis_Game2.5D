@@ -75,7 +75,8 @@ public class JournalController : MonoBehaviour
         }
 
         // 2. ดักปุ่มลัดของแต่ละหน้า (I, K, N)
-        if (pages != null)
+        //    [Claude 2026-11-11] นั่งโต๊ะ / หน้าเซฟเปิดอยู่ = ห้ามเปิดสมุด
+        if (pages != null && !(GameplayInputGate.Blocked && !IsOpen))
         {
             foreach (JournalPage page in pages)
             {
@@ -95,6 +96,9 @@ public class JournalController : MonoBehaviour
         //    จึงไม่ต้องตามเช็ด ResumeGame() ทีหลังอีก
         if (IsOpen && Input.GetKeyDown(closeKey))
         {
+            // [Claude 2026-11-11] PauseManager ย้ายไปเช็คใน LateUpdate (หลังสมุดปิดแล้ว IsAnyOpen = false) → บอกตัวกลางว่าใช้ ESC แล้ว
+            if (closeKey == KeyCode.Escape) EscapeGuard.MarkHandled();
+
             // หน้าที่เปิดอยู่ขอจัดการเองก่อน (เช่น หน้าเอกสาร: Esc ปิดแค่หน้าอ่าน)
             JournalPage current = FindPage(CurrentPageId);
             if (current != null && current.HandleBack()) return;

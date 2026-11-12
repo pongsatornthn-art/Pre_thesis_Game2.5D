@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -129,6 +129,15 @@ public class PlayerCombat : MonoBehaviour
         // เกมหยุดอยู่ (เมนู Pause / เปิดสมุด) = ห้ามทำอะไรทั้งนั้น
         if (Time.timeScale == 0f) return;
 
+        // [Claude 2026-11-12] มินิเกม / นั่งโต๊ะ / หน้าเซฟ = ห้ามถือปืนตี-ยิง
+        // ฉากเนื้อเรื่องล็อกตัว (เก็บของ) / ติดสตัน = นิ่งสนิท ไม่หันตามเมาส์
+        if (GameplayInputGate.Blocked || (playerMovement != null && (playerMovement.isStunned || playerMovement.IsActionLocked)))
+        {
+            isAiming = false;
+            if (animator != null) animator.SetBool("IsAiming", false);
+            return;
+        }
+
         if (isReloading) return;
 
         ItemData weapon = GetEquippedWeapon();
@@ -159,30 +168,22 @@ public class PlayerCombat : MonoBehaviour
         }
 
         // ระบบของอาวุธประชิด (ท่อ / กระบอง)
+        // [Claude 2026-11-12 งานเพลย์เทส ข้อ 7] คลิกซ้าย = ตีเบา · คลิกขวา = ตีหนัก (ติดสตัน) · ใช้สตามิน่า ไม่พอ = ตีไม่ออก
+        // (เดิม: กดค้างคลิกซ้ายเพื่อง้างตีหนัก)
         if (weapon != null && weapon.itemType == ItemType.MeleeWeapon)
         {
-            if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
+            isChargingMelee = false;
+            if (Time.time >= nextAttackTime)
             {
-                isChargingMelee = true;
-                holdChargeTime = 0f;
-            }
-
-            if (isChargingMelee)
-            {
-                holdChargeTime += Time.deltaTime;
-
-                if (holdChargeTime >= maxHeavyChargeTime || Input.GetMouseButtonUp(0))
-                {
-                    isChargingMelee = false;
-                    bool isHeavy = holdChargeTime >= heavyChargeThreshold;
-                    PerformMeleeAttack(weapon as MeleeWeaponData, isHeavy);
-                }
+                if (Input.GetMouseButtonDown(0)) TryMeleeAttack(weapon as MeleeWeaponData, false);
+                else if (Input.GetMouseButtonDown(1)) TryMeleeAttack(weapon as MeleeWeaponData, true);
             }
         }
         // 🌟 แก้จุดที่ 2: เติม weapon != null เข้าไปดักบั๊ก NullReferenceException ตอนเดินมือเปล่า
         else if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
         {
-            if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
+            // [Claude 2026-11-12] ต้องกดคลิกขวาค้าง (เล็ง) ก่อนถึงยิงได้ — ไม่ยิงจากสะโพก
+            if (isAiming && Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
             {
                 PerformRangeAttack(weapon as RangedWeaponData);
             }
@@ -255,6 +256,21 @@ public class PlayerCombat : MonoBehaviour
     }
 
     [HideInInspector] public bool isCurrentAttackHeavy = false;
+
+    /// <summary>ตีไม่ออกเพราะสตามิน่าไม่พอ — ให้ระบบเสียง/HUD ฟัง (เช่น เสียงหอบ)</summary>
+    public static event System.Action OnOutOfStamina;
+
+    private void TryMeleeAttack(MeleeWeaponData weapon, bool isHeavy)
+    {
+        float cost = weapon != null ? (isHeavy ? weapon.heavyStaminaCost : weapon.staminaCost) : 0f;
+        if (playerMovement != null && !playerMovement.TryUseStamina(cost))
+        {
+            nextAttackTime = Time.time + 0.25f;   // กันกดรัวแล้วเสียงหอบดังรัว
+            OnOutOfStamina?.Invoke();
+            return;
+        }
+        PerformMeleeAttack(weapon, isHeavy);
+    }
 
     private void PerformMeleeAttack(MeleeWeaponData weapon, bool isHeavy)
     {

@@ -52,6 +52,7 @@ public class PTSDManager : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayInputGate.Blocked) return;   // [Claude 2026-11-11] ปุ่มลัดนักพัฒนา — ห้ามเข้า PTSD ตอนนั่งโต๊ะ
         if (Input.GetKeyDown(KeyCode.O)) TriggerPTSDSurvival();
         if (Input.GetKeyDown(KeyCode.LeftBracket)) TriggerPTSDNarrative();
         if (Input.GetKeyDown(KeyCode.P)) ExitPTSD();

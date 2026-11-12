@@ -4,7 +4,8 @@ public class StateRoam : IMonsterState
 {
     private float timer;
     private float stuckTimer;
-    
+    private readonly UnityEngine.AI.NavMeshPath roamPath = new UnityEngine.AI.NavMeshPath();
+
     public void EnterState(PTSDMonsterAI ai)
     {
         timer = (ai.assignedZone != null) ? ai.assignedZone.waitTimeAtPoint : 2f;
@@ -46,12 +47,18 @@ public class StateRoam : IMonsterState
             timer += Time.deltaTime;
             if (timer >= ai.assignedZone.waitTimeAtPoint)
             {
+                // [Claude 2026-11-12] เดิมสุ่มความสูงด้วย + หาพื้นเดินได้ไกลถึง 10 ม. → บางทีได้จุดบนโต๊ะ (NavMesh มีเกาะบนโต๊ะ) เดินไปไม่ถึง ยืนเอ๋อ
+                // ตอนนี้: สุ่มที่ระดับพื้นเดียวกับมอน · หาพื้นใกล้ๆ · ต้องมีทางเดินไปถึงจริง (ไม่ได้ = ลองใหม่เฟรมหน้า)
                 Vector3 randomPoint = ai.assignedZone.GetRandomPoint();
-                if (UnityEngine.AI.NavMesh.SamplePosition(randomPoint, out UnityEngine.AI.NavMeshHit hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+                randomPoint.y = ai.transform.position.y;
+                if (UnityEngine.AI.NavMesh.SamplePosition(randomPoint, out UnityEngine.AI.NavMeshHit hit, 1.5f, UnityEngine.AI.NavMesh.AllAreas)
+                    && Mathf.Abs(hit.position.y - ai.transform.position.y) < 0.5f
+                    && ai.Agent.CalculatePath(hit.position, roamPath)
+                    && roamPath.status == UnityEngine.AI.NavMeshPathStatus.PathComplete)
                 {
-                    ai.Agent.SetDestination(hit.position);
+                    ai.Agent.SetPath(roamPath);
+                    timer = 0;
                 }
-                timer = 0;
             }
         }
     }

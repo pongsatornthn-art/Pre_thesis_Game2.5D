@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public enum MinigameResult
 {
@@ -36,8 +36,10 @@ public abstract class MinigameBase : SceneIdentified<MinigameBase>
     [SerializeField] private GameObject[] hideWhilePlaying;
 
     [Header("ออกกลางคัน")]
-    [Tooltip("ปุ่มออก (None = ออกไม่ได้ ต้องเล่นจนจบ) · ห้ามใช้ Esc (ชนเมนูหยุดเกม)")]
+    [Tooltip("ปุ่มออกเพิ่มเติม (None = ไม่มี)")]
     [SerializeField] private KeyCode exitKey = KeyCode.None;
+    [Tooltip("[Claude 2026-11-12] กด ESC ออกกลางคันได้ (เจ้าของสั่ง: มินิเกมต้อง ESC ออกได้) — ไม่ชนเมนูหยุดเกมแล้ว (EscapeGuard)")]
+    [SerializeField] private bool escapeExits = true;
 
     [Header("เสียง (ผ่าน IAudioService)")]
     [SerializeField] private AudioClip startSound;
@@ -136,6 +138,12 @@ public abstract class MinigameBase : SceneIdentified<MinigameBase>
     protected virtual void Update()
     {
         if (IsInputBlocked) return;
+        if (escapeExits && Input.GetKeyDown(KeyCode.Escape))
+        {
+            EscapeGuard.MarkHandled();   // เมนูหยุดเกมไม่เด้งซ้อน
+            Abort();
+            return;
+        }
         if (exitKey != KeyCode.None && Input.GetKeyDown(exitKey)) Abort();
     }
 

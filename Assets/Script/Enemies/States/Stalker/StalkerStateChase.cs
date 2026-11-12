@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class StalkerStateChase : IStalkerState
 {
@@ -22,6 +22,8 @@ public class StalkerStateChase : IStalkerState
         }
 
         ai.ShowDebugText("BOSS_ROAR!", Color.magenta);
+        // [Claude 2026-11-12] เสียงคำรามตอนเริ่มไล่ (ไม่มีไฟล์ = เงียบ ไม่พัง)
+        if (ai.chaseRoarClip != null) ServiceLocator.GetOptional<IAudioService>()?.PlaySFX(ai.chaseRoarClip, ai.transform.position, ai.screamVolume, false);
         Debug.Log($"<color=magenta>🦇 Stalker เห็นผู้เล่นแล้ว! ยืนคำรามขู่เป็นเวลา {roarDuration} วินาที!</color>");
     }
 
@@ -48,6 +50,7 @@ public class StalkerStateChase : IStalkerState
                 ai.Agent.isStopped = false;
                 ai.Agent.speed = ai.chaseSpeed;
                 ai.ShowDebugText("BOSS_CHASE", Color.red);
+                if (ai.chaseRunLoop != null && ai.chaseRunLoop.clip != null && !ai.chaseRunLoop.isPlaying) ai.chaseRunLoop.Play();   // เสียงวิ่งไล่
                 Debug.Log("<color=red>🦇 Stalker คำรามเสร็จแล้ว เริ่มวิ่งไล่ล่า!!</color>");
             }
             return; // ยังไม่ให้ขยับหรือเช็คอะไรทั้งสิ้นจนกว่าจะคำรามจบ
@@ -65,7 +68,7 @@ public class StalkerStateChase : IStalkerState
         pathUpdateTimer += Time.deltaTime;
         if (pathUpdateTimer >= 0.2f)
         {
-            ai.Agent.SetDestination(ai.PlayerTransform.position);
+            ai.Agent.SetDestination(ChaseTarget.OnNavMesh(ai.PlayerTransform.position)); // [Claude 2026-11-11] ปลายทางบนพื้นเดินได้เสมอ
             pathUpdateTimer = 0f;
         }
 
@@ -92,9 +95,12 @@ public class StalkerStateChase : IStalkerState
 
         if (Vector3.Distance(ai.transform.position, ai.PlayerTransform.position) <= ai.killDistance)
         {
-            ai.ChangeState(new StalkerStateKill());
+            ai.CatchPlayer(); // [แก้โดย Claude 2026-11-11] จุดจับเดียว — มีหน้ามือผีของปอใช้อันนั้น ไม่มีค่อยใช้กด E เดิม
         }
     }
 
-    public void ExitState(StalkerAI ai) { }
+    public void ExitState(StalkerAI ai)
+    {
+        if (ai.chaseRunLoop != null && ai.chaseRunLoop.isPlaying) ai.chaseRunLoop.Stop();   // [Claude 2026-11-12] เลิกไล่ = หยุดเสียงวิ่ง
+    }
 }

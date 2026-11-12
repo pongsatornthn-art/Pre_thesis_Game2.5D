@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -23,6 +24,12 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
 
     [Tooltip("Shader ที่วาดทับทุกอย่าง (ไม่สนกำแพง) — ลาก 'TMP_SDF Overlay' (Assets/TextMesh Pro/Shaders) มาใส่\nSorting Order อย่างเดียวกันกำแพง 3D ไม่ได้ เพราะกำแพงยังบังด้วยความลึก")]
     [SerializeField] private Shader overlayShader;
+
+    [Header("ความยาวข้อความ (งานข้อ 5)")]
+    [Tooltip("บรรทัดสูงสุดต่อ 1 หน้า — ยาวกว่านี้ตัดขึ้นหน้าถัดไปอัตโนมัติ")]
+    [SerializeField, Min(1)] private int maxLines = 2;
+    [Tooltip("แต่ละหน้าค้างอย่างน้อยกี่วินาที (กรณีข้อความถูกตัดหลายหน้า)")]
+    [SerializeField, Min(0.3f)] private float minPageSeconds = 1.5f;
 
     [Header("การจางเข้า-ออก")]
     [SerializeField] private float fadeDuration = 0.25f;
@@ -81,28 +88,45 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
         ILocalizationService loc = ServiceLocator.GetOptional<ILocalizationService>();
         string text = loc != null ? loc.GetText(line.textKey) : line.textKey;
 
+        // [แก้โดย Claude 2026-11-11 งานข้อ 5] ข้อความยาวเกิน Max Lines → ตัดเป็นหน้าละไม่เกิน 2 บรรทัด ขึ้นต่อกันเอง
+        // เวลาค้างแบ่งตามความยาวแต่ละหน้า (รวมเท่าเดิม · หน้าละอย่างน้อย Min Page Seconds)
+        List<string> pages = new List<string> { text };
         if (dialogueText != null)
         {
-            dialogueText.text = text;
             if (loc != null) dialogueText.font = loc.GetFont(FontCategory.Dialog);
             ApplyOverlay();   // เปลี่ยนฟอนต์แล้ววัสดุถูกเปลี่ยนตาม → ตั้งใหม่ทุกครั้ง
+            pages = SplitIntoPages(text);
+            dialogueText.text = pages[0];
         }
 
-        // 1. Fade In (ใช้ unscaledDeltaTime เพื่อรองรับกรณี Pause/TimeScale = 0)
-        float elapsed = 0f;
-        while (elapsed < fadeDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            canvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
-            yield return null;
-        }
-        canvasGroup.alpha = 1f;
+        int totalChars = 0;
+        foreach (string p in pages) totalChars += Mathf.Max(1, p.Length);
 
-        // 2. Hold ตามระยะเวลาที่กำหนด (ข้อความจะหายเองเสมอแม้ผู้เล่นเดินหนี)
-        if (line.holdSeconds > 0f)
+        for (int i = 0; i < pages.Count; i++)
         {
-            yield return new WaitForSecondsRealtime(line.holdSeconds);
+            if (i > 0 && dialogueText != null)
+            {
+                // เปลี่ยนหน้า: จางออกเร็วๆ → เปลี่ยนข้อความ → จางเข้า
+                yield return Fade(1f, 0f, fadeDuration * 0.5f);
+                dialogueText.text = pages[i];
+                yield return Fade(0f, 1f, fadeDuration * 0.5f);
+            }
+            else
+            {
+                // 1. Fade In (ใช้ unscaledDeltaTime เพื่อรองรับกรณี Pause/TimeScale = 0)
+                yield return Fade(0f, 1f, fadeDuration);
+            }
+
+            // 2. Hold ตามระยะเวลาที่กำหนด (ข้อความจะหายเองเสมอแม้ผู้เล่นเดินหนี)
+            if (line.holdSeconds > 0f)
+            {
+                float share = pages.Count == 1 ? line.holdSeconds
+                    : Mathf.Max(minPageSeconds, line.holdSeconds * Mathf.Max(1, pages[i].Length) / totalChars);
+                yield return new WaitForSecondsRealtime(share);
+            }
         }
+
+        float elapsed;
 
         // 3. Fade Out
         elapsed = 0f;
@@ -114,6 +138,66 @@ public class WorldSpaceDialoguePresenter : MonoBehaviour, IDialoguePresenter
         }
         canvasGroup.alpha = 0f;
     }
+
+    private IEnumerator Fade(float from, float to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.Lerp(from, to, Mathf.Clamp01(elapsed / duration));
+            yield return null;
+        }
+        canvasGroup.alpha = to;
+    }
+
+    /// <summary>
+    /// ตัดข้อความเป็นหน้า หน้าละไม่เกิน maxLines บรรทัด
+    /// ภาษาไทยไม่มีเว้นวรรคระหว่างคำ → ถ้าปล่อย TextMeshPro ตัดเอง จะตัดกลางคำ ("ทา|งได้")
+    /// เลยจัดบรรทัดเอง: ตัดเฉพาะตรง "เว้นวรรค" ที่เขียนไว้ในบท (วัดความกว้างจริงด้วยฟอนต์ตอนนี้) แล้วใส่ขึ้นบรรทัดใหม่ให้เอง
+    /// ก้อนไหนยาวเกินบรรทัดเดียว (ไม่มีเว้นวรรคเลย) ค่อยยอมตัดกลางก้อน
+    /// → เขียนบทให้เว้นวรรคตรงจุดหายใจ จะตัดสวย
+    /// </summary>
+    private List<string> SplitIntoPages(string text)
+    {
+        List<string> pages = new List<string>();
+        if (string.IsNullOrEmpty(text) || maxLines <= 0 || dialogueText == null) { pages.Add(text ?? ""); return pages; }
+
+        float maxWidth = dialogueText.rectTransform.rect.width;
+        if (maxWidth <= 1f) { pages.Add(text); return pages; }
+
+        List<string> lines = new List<string>();
+        foreach (string paragraph in text.Split('\n'))
+        {
+            string line = "";
+            foreach (string word in paragraph.Split(' '))
+            {
+                if (word.Length == 0) continue;
+                string candidate = line.Length == 0 ? word : line + " " + word;
+                if (Width(candidate) <= maxWidth) { line = candidate; continue; }
+
+                if (line.Length > 0) lines.Add(line);
+                line = word;
+
+                // ก้อนเดียวยาวเกินบรรทัด → ตัดกลางก้อนตามความกว้าง (กรณีเลี่ยงไม่ได้)
+                while (Width(line) > maxWidth && line.Length > 1)
+                {
+                    int cut = line.Length - 1;
+                    while (cut > 1 && Width(line.Substring(0, cut)) > maxWidth) cut--;
+                    lines.Add(line.Substring(0, cut));
+                    line = line.Substring(cut);
+                }
+            }
+            if (line.Length > 0) lines.Add(line);
+        }
+
+        for (int i = 0; i < lines.Count; i += maxLines)
+            pages.Add(string.Join("\n", lines.GetRange(i, Mathf.Min(maxLines, lines.Count - i))));
+        if (pages.Count == 0) pages.Add(text);
+        return pages;
+    }
+
+    private float Width(string s) => dialogueText.GetPreferredValues(s, float.PositiveInfinity, float.PositiveInfinity).x;
 
     public void HideImmediate()
     {
