@@ -28,9 +28,6 @@ public class PlayerCombat : MonoBehaviour
     public int currentAmmoInMag;
     public float currentSpreadAngle;
     private bool isReloading = false;
-    // 🌟 [Alien Shooter Update] isAiming ตอนนี้ไม่ใช่ "โหมดเล็ง FPS" อีกต่อไป
-    // แค่บอกว่า "กำลังกดคลิกขวาค้าง" เพื่อทำให้ปืนนิ่งขึ้น (แคบกรวยกระสุน + เดินช้าลง) เท่านั้น
-    // ถือปืนคือยิงได้เลยโดยไม่ต้องกดคลิกขวาก่อน
     public bool isAiming = false;
 
     [Header("Alien Shooter Aim Settings")]
@@ -39,21 +36,19 @@ public class PlayerCombat : MonoBehaviour
     [Tooltip("ตอนกดคลิกขวาค้าง (นิ่งขึ้น) ความเร็วเดินจะเหลือกี่เท่า")]
     [Range(0f, 1f)] public float steadyAimSpeedMultiplier = 0.5f;
 
-    /// <summary>ตัวละครถือปืนอยู่ไหม (ให้ PlayerMovement ใช้ตัดสินใจเรื่องหันหน้า/ความเร็ว)</summary>
     public bool HasRangedWeaponEquipped => GetEquippedWeapon()?.itemType == ItemType.RangedWeapon;
 
     private Dictionary<ItemData, int> weaponAmmoMemory = new Dictionary<ItemData, int>();
     private float nextAttackTime = 0f;
 
-    // สำหรับระบบง้างฟัน (Charge Attack)
     [HideInInspector] public bool isChargingMelee = false;
     private float holdChargeTime = 0f;
-    
+
     [Header("Combat Feel Settings")]
-    public float heavyChargeThreshold = 0.4f; // กดค้างขั้นต่ำเพื่อให้นับว่าเป็นการโจมตีหนัก
-    public float maxHeavyChargeTime = 1.5f; // ชาร์จครบเวลานี้ จะปล่อยฟันอัตโนมัติ
-    public float attackMovementPause = 0.4f; // เวลาที่ถูกหยุดเดินตอนกำลังฟันดาบ (เพื่อให้ท่ายืนตีชัดเจน)
-    public float heavyChargeSpeedMultiplier = 0.7f; // เดินช้าลง 30% ตอนง้าง
+    public float heavyChargeThreshold = 0.4f;
+    public float maxHeavyChargeTime = 1.5f;
+    public float attackMovementPause = 0.4f;
+    public float heavyChargeSpeedMultiplier = 0.7f;
 
     [Header("Melee Swing Timing (จังหวะฟัน — คุมด้วยโค้ด ไม่ใช้ Animation Event แล้ว)")]
     [Tooltip("หน่วงก่อนเปิด hitbox (วินาที) — เหมือนจังหวะง้างดาบ")]
@@ -90,20 +85,19 @@ public class PlayerCombat : MonoBehaviour
         isReloading = false;
         isAiming = false;
 
-        // 🌟 [แก้บั๊กแอนิเมชันกระพริบ] ล้างสถานะค้างของอาวุธชิ้นเก่าให้หมดก่อนเปลี่ยนอาวุธ
-        // ปัญหาเดิม: กดค้างจะฟันอยู่ แล้วสลับไปปืน -> โค้ดที่ปล่อยค่าอยู่ในสาขาที่ถูกข้าม
-        // ทำให้ isChargingMelee ค้าง true (เดินช้าถาวร) และ trigger ค้างในคิว
-        // แล้วไปเด้งทีหลังตอนยิงปืน = ตัวละครกระพริบเข้าท่าฟัน (Test_Attack) เสี้ยววิ
         isChargingMelee = false;
         holdChargeTime = 0f;
         isCurrentAttackHeavy = false;
 
         bool holdingGun = (newWeapon != null && newWeapon.itemType == ItemType.RangedWeapon);
+        // 🌟 [อัปเดต] เช็กอาวุธประชิดส่งให้ Animator
+        bool holdingMelee = (newWeapon != null && newWeapon.itemType == ItemType.MeleeWeapon);
+
         if (animator != null)
         {
             animator.SetBool("HasGun", holdingGun);
+            animator.SetBool("HasMelee", holdingMelee); // 🌟 [อัปเดต] ส่งสถานะ HasMelee 
 
-            // ล้าง trigger ที่อาจค้างอยู่ในคิว ไม่ให้ข้ามมาเด้งกับอาวุธชิ้นใหม่
             animator.ResetTrigger("Attack");
             animator.ResetTrigger("HeavyAttack");
             animator.ResetTrigger("Shoot");
@@ -126,11 +120,8 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        // เกมหยุดอยู่ (เมนู Pause / เปิดสมุด) = ห้ามทำอะไรทั้งนั้น
         if (Time.timeScale == 0f) return;
 
-        // [Claude 2026-11-12] มินิเกม / นั่งโต๊ะ / หน้าเซฟ = ห้ามถือปืนตี-ยิง
-        // ฉากเนื้อเรื่องล็อกตัว (เก็บของ) / ติดสตัน = นิ่งสนิท ไม่หันตามเมาส์
         if (GameplayInputGate.Blocked || (playerMovement != null && (playerMovement.isStunned || playerMovement.IsActionLocked)))
         {
             isAiming = false;
@@ -142,8 +133,6 @@ public class PlayerCombat : MonoBehaviour
 
         ItemData weapon = GetEquippedWeapon();
 
-        // 🌟 แก้จุดที่ 1: ย้ายคำสั่งหันหน้าตามเมาส์มาไว้ตรงนี้! 
-        // เพื่อให้ตัวละครอัปเดตทิศทาง AimX, AimZ ส่งให้ Animator ตลอดเวลา ไม่ว่าจะถือปืน, ท่อ, หรือมือเปล่า
         FaceMouseCursor();
 
         if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
@@ -167,9 +156,6 @@ public class PlayerCombat : MonoBehaviour
             isAiming = false;
         }
 
-        // ระบบของอาวุธประชิด (ท่อ / กระบอง)
-        // [Claude 2026-11-12 งานเพลย์เทส ข้อ 7] คลิกซ้าย = ตีเบา · คลิกขวา = ตีหนัก (ติดสตัน) · ใช้สตามิน่า ไม่พอ = ตีไม่ออก
-        // (เดิม: กดค้างคลิกซ้ายเพื่อง้างตีหนัก)
         if (weapon != null && weapon.itemType == ItemType.MeleeWeapon)
         {
             isChargingMelee = false;
@@ -179,10 +165,8 @@ public class PlayerCombat : MonoBehaviour
                 else if (Input.GetMouseButtonDown(1)) TryMeleeAttack(weapon as MeleeWeaponData, true);
             }
         }
-        // 🌟 แก้จุดที่ 2: เติม weapon != null เข้าไปดักบั๊ก NullReferenceException ตอนเดินมือเปล่า
         else if (weapon != null && weapon.itemType == ItemType.RangedWeapon)
         {
-            // [Claude 2026-11-12] ต้องกดคลิกขวาค้าง (เล็ง) ก่อนถึงยิงได้ — ไม่ยิงจากสะโพก
             if (isAiming && Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime)
             {
                 PerformRangeAttack(weapon as RangedWeaponData);
@@ -190,8 +174,6 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    // กันไฟล์ไอเทมที่ตั้งค่าผิด (itemType = ปืน แต่ไฟล์ไม่ได้สร้างจาก RangedWeaponData)
-    // ไม่ให้สาด NullReferenceException ทุกเฟรมจนเกมพัง — เตือนครั้งเดียวพอ
     private ItemData warnedBadGun;
     private bool IsGunDataValid(RangedWeaponData gun)
     {
@@ -257,7 +239,6 @@ public class PlayerCombat : MonoBehaviour
 
     [HideInInspector] public bool isCurrentAttackHeavy = false;
 
-    /// <summary>ตีไม่ออกเพราะสตามิน่าไม่พอ — ให้ระบบเสียง/HUD ฟัง (เช่น เสียงหอบ)</summary>
     public static event System.Action OnOutOfStamina;
 
     private void TryMeleeAttack(MeleeWeaponData weapon, bool isHeavy)
@@ -265,7 +246,7 @@ public class PlayerCombat : MonoBehaviour
         float cost = weapon != null ? (isHeavy ? weapon.heavyStaminaCost : weapon.staminaCost) : 0f;
         if (playerMovement != null && !playerMovement.TryUseStamina(cost))
         {
-            nextAttackTime = Time.time + 0.25f;   // กันกดรัวแล้วเสียงหอบดังรัว
+            nextAttackTime = Time.time + 0.25f;
             OnOutOfStamina?.Invoke();
             return;
         }
@@ -278,22 +259,20 @@ public class PlayerCombat : MonoBehaviour
         float cooldown = weapon != null ? (isHeavy ? weapon.heavyAttackCooldown : weapon.lightAttackCooldown) : (isHeavy ? defaultCooldown * 2f : defaultCooldown);
         nextAttackTime = Time.time + cooldown;
 
-        // สั่งหยุดเดินชั่วคราวตอนตี
         if (playerMovement != null)
         {
             playerMovement.ApplyAttackPause(attackMovementPause);
         }
 
-        // 🌟 เพิ่มคำสั่งเล่นอนิเมชันตรงนี้ครับ
         if (animator != null)
         {
             if (isHeavy)
             {
-                animator.SetTrigger("HeavyAttack"); // เล่นท่าตีหนัก
+                animator.SetTrigger("HeavyAttack");
             }
             else
             {
-                animator.SetTrigger("Attack"); // เล่นท่าตีเบา
+                animator.SetTrigger("Attack");
             }
         }
 
@@ -302,10 +281,6 @@ public class PlayerCombat : MonoBehaviour
         StartCoroutine(MeleeSwingRoutine());
     }
 
-    /// <summary>
-    /// จังหวะฟัน 1 ครั้ง: ง้าง -> เปิด hitbox (+เสก VFX รอยดาบ) -> ปิด hitbox
-    /// แทนที่ Animation Event เดิมที่ฝังอยู่ในคลิปท่าฟัน (ซึ่งเลิกเล่นแล้วตามทาง B)
-    /// </summary>
     private IEnumerator MeleeSwingRoutine()
     {
         if (meleeReceiver == null) meleeReceiver = GetComponentInChildren<CombatAnimationReceiver>();
@@ -318,14 +293,13 @@ public class PlayerCombat : MonoBehaviour
 
         if (meleeWindupTime > 0f) yield return new WaitForSeconds(meleeWindupTime);
 
-        meleeReceiver.OnAttackActive();   // เปิด hitbox + ส่งค่าดาเมจ + เสก VFX รอยดาบ 8 ทิศ
+        meleeReceiver.OnAttackActive();
 
         yield return new WaitForSeconds(meleeActiveTime);
 
-        meleeReceiver.OnAttackDeactive(); // ปิด hitbox
+        meleeReceiver.OnAttackDeactive();
     }
 
-    // ฟังก์ชันสำหรับส่งค่าพลังโจมตีปัจจุบัน ให้ CombatAnimationReceiver เอาไปใช้เปิด Hitbox
     public int GetCurrentWeaponDamage()
     {
         MeleeWeaponData weapon = GetEquippedWeapon() as MeleeWeaponData;
@@ -336,7 +310,6 @@ public class PlayerCombat : MonoBehaviour
         return isCurrentAttackHeavy ? defaultHeavyDamage : defaultDamage;
     }
 
-    // ฟังก์ชันสำหรับส่งค่าผลักกระเด็น
     public float GetCurrentWeaponKnockback()
     {
         ItemData weapon = GetEquippedWeapon();
@@ -345,7 +318,6 @@ public class PlayerCombat : MonoBehaviour
         return 0f;
     }
 
-    // ฟังก์ชันสำหรับส่ง Prefab ควัน/แสงดาบ ให้ CombatAnimationReceiver
     public GameObject GetCurrentWeaponVFX()
     {
         return isCurrentAttackHeavy ? heavySlashVFX : lightSlashVFX;
@@ -353,8 +325,6 @@ public class PlayerCombat : MonoBehaviour
 
     public void PerformStrikeDamage()
     {
-        // [REFACRTOR] ถูกลบทิ้งและย้ายไปใช้ MeleeHitbox + Animation Event แทนแล้ว
-        // ฟังก์ชันนี้เก็บไว้เฉยๆ กันสคริปต์อื่นพังถ้าเคยเรียกใช้
         Debug.LogWarning("PerformStrikeDamage ถูกยกเลิก! กรุณาใช้ Animation Event (OnAttackActive) แทน");
     }
 
@@ -378,7 +348,6 @@ public class PlayerCombat : MonoBehaviour
         Ray ray = mainCam.ScreenPointToRay(GetAimScreenPosition());
         Vector3 targetPoint = ray.GetPoint(100f);
 
-        // หาจุดตัดบนพื้น (Y=0) สมมติว่าพื้นอยู่ที่ระดับเดียวกับผู้เล่น
         Plane groundPlane = new Plane(Vector3.up, transform.position);
         if (groundPlane.Raycast(ray, out float enter))
         {
@@ -402,7 +371,6 @@ public class PlayerCombat : MonoBehaviour
 
     private Vector3 GetAimScreenPosition()
     {
-        // 🌟 ไม่มีกล้อง FPS ซูมกลางจอแล้ว ยิงตามตำแหน่งเมาส์บนจอเสมอ
         return Input.mousePosition;
     }
 }

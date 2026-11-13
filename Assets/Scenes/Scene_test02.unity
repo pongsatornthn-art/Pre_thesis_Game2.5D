@@ -140402,7 +140402,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   space: 10
-  items: []
+  items:
+  - itemData: {fileID: 11400000, guid: e24dd22afde2a4646bfef7c8d707d9ac, type: 2}
+    amount: 1
+  - itemData: {fileID: 11400000, guid: 00c7675fe3b4e6d45b961cf9ba359cda, type: 2}
+    amount: 1
 --- !u!114 &1848288841
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -140431,6 +140435,14 @@ MonoBehaviour:
   runStaminaPerSecond: 12
   staminaRegenDelay: 0.8
   exhaustedRecoverRatio: 0.3
+  idleState: Idle
+  idleGunState: Idle_Gun_Tree
+  walkState: Movement
+  walkGunState: Gun_Movement
+  runState: Run_Tree
+  runMeleeState: Run_Melee_Tree
+  runGunState: Run_Gun_Tree
+  animatorLayer: 0
   backwardSpeedMultiplier: 0.6
   backwardStartDot: -0.2
   dashDuration: 0.2
