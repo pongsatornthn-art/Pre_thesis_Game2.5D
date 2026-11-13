@@ -25,32 +25,36 @@ public class PlayerMovement : MonoBehaviour
     public float deceleration = 25f;
 
     [Header("Sneak Settings (ย่องเบา)")]
-    [Tooltip("[Claude 2026-11-12] ความเร็วย่อง = ความเร็วเดิน x ค่านี้")]
     public float sneakSpeedMultiplier = 0.5f;
     [HideInInspector] public bool isSneaking = false;
 
-    // [Claude 2026-11-12 งานเพลย์เทส ข้อ 7] เดิน / วิ่ง / ย่อง — ความเร็ว Base Speed เดิม = "วิ่ง"
     [Header("Walk / Run (เดิน / วิ่ง)")]
-    [Tooltip("กดค้างเพื่อวิ่ง (ใช้สตามิน่า)")]
     public KeyCode runKey = KeyCode.LeftShift;
-    [Tooltip("ความเร็วเดินปกติ = Base Speed x ค่านี้ (Base Speed = ความเร็ววิ่ง)")]
     [Range(0.2f, 1f)] public float walkSpeedMultiplier = 0.6f;
-    [Tooltip("วิ่งใช้สตามิน่ากี่หน่วยต่อวินาที")]
     public float runStaminaPerSecond = 20f;
-    [Tooltip("ใช้สตามิน่าแล้ว (วิ่ง/ตี/แดช) รอกี่วินาทีถึงเริ่มฟื้น")]
     public float staminaRegenDelay = 0.8f;
-    [Tooltip("สตามิน่าหมด = เหนื่อย วิ่งไม่ได้จนกว่าจะฟื้นถึงกี่ %")]
     [Range(0f, 1f)] public float exhaustedRecoverRatio = 0.3f;
 
+    [Header("Animator State Names (ต้องตรงกับชื่อกล่องใน Animator เป๊ะ ๆ)")]
+    public string idleState = "Idle";
+    public string idleGunState = "Idle_Gun_Tree";
+    public string walkState = "Movement";          // เดิน มือเปล่า / อาวุธประชิด
+    public string walkGunState = "Gun_Movement";   // เดิน ถือปืน
+    public string runState = "Run_Tree";
+    public string runMeleeState = "Run_Melee_Tree";
+    public string runGunState = "Run_Gun_Tree";
+    public int animatorLayer = 0;
+
     public bool IsRunning { get; private set; }
-    /// <summary>สตามิน่าหมดจนเหนื่อยหอบ (วิ่งไม่ได้จนกว่าจะฟื้นถึง Exhausted Recover Ratio)</summary>
     public bool IsExhausted { get; private set; }
     public float CurrentStamina => currentStamina;
     public float StaminaRatio => maxStamina > 0f ? currentStamina / maxStamina : 0f;
     public float HealthRatio => maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
     private float lastStaminaUseTime = -99f;
 
-    /// <summary>ใช้สตามิน่า (ตี/แดช) — ไม่พอ = false และไม่หัก</summary>
+    // ตัวแปรคุมสถานะแอนิเมชัน ไม่ให้สั่งเล่นซ้ำเฟรมเดิม
+    private int lastCombinedState = -1;
+
     public bool TryUseStamina(float amount)
     {
         if (amount <= 0f) return true;
@@ -68,11 +72,9 @@ public class PlayerMovement : MonoBehaviour
     }
 
     [Header("Backward Settings (ถอยหลังช้าลง)")]
-    [Tooltip("ความเร็วตอนถอยหลังตรงๆ เทียบกับปกติ (0.6 = เหลือ 60%)")]
     [Range(0.1f, 1f)] public float backwardSpeedMultiplier = 0.6f;
-    [Tooltip("เดินสวนทิศเล็งเกินค่านี้ถึงเริ่มนับว่าถอย (dot product) ใช้ค่าเดียวกับแอนิเมชันถอย")]
     public float backwardStartDot = -0.2f;
-    private float backwardFactor = 0f; // 0 = เดินหน้า/ข้าง, 1 = ถอยตรงๆ
+    private float backwardFactor = 0f;
 
     private Vector3 currentVelocity;
     private Vector3 moveInput;
@@ -86,7 +88,7 @@ public class PlayerMovement : MonoBehaviour
     private bool canDash = true;
     [HideInInspector] public bool isInvincible = false;
     [HideInInspector] public bool isStunned = false;
-    private bool isAttackPaused = false; // สำหรับหยุดเดินตอนฟันดาบ
+    private bool isAttackPaused = false;
 
     [Header("References")]
     public Animator animator;
@@ -99,7 +101,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         mainCam = Camera.main;
-        combatScript = GetComponent<PlayerCombat>(); // 🌟 หาว่ามีสคริปต์ยิงปืนไหม
+        combatScript = GetComponent<PlayerCombat>();
 
         currentHealth = maxHealth;
         currentStamina = maxStamina;
@@ -119,13 +121,11 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // 🌟 ถ้าเกมหยุด (เปิดหน้า Pause) ห้ามผู้เล่นขยับหรือหันหน้าตามเมาส์เด็ดขาด!
         if (Time.timeScale == 0f) return;
 
         if (isDashing || isStunned || isAttackPaused) return;
-        if (IsActionLocked) { IsRunning = false; return; }   // [Claude 2026-11-12] เก็บของ/ฉาก = นิ่งสนิท ไม่หันตามเมาส์
+        if (IsActionLocked) { IsRunning = false; return; }
 
-        // [Claude 2026-11-12] วิ่งอยู่ / เพิ่งใช้สตามิน่า = ยังไม่ฟื้น
         if (currentStamina < maxStamina && !IsRunning && Time.time - lastStaminaUseTime >= staminaRegenDelay)
         {
             currentStamina += staminaRegenRate * Time.deltaTime;
@@ -142,25 +142,19 @@ public class PlayerMovement : MonoBehaviour
 
         if (IsExhausted && currentStamina >= maxStamina * exhaustedRecoverRatio) IsExhausted = false;
 
-        // 🌟 Toggle ย่องเบา (Sneak)
         if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.C))
         {
             isSneaking = !isSneaking;
-            if (isSneaking) Debug.Log("🥷 ผู้เล่นเข้าสู่โหมด ย่องเบา (Sneak)");
-            else Debug.Log("🚶 ผู้เล่นกลับมาเดินปกติ");
         }
 
-        // 🌟 1. แก้ไขระบบเดินให้อิงตามหน้ากล้อง (Camera-Relative Movement)
         Vector3 camForward = mainCam.transform.forward;
         Vector3 camRight = mainCam.transform.right;
 
-        // ล็อคแกน Y ไว้ไม่ให้ตัวละครบินขึ้นฟ้าถ้ากล้องเงยหน้า
         camForward.y = 0f;
         camRight.y = 0f;
         camForward.Normalize();
         camRight.Normalize();
 
-        // คำนวณทิศการเดินใหม่ = (หน้ากล้อง * แกนตั้ง) + (ข้างกล้อง * แกนนอน)
         moveInput = (camForward * moveZ + camRight * moveX).normalized;
 
         if (animator != null)
@@ -170,11 +164,34 @@ public class PlayerMovement : MonoBehaviour
 
         HandleFacingDirection();
 
-        // [Claude 2026-11-12] วิ่ง = กดค้าง + กำลังเดิน + ไม่ย่อง + ไม่เหนื่อยหอบ (กดวิ่งตอนย่อง = เลิกย่อง)
-        bool wantRun = Input.GetKey(runKey) && moveInput.magnitude > 0.1f && !IsExhausted && currentStamina > 0f;
+        // ตรวจจับว่า กำลังหยุด, เดิน, หรือวิ่ง
+        bool isMoving = moveInput.magnitude > 0.1f;
+        bool wantRun = Input.GetKey(runKey) && isMoving && !IsExhausted && currentStamina > 0f;
         if (wantRun && isSneaking) isSneaking = false;
+
+        // 0 = หยุดนิ่ง, 1 = เดิน, 2 = วิ่ง
+        int targetMoveState = isMoving ? (wantRun ? 2 : 1) : 0;
+
+        bool hasGun = combatScript != null && combatScript.HasRangedWeaponEquipped;
+        bool hasMelee = combatScript != null && combatScript.GetCurrentWeaponDamage() != combatScript.defaultDamage && !hasGun;
+
+        int weaponState = hasGun ? 2 : (hasMelee ? 1 : 0);
+        int combinedState = (targetMoveState * 10) + weaponState;
+
+        // ถ้ามีการเปลี่ยนท่าเดิน/วิ่ง หรือ สลับอาวุธ -> สั่ง Animator เปลี่ยนกล่องทันที
+        if (combinedState != lastCombinedState)
+        {
+            PlayMovementState(targetMoveState, hasGun, hasMelee);
+            lastCombinedState = combinedState;
+        }
+
         IsRunning = wantRun;
         if (IsRunning) SpendStamina(runStaminaPerSecond * Time.deltaTime);
+
+        if (animator != null)
+        {
+            animator.SetBool("IsRunning", IsRunning);
+        }
 
         if (Input.GetKeyDown(KeyCode.Space) && canDash && moveInput.magnitude > 0.1f && currentStamina >= dashStaminaCost)
         {
@@ -192,23 +209,19 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // คำนวณความเร็ว — [Claude 2026-11-12] วิ่ง = Base Speed · เดิน = x Walk · ย่อง = เดิน x Sneak
         float walkSpeed = baseSpeed * walkSpeedMultiplier;
         float currentMaxSpeed = IsRunning ? baseSpeed : (isSneaking ? walkSpeed * sneakSpeedMultiplier : walkSpeed);
 
-        // ถ้ากำลังชาร์จฟันดาบ ให้เดินช้าลง (ดึงค่าจาก PlayerCombat)
         if (combatScript != null && combatScript.isChargingMelee)
         {
             currentMaxSpeed *= combatScript.heavyChargeSpeedMultiplier;
         }
 
-        // 🌟 [Alien Shooter Update] ถือปืน + กดคลิกขวาค้าง (นิ่งขึ้น) = เดินช้าลง
         if (combatScript != null && combatScript.isAiming && combatScript.HasRangedWeaponEquipped)
         {
             currentMaxSpeed *= combatScript.steadyAimSpeedMultiplier;
         }
 
-        // 🌟 ถอยหลัง = เดินช้าลง (ถอยตรงๆ ช้าสุด เดินเฉียงหลังช้าลงตามสัดส่วน)
         currentMaxSpeed *= Mathf.Lerp(1f, backwardSpeedMultiplier, backwardFactor);
 
         Vector3 targetVelocity = moveInput * currentMaxSpeed;
@@ -229,12 +242,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (mainCam == null) return;
 
-        // 🌟 [Alien Shooter Update] ไม่มีโหมดกล้อง FPS แล้ว เลยหันหน้าตามเมาส์บนพื้นเสมอ
-        // (ไม่ว่าจะถือปืน ดาบ หรือมือเปล่า) ต่างกันแค่ "แบบไหน" หันตอนถือปืน (raw ลื่น) กับตอนไม่ถือ (snap 8 ทิศ)
         Vector3 aimDirection = Vector3.zero;
         Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
-        // ตัดระนาบที่ "ความสูงลำตัว" (AimAnchor) ไม่ใช่ที่เท้า — เมาส์ชี้ตัวมอนบนจอแล้วทิศฟันตรงตัวมันจริง
-        // (ถ้าตัดที่เท้า กล้องเอียง 45° ทำให้จุดเล็งเลยไปด้านหลังมอน ฟันพลาดทั้งที่บนจอดูตรงกัน)
         float aimHeight = aimAnchor != null ? aimAnchor.position.y : transform.position.y;
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, aimHeight, 0));
 
@@ -247,11 +256,9 @@ public class PlayerMovement : MonoBehaviour
         aimDirection.y = 0f;
         if (aimDirection.sqrMagnitude > 0.001f) aimDirection.Normalize();
 
-        // 🌟 คำนวณระดับ "ถอยหลัง" ไว้ใช้ลดความเร็วใน FixedUpdate
         if (moveInput.sqrMagnitude > 0.01f && aimDirection.sqrMagnitude > 0.001f)
         {
             float dot = Vector3.Dot(moveInput.normalized, aimDirection);
-            // 0 ที่ dot = backwardStartDot, 1 ที่ dot = -1 (ถอยตรงๆ)
             backwardFactor = Mathf.InverseLerp(backwardStartDot, -1f, dot);
         }
         else
@@ -264,7 +271,6 @@ public class PlayerMovement : MonoBehaviour
             aimAnchor.forward = aimDirection;
         }
 
-        // 🌟 ถือปืนอยู่ = หันแบบลื่น (raw) เอาไว้เล็งละเอียด / ถือดาบหรือมือเปล่า = หันแบบ snap 8 ทิศ (ฟีลหนักแน่น)
         bool useRawAim = combatScript != null && combatScript.HasRangedWeaponEquipped;
 
         if (animator != null)
@@ -291,25 +297,58 @@ public class PlayerMovement : MonoBehaviour
 
                 if (dotProduct < backwardStartDot)
                 {
-                    animator.SetFloat("AnimSpeed", -1f); // ถอยหลัง
+                    animator.SetFloat("AnimSpeed", -1f);
                 }
                 else
                 {
-                    animator.SetFloat("AnimSpeed", 1f); // เดินหน้า
+                    animator.SetFloat("AnimSpeed", 1f);
                 }
             }
             else
             {
                 animator.SetFloat("AnimSpeed", 1f);
             }
-
-            // 🐛 DEBUG LOG: เช็คว่าหลังฟันแล้ว โค้ดยังส่งค่าให้ Animator หรือเปล่า?
-            // (ถ้าตัวเลขยังขยับตามเมาส์ แปลว่าโค้ดทำงานปกติ 100% บัคอยู่ที่ Animator)
-            // (ถ้าตัวเลขหยุดนิ่ง แปลว่ามีโค้ดบางบรรทัดค้างหรือพัง)
-            // เปิดปิดการ Log ได้ด้วยการ comment บรรทัดล่างนี้ถ้าเทสเสร็จแล้ว
-            // [Claude 2026-11-12] ปิด — พิมพ์ทุกเฟรมทำให้เกมหน่วง
-            // Debug.Log($"[Debug] useRawAim={useRawAim} | AimX={animator.GetFloat("AimX"):F2} | AimZ={animator.GetFloat("AimZ"):F2} | CurrentState={animator.GetCurrentAnimatorStateInfo(0).shortNameHash}");
         }
+    }
+
+    // ฟังก์ชันสั่งกระโดดข้ามกล่อง Animator (ใช้ชื่อ State ที่ตั้งได้ใน Inspector)
+    private void PlayMovementState(int moveState, bool hasGun, bool hasMelee)
+    {
+        if (animator == null) return;
+
+        string targetStateName;
+
+        if (moveState == 2) // 🏃 วิ่ง
+        {
+            if (hasGun) targetStateName = runGunState;
+            else if (hasMelee) targetStateName = runMeleeState;
+            else targetStateName = runState;
+        }
+        else if (moveState == 1) // 🚶 เดิน
+        {
+            targetStateName = hasGun ? walkGunState : walkState;
+        }
+        else // 🧍 หยุดนิ่ง
+        {
+            targetStateName = hasGun ? idleGunState : idleState;
+        }
+
+        int hash = Animator.StringToHash(targetStateName);
+
+        // ถ้าชื่อ State ไม่มีใน Animator ให้เตือนใน Console แทนที่จะเงียบไป
+        if (!animator.HasState(animatorLayer, hash))
+        {
+            Debug.LogWarning($"[PlayerMovement] ไม่พบ State '{targetStateName}' ใน Animator Layer {animatorLayer} (เช็คชื่อใน Inspector)");
+            return;
+        }
+
+        animator.CrossFadeInFixedTime(hash, 0.1f, animatorLayer);
+    }
+
+    // สั่งให้ Update เล่นท่าเดิน/ยืนใหม่ในเฟรมถัดไป (เรียกหลังโจมตี/สตัน/ล็อกแอ็คชั่นจบ)
+    public void ForceRefreshMovementAnim()
+    {
+        lastCombinedState = -1;
     }
 
     private IEnumerator DashRoutine()
@@ -334,11 +373,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isInvincible)
-        {
-            Debug.Log("แดชหลบได้! ผู้เล่นเป็นอมตะ ไม่โดนดาเมจ");
-            return;
-        }
+        if (isInvincible) return;
         TakeRawDamage(damage);
     }
 
@@ -346,10 +381,7 @@ public class PlayerMovement : MonoBehaviour
     {
         currentHealth -= damage;
 
-        // [เพิ่มโดย Claude 2026-09-19] กระจายข่าวว่าผู้เล่นโดนตี ให้ระบบอื่นมาฟังเองได้
-        // ตอนนี้ระบบกรวยกระสุนใช้บรรทัดนี้เพื่อเด้งกรวยบานสุดตอนเสียหลัก (GDD: Interrupt Condition)
         GameEventBus.Publish(new PlayerDamagedEvent(damage, transform.position));
-        Debug.Log($"<color=red>ผู้เล่นโดนโจมตี {damage} ดาเมจ! เลือดเหลือ {currentHealth}</color>");
 
         if (healthSlider != null)
         {
@@ -362,17 +394,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// [เพิ่มโดย Claude 2026-10-04] ตั้งเลือดตรงๆ ตอนโหลดเซฟ (PlayerStateSaveWrapper เรียก)
-    /// ไม่ใช้ TakeRawDamage เพราะจะยิง PlayerDamagedEvent (กรวยกระสุนเด้ง) ทั้งที่ไม่ได้โดนตีจริง
-    /// </summary>
     public void SetHealthFromSave(int value)
     {
-        currentHealth = Mathf.Clamp(value, 1, maxHealth);   // อย่างน้อย 1 — ไม่โหลดมาแล้วตายทันที
+        currentHealth = Mathf.Clamp(value, 1, maxHealth);
         if (healthSlider != null) healthSlider.value = currentHealth;
     }
 
-    /// <summary>ฟื้นเลือด (ใช้ยา/ผ้าพันแผล) — เลือดไม่เกินค่าสูงสุด</summary>
     public void Heal(int amount)
     {
         if (amount <= 0 || currentHealth <= 0) return;
@@ -380,8 +407,6 @@ public class PlayerMovement : MonoBehaviour
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
 
         if (healthSlider != null) healthSlider.value = currentHealth;
-
-        Debug.Log($"<color=green>ฟื้นเลือด {amount} · เลือดตอนนี้ {currentHealth}/{maxHealth}</color>");
     }
 
     public void ApplyStun(float duration)
@@ -392,11 +417,10 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // [Claude 2026-11-12 ข้อ 4] ล็อกตัวนิ่งสนิท (ไม่เดิน ไม่หันตามเมาส์) — ใช้ตอนเก็บของ/ฉากเนื้อเรื่อง · นับซ้อนได้
     private int actionLockCount;
     public bool IsActionLocked => actionLockCount > 0;
     public void PushActionLock() { actionLockCount++; moveInput = Vector3.zero; currentVelocity = Vector3.zero; if (animator != null) animator.SetFloat("Speed", 0f); }
-    public void PopActionLock() { actionLockCount = Mathf.Max(0, actionLockCount - 1); }
+    public void PopActionLock() { actionLockCount = Mathf.Max(0, actionLockCount - 1); ForceRefreshMovementAnim(); }
 
     public void ApplyAttackPause(float duration)
     {
@@ -414,24 +438,22 @@ public class PlayerMovement : MonoBehaviour
 
         yield return new WaitForSeconds(duration);
         isAttackPaused = false;
+        ForceRefreshMovementAnim();
     }
 
     private IEnumerator StunRoutine(float duration)
     {
         isStunned = true;
-        Debug.Log($"<color=red>ผู้เล่นติดสตันเป็นเวลา {duration} วินาที!</color>");
 
         if (animator != null)
         {
-            // ถ้ามีแอนิเมชัน Stun ค่อยไปตั้งค่า Trigger
-            // animator.SetTrigger("Hit"); 
             animator.SetFloat("Speed", 0f);
         }
 
         yield return new WaitForSeconds(duration);
 
         isStunned = false;
-        Debug.Log("ผู้เล่นหายสตันแล้ว");
+        ForceRefreshMovementAnim();
     }
 
     private void Die()
