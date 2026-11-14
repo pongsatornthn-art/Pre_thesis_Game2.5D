@@ -72,6 +72,9 @@ PROMPT_OPEN;เปิด/ปิด;Open/Close
 PROMPT_USE;ตรวจดู;Use
 PROMPT_INSPECT;ตรวจสอบ;Inspect
 PROMPT_SAVE;บันทึก;Save
+DOOR_LOCKED;ประตูล็อกอยู่ ต้องหากุญแจก่อน;It's locked. I need to find the key first.
+DOOR_LOCKED_RECORDS;ประตูห้องเอกสารล็อกอยู่ ต้องหากุญแจห้องเอกสารก่อน;The records room is locked. I need its key.
+DOOR_LOCKED_PADLOCK;มีแม่กุญแจคล้องอยู่ ต้องหาอะไรมาทุบ;There's a padlock. I need something to break it.
 OFFICE_LOCKED_1;ล็อคงั้นหรอ คงต้องหากุญแจสักที่นึง;It's locked? I'll have to find a key somewhere.
 OFFICE_LOCKED_2;ต้องเริ่มหาเบาะแสจากห้องอื่น ๆ ดูก่อน;I should look for clues in the other rooms first.
 OFFICE_BASE_1;ห้องนี้เหมาะเป็นฐานเลย;This room would make a good base, actually.

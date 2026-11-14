@@ -93,7 +93,7 @@ public abstract class StoryInteractableBase : MonoBehaviour
 
         IInteractPromptService world = ServiceLocator.GetOptional<IInteractPromptService>();
         if (world == null) return;
-        if (visible) world.Show(this, transform, promptHeight, PromptKey.Story, promptLabelKey);
+        if (visible) world.Show(this, transform, Vector3.up * promptHeight, PromptKey.Story, promptLabelKey);
         else world.Hide(this);
     }
 

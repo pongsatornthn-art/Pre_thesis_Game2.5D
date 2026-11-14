@@ -36,10 +36,13 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
     private struct Request
     {
         public Transform anchor;
-        public float height;
+        public Vector3 offset;
         public PromptKey key;
         public string labelKey;
     }
+
+    [Tooltip("ความไวตอนป้ายเลื่อนไปหาของชิ้นใหม่ (ยิ่งมากยิ่งเร็ว · 0 = กระโดดทันที)")]
+    [SerializeField, Min(0f)] private float moveSharpness = 18f;
 
     private readonly Dictionary<object, Request> requests = new Dictionary<object, Request>();
     private readonly List<object> deadOwners = new List<object>();
@@ -47,6 +50,9 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
     private object shownOwner;
     private PromptKey shownKey;
     private string shownLabel;
+    private object currentOwner;          // ชิ้นที่ป้ายโชว์อยู่ "เฟรมนี้" (null = ไม่มีป้าย) — ใช้ตอบ IsOtherShown
+    private PromptKey currentKey;
+    private bool wasPlaced;               // ป้ายเคยวางตำแหน่งแล้ว (ใช้ตัดสินว่าเลื่อนนุ่มหรือวางทันที)
 
     private void Awake()
     {
@@ -61,10 +67,10 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
             ServiceLocator.Unregister<IInteractPromptService>();
     }
 
-    public void Show(object owner, Transform anchor, float height, PromptKey key, string labelKey)
+    public void Show(object owner, Transform anchor, Vector3 offset, PromptKey key, string labelKey)
     {
         if (owner == null || anchor == null) return;
-        requests[owner] = new Request { anchor = anchor, height = height, key = key, labelKey = labelKey };
+        requests[owner] = new Request { anchor = anchor, offset = offset, key = key, labelKey = labelKey };
     }
 
     public void Hide(object owner)
@@ -72,11 +78,18 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
         if (owner != null) requests.Remove(owner);
     }
 
+    public bool IsOtherShown(object owner, PromptKey key)
+    {
+        return currentOwner != null && !ReferenceEquals(currentOwner, owner) && currentKey == key;
+    }
+
     private void LateUpdate()
     {
         object owner = null;
         Request req = default;
         bool hasTarget = !IsBlocked() && TryPickNearest(out owner, out req);
+        currentOwner = hasTarget ? owner : null;
+        currentKey = req.key;
         if (!hasTarget)
         {
             SetVisible(false);
@@ -93,7 +106,7 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
             if (label != null) label.SetKey(req.labelKey);
         }
 
-        Vector3 world = req.anchor.position + Vector3.up * req.height;
+        Vector3 world = req.anchor.position + req.offset;
         Camera cam = Camera.main;
         if (IsScreenSpace())
         {
@@ -101,7 +114,12 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
             if (cam == null) { SetVisible(false); return; }
             Vector3 sp = cam.WorldToScreenPoint(world);
             if (sp.z <= 0f) { SetVisible(false); return; }
-            visualRoot.transform.position = new Vector3(sp.x, sp.y, 0f);
+            Vector3 target = new Vector3(sp.x, sp.y, 0f);
+            Transform t = visualRoot.transform;
+            // ป้ายโผล่ใหม่ = วางทันที · ย้ายไปของชิ้นใหม่ = เลื่อนนุ่มๆ ไม่กระโดด
+            if (!wasPlaced || !visualRoot.activeSelf || moveSharpness <= 0f) t.position = target;
+            else t.position = Vector3.Lerp(t.position, target, 1f - Mathf.Exp(-moveSharpness * Time.unscaledDeltaTime));
+            wasPlaced = true;
         }
         else
         {
@@ -169,6 +187,7 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
         {
             visualRoot.SetActive(false);
             shownOwner = null;
+            wasPlaced = false;
         }
     }
 }

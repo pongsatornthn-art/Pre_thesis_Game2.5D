@@ -12,19 +12,40 @@ public class InteractPromptMarker : MonoBehaviour
     [Tooltip("Pickup = ปุ่ม E (ของทั่วไป) · Story = ปุ่ม F (เนื้อเรื่อง)")]
     [SerializeField] private PromptKey key = PromptKey.Pickup;
 
-    [Tooltip("คีย์ข้อความการกระทำใน LocalizationData.csv เช่น PROMPT_OPEN (เปิด/ปิด) · PROMPT_USE (ใช้)")]
+    [Tooltip("คีย์ข้อความการกระทำใน LocalizationData.csv เช่น PROMPT_OPEN (เปิด/ปิด) · PROMPT_USE (ตรวจดู)")]
     [SerializeField] private string labelKey = "PROMPT_USE";
 
-    [Tooltip("จุดอ้างอิงตำแหน่งป้าย (เว้นว่าง = object นี้)")]
+    [Tooltip("จุดอ้างอิงตำแหน่งป้าย (เว้นว่าง = กึ่งกลางระยะกด (trigger) ของ object นี้ — เช่น กลางบานประตู ไม่ใช่ฝั่งบานพับ)")]
     [SerializeField] private Transform anchor;
 
-    [Tooltip("ป้ายลอยสูงจากจุดอ้างอิงกี่เมตร")]
+    [Tooltip("ป้ายลอยสูงจากพื้น/จุดอ้างอิงกี่เมตร")]
     [SerializeField] private float height = 2f;
 
     [Tooltip("ซ่อนป้ายเมื่อสคริปต์นี้ถูกปิด (เว้นว่างได้) เช่น ลากสคริปต์ตู้เซฟใส่ — เล่นจบแล้วปิดสคริปต์ = ป้ายไม่ขึ้นอีก")]
     [SerializeField] private Behaviour onlyWhileEnabled;
 
     private bool playerNear;
+    private Collider triggerCol;
+
+    public PromptKey Key => key;
+
+    /// <summary>
+    /// ป้ายกำลังโชว์ของชิ้นอื่นที่ใช้ปุ่มเดียวกันอยู่ไหม — สคริปต์ที่รับปุ่มเอง (เช่น ประตู) เช็คก่อนทำงาน
+    /// กันยืนใกล้ประตู+ไอเทม กด E ครั้งเดียวแล้วทำทั้ง 2 อย่าง · ไม่มี marker/ไม่มีบริการป้าย = ไม่กัน (ทำงานแบบเดิม)
+    /// </summary>
+    public static bool OtherPromptShown(GameObject go)
+    {
+        InteractPromptMarker m = go != null ? go.GetComponent<InteractPromptMarker>() : null;
+        if (m == null) return false;
+        IInteractPromptService prompt = ServiceLocator.GetOptional<IInteractPromptService>();
+        return prompt != null && prompt.IsOtherShown(m, m.key);
+    }
+
+    private void Awake()
+    {
+        foreach (Collider c in GetComponents<Collider>())
+            if (c.isTrigger) { triggerCol = c; break; }
+    }
 
     private void Update()
     {
@@ -32,8 +53,15 @@ public class InteractPromptMarker : MonoBehaviour
         if (prompt == null) return;
 
         bool show = playerNear && (onlyWhileEnabled == null || onlyWhileEnabled.isActiveAndEnabled);
-        if (show) prompt.Show(this, anchor != null ? anchor : transform, height, key, labelKey);
+        if (show) prompt.Show(this, anchor != null ? anchor : transform, ComputeOffset(), key, labelKey);
         else prompt.Hide(this);
+    }
+
+    private Vector3 ComputeOffset()
+    {
+        if (anchor != null || triggerCol == null) return Vector3.up * height;
+        Vector3 c = triggerCol.bounds.center - transform.position;
+        return new Vector3(c.x, height, c.z);
     }
 
     private void OnTriggerEnter(Collider other)

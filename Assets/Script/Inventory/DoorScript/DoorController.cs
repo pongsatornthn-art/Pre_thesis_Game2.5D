@@ -9,6 +9,9 @@ public class DoorController : MonoBehaviour
 
     public string keyNameForPlayer;
 
+    [Tooltip("[Claude 2026-11-14] คีย์บทพูดตอนกดแล้วประตูล็อก (LocalizationData.csv) · เว้นว่าง = DOOR_LOCKED \"ประตูล็อกอยู่ ต้องหากุญแจก่อน\"")]
+    public string lockedTextKey;
+
     public bool isUnlocked = false;
     public bool isOpen = false;
 
@@ -36,7 +39,8 @@ public class DoorController : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && Input.GetKeyDown(KeyCode.E))
+        // [Claude 2026-11-14] ป้ายลอยโชว์ของชิ้นอื่นอยู่ (เช่น ไอเทมใกล้กว่า) = E ครั้งนี้ไม่ใช่ของประตู
+        if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !InteractPromptMarker.OtherPromptShown(gameObject))
         {
             if (isUnlocked)
             {
@@ -63,7 +67,15 @@ public class DoorController : MonoBehaviour
         }
 
         // ไม่มีกุญแจ (หรือยังไม่มี KeyItemHolder ในซีน)
-        ShowNotification($"The door is locked! need <color=yellow>{keyNameForPlayer}</color>");
+        // [Claude 2026-11-14] เดิมขึ้นข้อความอังกฤษมุมจอ → เจ้าของสั่ง: ตัวละครพูดเป็นบทพูด + ผ่านระบบแปลภาษา
+        IDialogueService dialogue = ServiceLocator.GetOptional<IDialogueService>();
+        if (dialogue != null)
+        {
+            if (!dialogue.IsPlaying)
+                StartCoroutine(dialogue.PlaySimple(string.IsNullOrEmpty(lockedTextKey) ? "DOOR_LOCKED" : lockedTextKey, 2.5f));
+            return;
+        }
+        ShowNotification($"The door is locked! need <color=yellow>{keyNameForPlayer}</color>");   // สำรอง: ซีนที่ไม่มีระบบบทพูด
     }
 
     private void ToggleDoor()

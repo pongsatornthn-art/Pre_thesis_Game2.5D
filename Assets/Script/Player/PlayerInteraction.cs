@@ -46,7 +46,7 @@ public class PlayerInteraction : MonoBehaviour
         if (nearest != null && worldPrompt != null)
         {
             float height = nearestCol != null ? nearestCol.bounds.max.y - nearest.transform.position.y + 0.35f : 0.8f;
-            worldPrompt.Show(this, nearest.transform, height, PromptKey.Pickup, "PROMPT_PICKUP");
+            worldPrompt.Show(this, nearest.transform, Vector3.up * height, PromptKey.Pickup, "PROMPT_PICKUP");
         }
         else worldPrompt?.Hide(this);
     }
@@ -93,6 +93,8 @@ public class PlayerInteraction : MonoBehaviour
         if (currentTargetItem != null && InteractInput.PickupPressed) // [แก้โดย Claude 2026-10-07] กลับเป็น E ตามเดิม (ปุ่มเก็บของ)
         {
             if (GameplayInputGate.Blocked || (PauseManager.Instance != null && PauseManager.Instance.IsPaused)) return;   // [Claude 2026-11-14] ตอนป้ายซ่อน ห้ามเก็บ
+            IInteractPromptService worldPrompt = ServiceLocator.GetOptional<IInteractPromptService>();
+            if (worldPrompt != null && worldPrompt.IsOtherShown(this, PromptKey.Pickup)) return;   // [Claude 2026-11-14] ป้ายโชว์ของชิ้นอื่น (เช่น ประตู) = E ครั้งนี้เป็นของชิ้นนั้น
             currentTargetItem.Pickup();
             ClearTarget();
         }
