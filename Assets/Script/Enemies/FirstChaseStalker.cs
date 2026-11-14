@@ -29,6 +29,9 @@ public class FirstChaseStalker : MonoBehaviour
     [SerializeField, Min(0f)] private float catchUpDistance = 9f;
     [Tooltip("ความเร็วตอนเร่งตามทัน")]
     [SerializeField, Min(0.1f)] private float catchUpSpeed = 4.5f;
+    [Tooltip("ผ่อนตามแรงผู้เล่น: ตอนอยู่ใกล้ บอสวิ่งได้ไม่เกิน (ความเร็วที่ผู้เล่นทำได้ตอนนี้ × ค่านี้)\n" +
+             "เช่น ผู้เล่นสตามิน่าหมดเหลือแค่เดิน → บอสช้าลงตาม · ผู้เล่นยังโดนจับถ้าหยุด/วิ่งชนกำแพง\n0 = ปิด (บอสวิ่งตามค่าข้างบนตรงๆ)")]
+    [SerializeField, Range(0f, 1.2f)] private float matchPlayerRatio = 0.92f;
 
     [Header("จับตัว")]
     [Tooltip("เข้าใกล้ผู้เล่นเท่านี้ (เมตร) = จับได้")]
@@ -325,6 +328,12 @@ public class FirstChaseStalker : MonoBehaviour
 
         float distToPlayer = Vector3.Distance(me, target);
         float speed = distToPlayer > catchUpDistance ? catchUpSpeed : chaseSpeed;
+        // ระยะใกล้ → ไม่ให้เร็วกว่าที่ผู้เล่นวิ่งหนีได้ (สตามิน่าหมด = ผีช้าลงตาม ฉากสอนเล่นต้องหนีทัน)
+        if (matchPlayerRatio > 0f && playerMovement != null && distToPlayer <= catchUpDistance)
+        {
+            float playerCan = playerMovement.IsRunning ? playerMovement.baseSpeed : playerMovement.baseSpeed * playerMovement.walkSpeedMultiplier;
+            speed = Mathf.Min(speed, playerCan * matchPlayerRatio);
+        }
         if (pressureGap > 0f) speed = distToPlayer > pressureGap ? pressureSpeed : chaseSpeed; // ช่วงฉากบังคับจังหวะ: จี้หลังติดๆ
         float step = speed * Time.deltaTime;
 

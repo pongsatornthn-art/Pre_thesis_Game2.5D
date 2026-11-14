@@ -14,6 +14,12 @@ public abstract class StoryInteractableBase : MonoBehaviour
     [Tooltip("UI ป้าย 'กด F' (เว้นว่างได้)")]
     [SerializeField] private GameObject interactPrompt;
 
+    // [Claude 2026-11-14] ป้ายลอยเหนือของ "[F] ตรวจสอบ" (WorldInteractPrompt) — ขึ้นเองทุกชิ้น ไม่ต้องลากอะไร
+    [Tooltip("คีย์ข้อความบนป้ายลอย (LocalizationData.csv) เช่น PROMPT_INSPECT = ตรวจสอบ · PROMPT_SAVE = บันทึก")]
+    [SerializeField] private string promptLabelKey = "PROMPT_INSPECT";
+    [Tooltip("ป้ายลอยสูงจากตัวของกี่เมตร")]
+    [SerializeField] private float promptHeight = 1.6f;
+
     [Tooltip("เงื่อนไขที่ต้องครบก่อนถึงจะกดได้ (เว้นว่าง = กดได้เสมอ)")]
     [SerializeReference, SubclassPicker] private IStoryCondition interactableWhen;
 
@@ -84,6 +90,11 @@ public abstract class StoryInteractableBase : MonoBehaviour
     private void SetPrompt(bool visible)
     {
         if (interactPrompt != null && interactPrompt.activeSelf != visible) interactPrompt.SetActive(visible);
+
+        IInteractPromptService world = ServiceLocator.GetOptional<IInteractPromptService>();
+        if (world == null) return;
+        if (visible) world.Show(this, transform, promptHeight, PromptKey.Story, promptLabelKey);
+        else world.Hide(this);
     }
 
     /// <summary>คลาสลูกบอกว่าตอนนี้ยังกดได้ไหม (เช่น ส่งไปแล้ว = กดไม่ได้)</summary>

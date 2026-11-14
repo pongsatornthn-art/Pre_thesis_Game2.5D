@@ -60,12 +60,18 @@ safezone_new;Safe Zone ย้ายไปยังห้องใหม่!;Safe
 safezone_panic;ตกใจสุดขีด! ไม่สามารถสงบสติอารมณ์ได้;Extreme panic! Unable to calm down.
 FP1_EXIT_1;ตั้งสติ Rowan หายใจเข้าลึก ๆ แกทำได้;Pull yourself together, Rowan. Breathe. You can do this.
 FP1_EXIT_2;...เดี๋ยวนะ;...Wait.
+FP1_MAP_0;หืม... กระดาษอะไรแปลกๆ ติดอยู่ตรงนี้;Hm... what's this strange paper stuck here?
 FP1_MAP_1;นี่อะไร? ผังของบ้านงั้นหรอ;What's this? A floor plan of the house?
 FP1_MAP_2;ดูเหมือนจะมีห้องแปลก ๆ หลังห้องเอกสาร มันคือห้องอะไรนะ ทำไมฉันถึงไม่มีความทรงจำ เกี่ยวกับห้องลับนั้นเลย;There's a strange room behind the archive room. What is it? Why don't I remember any secret room?
 FP1_MAP_3;งั้นคงต้องเริ่มจากที่ห้องนั้นก่อนแล้ว;Then I should start with that room.
 ITEM_MANSION_MAP;แผนผังคฤหาสน์;Mansion Floor Plan
 ITEM_MANSION_MAP_DESC;ผังของบ้านหลังนี้ มีทางลับกับห้องที่ยังไม่เคยสำรวจ · ด้านหลังห้องเอกสารมีห้องแปลก ๆ ที่ฉันจำไม่ได้;A floor plan of this house, with secret passages and unexplored rooms. There's a strange room behind the archive room I can't remember.
 PROMPT_PICKUP_F;กด [F] เก็บของ;Press [F] to pick up
+PROMPT_PICKUP;เก็บ;Pick up
+PROMPT_OPEN;เปิด/ปิด;Open/Close
+PROMPT_USE;ตรวจดู;Use
+PROMPT_INSPECT;ตรวจสอบ;Inspect
+PROMPT_SAVE;บันทึก;Save
 OFFICE_LOCKED_1;ล็อคงั้นหรอ คงต้องหากุญแจสักที่นึง;It's locked? I'll have to find a key somewhere.
 OFFICE_LOCKED_2;ต้องเริ่มหาเบาะแสจากห้องอื่น ๆ ดูก่อน;I should look for clues in the other rooms first.
 OFFICE_BASE_1;ห้องนี้เหมาะเป็นฐานเลย;This room would make a good base, actually.

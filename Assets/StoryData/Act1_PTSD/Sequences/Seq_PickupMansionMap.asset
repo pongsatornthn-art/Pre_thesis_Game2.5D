@@ -14,19 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lockPlayer: 1
   actions:
-  - rid: 398983252227129416
+  - rid: 398983252227129420
+  - rid: 398983252227129421
+  - rid: 398983252227129422
+  - rid: 398983252227129423
   - rid: 398983252227129417
   - rid: 398983252227129418
   - rid: 398983252227129419
   references:
     version: 2
     RefIds:
-    - rid: 398983252227129416
-      type: {class: GiveItemAction, ns: , asm: Assembly-CSharp}
-      data:
-        items:
-        - {fileID: 11400000, guid: a1ca1abac34ea0343acb6b90160b8533, type: 2}
-        amount: 1
     - rid: 398983252227129417
       type: {class: ShowDialogueAction, ns: , asm: Assembly-CSharp}
       data:
@@ -45,3 +42,23 @@ MonoBehaviour:
         dialogueData: {fileID: 0}
         textKey: FP1_MAP_3
         duration: 3
+    - rid: 398983252227129420
+      type: {class: ShowDialogueAction, ns: , asm: Assembly-CSharp}
+      data:
+        dialogueData: {fileID: 0}
+        textKey: FP1_MAP_0
+        duration: 2.5
+    - rid: 398983252227129421
+      type: {class: EnterCloseUpAction, ns: , asm: Assembly-CSharp}
+      data:
+        viewId: kitchen_map
+        holdSeconds: 0.3
+    - rid: 398983252227129422
+      type: {class: WaitForFlagAction, ns: , asm: Assembly-CSharp}
+      data:
+        flag: {fileID: 11400000, guid: 6f440a1d2324e5e4396d48bc0929ff01, type: 2}
+        timeoutSeconds: 0
+    - rid: 398983252227129423
+      type: {class: ExitCloseUpAction, ns: , asm: Assembly-CSharp}
+      data:
+        waitSeconds: 0.3

@@ -23,6 +23,10 @@ public class CloseUpClickPickup : MonoBehaviour, IPresenceGate
     [Tooltip("Scene Id ของมุม close-up ที่ต้องเปิดอยู่ (เว้นว่าง = มุมไหนก็ได้)")]
     [SerializeField] private string closeUpId;
 
+    // [Claude 2026-11-14] แผนที่ห้องเล็กในครัว — หันกล้องหาเอง แล้วเล็งจุดกลางจอคลิก (ต้องติ๊ก Center Aim ที่ FPSCameraController ของมุมนั้นด้วย)
+    [Tooltip("✔ = เล็งด้วยจุดกลางจอ (เมาส์ล็อก กล้องยังหันได้) · ✘ = แบบเดิม: เมาส์โผล่ กล้องหยุดหัน ชี้ด้วยเมาส์")]
+    [SerializeField] private bool useCenterAim;
+
     [Header("ได้อะไร")]
     [Tooltip("ไอเทมที่ได้ (แต่ละชนิดไปคลังของตัวเอง: กุญแจ/ของสำคัญ → หน้าคีย์ไอเทม · เอกสาร → หน้าเอกสาร)")]
     [SerializeField] private List<ItemData> items = new List<ItemData>();
@@ -122,7 +126,8 @@ public class CloseUpClickPickup : MonoBehaviour, IPresenceGate
         if (cam == null) return false;
 
         // ยิงทะลุทุกอย่าง — กันโซนกด F (trigger) / ตัวขาตั้ง บังเรย์
-        foreach (RaycastHit hit in Physics.RaycastAll(cam.ScreenPointToRay(Input.mousePosition), 20f, ~0, QueryTriggerInteraction.Collide))
+        Ray ray = useCenterAim ? cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)) : cam.ScreenPointToRay(Input.mousePosition);
+        foreach (RaycastHit hit in Physics.RaycastAll(ray, 20f, ~0, QueryTriggerInteraction.Collide))
         {
             foreach (Collider c in myColliders) if (hit.collider == c) return true;
         }
@@ -149,6 +154,7 @@ public class CloseUpClickPickup : MonoBehaviour, IPresenceGate
     {
         armed = true;
         armedView = StoryCloseUpView.Active;
+        if (useCenterAim) return;   // เมาส์/กล้อง ให้ FPSCameraController (Center Aim) คุมต่อ
         savedLock = Cursor.lockState;
         savedVisible = Cursor.visible;
         Cursor.lockState = CursorLockMode.None;
@@ -161,6 +167,7 @@ public class CloseUpClickPickup : MonoBehaviour, IPresenceGate
         if (!armed) return;
         armed = false;
         if (hoverHighlight != null) hoverHighlight.SetActive(false);
+        if (useCenterAim) { armedView = null; return; }
         Cursor.lockState = savedLock;
         Cursor.visible = savedVisible;
         if (armedView != null && StoryCloseUpView.Active == armedView) armedView.SetLookEnabled(true);
