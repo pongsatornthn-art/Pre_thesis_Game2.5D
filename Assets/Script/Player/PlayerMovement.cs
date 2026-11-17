@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -49,6 +50,8 @@ public class PlayerMovement : MonoBehaviour
     public bool IsExhausted { get; private set; }
     public float CurrentStamina => currentStamina;
     public float StaminaRatio => maxStamina > 0f ? currentStamina / maxStamina : 0f;
+    /// <summary>[ข้อ 7] ส่ง (ค่าปัจจุบัน, ค่าสูงสุด) ทุกครั้งที่ Stamina เปลี่ยน — ใช้กับหลอด Stamina แบบจางหาย</summary>
+    public event Action<float, float> OnStaminaChanged;
     public float HealthRatio => maxHealth > 0 ? (float)currentHealth / maxHealth : 0f;
     private float lastStaminaUseTime = -99f;
 
@@ -69,6 +72,7 @@ public class PlayerMovement : MonoBehaviour
         lastStaminaUseTime = Time.time;
         if (currentStamina <= 0.01f) IsExhausted = true;
         if (staminaSlider != null) staminaSlider.value = currentStamina;
+        OnStaminaChanged?.Invoke(currentStamina, maxStamina); // [ข้อ 7]
     }
 
     [Header("Backward Settings (ถอยหลังช้าลง)")]
@@ -117,6 +121,8 @@ public class PlayerMovement : MonoBehaviour
             staminaSlider.maxValue = maxStamina;
             staminaSlider.value = currentStamina;
         }
+
+        OnStaminaChanged?.Invoke(currentStamina, maxStamina); // [ข้อ 7]
     }
 
     void Update()
@@ -135,6 +141,8 @@ public class PlayerMovement : MonoBehaviour
             {
                 staminaSlider.value = currentStamina;
             }
+
+            OnStaminaChanged?.Invoke(currentStamina, maxStamina); // [ข้อ 7]
         }
 
         float moveX = Input.GetAxisRaw("Horizontal");

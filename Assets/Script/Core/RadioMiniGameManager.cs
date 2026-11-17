@@ -1,32 +1,28 @@
 ﻿using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// มินิเกมวิทยุ/โต๊ะเซฟ — [ข้อ 4] ย้ายงานสลับกล้อง/ล็อกผู้เล่น/คุมเมาส์ ไปให้ FirstPersonModeController ทำแล้ว
+/// ลอจิกเดิมของ branch ทดสอบ ยังอยู่ครบ: ถ่ายรูปก่อนเข้า (การ์ดเซฟ), ESC/Q ออก, เข้าซ้ำได้เพื่อเซฟที่สมุด
+/// </summary>
 public class RadioMiniGameManager : MonoBehaviour
 {
     public static bool IsActive { get; private set; }
 
-    [Header("Cameras & HUD")]
-    public GameObject mainCameraGroup;
+    [Header("Camera")]
+    [Tooltip("กล้อง First-Person ของโต๊ะ/วิทยุ (GameObject ที่มี Camera)")]
     public GameObject fpsCamera;
-    public GameObject mainHUD;
 
     [Header("Radio UI")]
     public GameObject radioMinigameUI;
     public GameObject interactPrompt;
-    public GameObject crosshair; // 🔥 เปลี่ยนเป็น GameObject ให้ใส่ง่ายๆ
 
     [Header("Audio System")]
     public RadioTapeSystem tapeSystem;
 
-    [Header("Player Positioning")]
+    [Header("Player Positioning (ข้อ 8: ขยับจุดนี้ให้ใกล้โต๊ะขึ้น)")]
     public Transform playerStandPoint;
     public bool returnToOriginalPosition = true;
-
-    [Header("Controllers (ปิดตอนเล่นมินิเกม)")]
-    public MonoBehaviour playerController;
-    public MonoBehaviour playerInteraction;
-    public MonoBehaviour playerCombat;
-    public MonoBehaviour cameraAimScript;
 
     [Header("Exit")]
     public KeyCode exitKey = KeyCode.Escape;
@@ -37,14 +33,6 @@ public class RadioMiniGameManager : MonoBehaviour
     private bool isPlayerNear = false;
     private bool inMiniGame = false;
     private bool hasPlayed = false;
-    private CursorLockMode savedLock = CursorLockMode.Confined;
-    private bool savedVisible = true;
-
-    private Vector3 playerReturnPos;
-    private Quaternion playerReturnRot;
-
-    private Rigidbody playerRb;
-    private bool rbWasKinematic;
 
     private void Start()
     {
@@ -100,57 +88,25 @@ public class RadioMiniGameManager : MonoBehaviour
     public void EnterMiniGame()
     {
         if (inMiniGame) return;
+
+        FirstPersonModeController fp = FirstPersonModeController.Instance;
+        if (fp == null)
+        {
+            Debug.LogError("[RadioMiniGameManager] ไม่พบ FirstPersonModeController ในซีน", this);
+            return;
+        }
+
         inMiniGame = true;
-        savedLock = Cursor.lockState;   // [Claude 2026-11-11] จำสถานะเมาส์ไว้คืนตอนออก
-        savedVisible = Cursor.visible;
         IsActive = true;
 
         if (interactPrompt != null) interactPrompt.SetActive(false);
-        if (crosshair != null) crosshair.SetActive(false);
-        if (mainHUD != null) mainHUD.SetActive(false);
 
-        if (playerController != null)
-        {
-            Transform p = playerController.transform;
-            playerReturnPos = p.position;
-            playerReturnRot = p.rotation;
+        // [ข้อ 4] สลับกล้อง + ล็อกผู้เล่น + ซ่อน HUD + จำ/ตั้งเมาส์ ทำในตัวกลางที่เดียว
+        // (ถ้ากล้องโต๊ะเปิด centerAim ใน FPSCameraController มันจะล็อกเมาส์กลางจอต่อเอง เหมือนเดิม)
+        fp.EnterMode(fpsCamera, unlockCursor: true, lookController: null,
+                     standPoint: playerStandPoint, returnToOriginalPosition: returnToOriginalPosition);
 
-            playerController.enabled = false;
-
-            playerRb = playerController.GetComponent<Rigidbody>();
-            if (playerRb != null)
-            {
-                rbWasKinematic = playerRb.isKinematic;
-                if (!playerRb.isKinematic)
-                {
-                    playerRb.linearVelocity = Vector3.zero;
-                    playerRb.angularVelocity = Vector3.zero;
-                }
-                playerRb.isKinematic = true;
-            }
-
-            CharacterController cc = playerController.GetComponent<CharacterController>();
-            if (cc != null) cc.enabled = false;
-
-            if (playerStandPoint != null)
-            {
-                p.SetPositionAndRotation(playerStandPoint.position, playerStandPoint.rotation);
-            }
-            Physics.SyncTransforms();
-        }
-
-        if (playerInteraction != null) playerInteraction.enabled = false;
-        if (playerCombat != null) playerCombat.enabled = false;
-        if (cameraAimScript != null) cameraAimScript.enabled = false;
-
-        if (fpsCamera != null) fpsCamera.SetActive(true);
-        if (mainCameraGroup != null) mainCameraGroup.SetActive(false);
-
-        // 🔥 เอาคำสั่ง radioMinigameUI.SetActive(true) ออกจากตรงนี้แล้ว
-        // UI จะไม่เปิดเองจนกว่าเราจะคลิกที่วิทยุ
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        // UI วิทยุยังไม่เปิดเองตรงนี้ จะเปิดตอนคลิกที่วิทยุ (เหมือนเดิม)
     }
 
     public void ExitMiniGame()
@@ -159,53 +115,19 @@ public class RadioMiniGameManager : MonoBehaviour
         inMiniGame = false;
         IsActive = false;
         StopAllCoroutines();
+        entering = false;
 
         if (tapeSystem != null) tapeSystem.StopTape();
-
-        // 🔥 สั่งปิด UI ตรงนี้ ถ้าช่อง Inspector ใส่ถูก ยังไงก็หายชัวร์
         if (radioMinigameUI != null) radioMinigameUI.SetActive(false);
 
-        if (fpsCamera != null) fpsCamera.SetActive(false);
-        if (mainCameraGroup != null) mainCameraGroup.SetActive(true);
-
-        if (mainHUD != null) mainHUD.SetActive(true);
-        if (crosshair != null) crosshair.SetActive(true);
-
-        if (playerController != null)
-        {
-            Transform p = playerController.transform;
-            CharacterController cc = p.GetComponent<CharacterController>();
-
-            if (returnToOriginalPosition)
-            {
-                if (cc != null) cc.enabled = false;
-                p.SetPositionAndRotation(playerReturnPos, playerReturnRot);
-                Physics.SyncTransforms();
-            }
-
-            if (cc != null) cc.enabled = true;
-            if (playerRb != null) playerRb.isKinematic = rbWasKinematic;
-            playerController.enabled = true;
-        }
-
-        if (playerInteraction != null) playerInteraction.enabled = true;
-        if (playerCombat != null) playerCombat.enabled = true;
-        if (cameraAimScript != null) cameraAimScript.enabled = true;
-
-        StartCoroutine(RelockCursor());
+        // [ข้อ 4] คืนกล้อง/ผู้เล่น/HUD/เมาส์ เป็นสถานะก่อนเข้า
+        FirstPersonModeController fp = FirstPersonModeController.Instance;
+        if (fp != null) fp.ExitMode();
 
         if (isPlayerNear && interactPrompt != null)
         {
             interactPrompt.SetActive(true);
         }
-    }
-
-    private IEnumerator RelockCursor()
-    {
-        yield return null;
-        // [แก้โดย Claude 2026-11-11] เดิมล็อกเมาส์กลางจอ + ซ่อน → เกมนี้เล็งปืนด้วยเมาส์ เล็งไม่ได้หลังออกจากโต๊ะ
-        Cursor.lockState = savedLock;
-        Cursor.visible = savedVisible;
     }
 
     public void SolvePuzzleAndExit()

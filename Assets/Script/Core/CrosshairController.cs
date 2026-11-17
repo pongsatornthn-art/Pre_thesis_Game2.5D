@@ -3,6 +3,12 @@ using UnityEngine.UI;
 
 public class CrosshairController : MonoBehaviour
 {
+    /// <summary>
+    /// 🌟 [ข้อ 9] true = มีระบบอื่นคุมเมาส์อยู่ (FirstPersonModeController ตอนเข้ามินิเกม/โต๊ะ/วิทยุ/ดันประตู)
+    /// สคริปต์นี้จะซ่อนเป้าและ "ไม่ยุ่งกับ Cursor" จนกว่าจะคืนเป็น false
+    /// </summary>
+    public static bool IsCursorOverriddenByMinigame = false;
+
     [Header("References")]
     public RectTransform crosshairRect;
     public PlayerCombat playerCombat;
@@ -39,6 +45,14 @@ public class CrosshairController : MonoBehaviour
 
     void Update()
     {
+        // 0. 🌟 [ข้อ 9] ถ้ามินิเกมคุมเมาส์อยู่ ห้ามสั่ง Cursor.visible ทับ (เดิมทำให้เมาส์หายตอนถือปืนเข้ามินิเกม)
+        if (IsCursorOverriddenByMinigame)
+        {
+            if (crosshairRect != null && crosshairRect.gameObject.activeSelf)
+                crosshairRect.gameObject.SetActive(false);
+            return;
+        }
+
         // 1. เช็กว่าผู้เล่นเปิดกระเป๋าอยู่ไหม
         bool isInventoryOpen = false;
         if (InventoryUI.Instance != null && InventoryUI.Instance.inventoryPanel != null)

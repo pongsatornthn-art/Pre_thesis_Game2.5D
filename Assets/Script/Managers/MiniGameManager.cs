@@ -2,30 +2,31 @@
 using System.Collections;
 using UnityEngine.Playables;
 
+/// <summary>
+/// มินิเกมโต๊ะทำงาน (ใช้ FPSCameraController) — [ข้อ 4] ย้ายงานสลับกล้อง/ล็อกผู้เล่น/คุมเมาส์
+/// ไปให้ FirstPersonModeController ทำแล้ว ไฟล์นี้เหลือแค่ลำดับคัตซีนเข้า-ออก และธงเนื้อเรื่อง
+/// </summary>
 public class MiniGameManager : MonoBehaviour
 {
-    [Header("Cameras & UI")]
-    public GameObject mainCamera;
+    [Header("Camera & UI")]
+    [Tooltip("กล้อง First-Person ของโต๊ะ (GameObject ที่มี Camera + FPSCameraController)")]
     public GameObject fpsCamera;
-    public GameObject mainHUD;
     public GameObject fpsCrosshair;
-
-    [Header("Controllers")]
-    public MonoBehaviour playerController;
-    public MonoBehaviour playerInteraction;
-    public MonoBehaviour playerCombat;
-    public MonoBehaviour cameraAimScript;
     public FPSCameraController fpsController;
+
+    [Header("Player Positioning (ข้อ 8)")]
+    [Tooltip("จุดยืนหน้าโต๊ะ (เว้นว่าง = ยืนตรงที่เดินเข้ามา)")]
+    public Transform playerStandPoint;
+    [Tooltip("ออกมินิเกมแล้วให้วาร์ปกลับจุดเดิมไหม (ใช้เมื่อมีจุดยืน)")]
+    public bool returnToOriginalPosition = false;
 
     [Header("Cutscenes")]
     public PlayableDirector enterCutscene;
     public PlayableDirector exitCutscene;
 
-    // --- ส่วนที่เพิ่มเข้ามาใหม่: เชื่อมต่อกับระบบเนื้อเรื่อง ---
     [Header("Story Integration")]
     [Tooltip("ใส่ธง (Flag) ที่ต้องการให้ระบบบันทึกว่าผ่านมินิเกมนี้แล้ว")]
     public StoryFlagId onCompleteFlag;
-    // --------------------------------------------------
 
     private bool inMiniGame = false;
     private bool hasPlayed = false;
@@ -47,30 +48,19 @@ public class MiniGameManager : MonoBehaviour
 
     private IEnumerator StartMiniGameSequence()
     {
-        inMiniGame = true;
-
-        if (playerController != null)
+        FirstPersonModeController fp = FirstPersonModeController.Instance;
+        if (fp == null)
         {
-            Rigidbody rb = playerController.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-            playerController.enabled = false;
+            Debug.LogError("[MiniGameManager] ไม่พบ FirstPersonModeController ในซีน", this);
+            yield break;
         }
 
-        if (playerInteraction != null) playerInteraction.enabled = false;
-        if (playerCombat != null) playerCombat.enabled = false;
-        if (cameraAimScript != null) cameraAimScript.enabled = false;
+        inMiniGame = true;
 
-        if (mainHUD != null) mainHUD.SetActive(false);
+        // 1) ล็อกผู้เล่น + ซ่อน HUD ก่อน แต่ยังอยู่กล้องหลักระหว่างเล่นคัตซีนขาเข้า
+        fp.LockPlayer(playerStandPoint, returnToOriginalPosition);
 
-        if (mainCamera != null) mainCamera.SetActive(true);
-        if (fpsCamera != null) fpsCamera.SetActive(false);
-
-        float waitTime = 0f;
-
+        float waitTime;
         if (enterCutscene != null)
         {
             enterCutscene.Play();
@@ -83,14 +73,10 @@ public class MiniGameManager : MonoBehaviour
 
         yield return new WaitForSeconds(waitTime);
 
-        if (mainCamera != null) mainCamera.SetActive(false);
-        if (fpsCamera != null) fpsCamera.SetActive(true);
-        if (fpsController != null) fpsController.enabled = true;
+        // 2) เข้ากล้อง FPS: ล็อกเมาส์กลางจอ + เปิด FPSCameraController (คลิกขวาค้างเพื่อหัน)
+        fp.ShowFirstPersonCamera(fpsCamera, unlockCursor: false, lookController: fpsController);
 
         if (fpsCrosshair != null) fpsCrosshair.SetActive(true);
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     public void SolvePuzzleWithCutscene()
@@ -100,18 +86,25 @@ public class MiniGameManager : MonoBehaviour
 
     private IEnumerator ExitCutsceneSequence()
     {
-        fpsController.enabled = false;
+        FirstPersonModeController fp = FirstPersonModeController.Instance;
+
+        if (fp != null)
+        {
+            fp.SetLookLocked(true);
+            fp.SetCursorUnlocked(false);
+        }
+        else if (fpsController != null)
+        {
+            fpsController.enabled = false;
+        }
+
         if (fpsCrosshair != null) fpsCrosshair.SetActive(false);
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
-        float waitTime = 0f;
-
+        float waitTime;
         if (exitCutscene != null)
         {
-            if (fpsCamera != null) fpsCamera.SetActive(false);
-            if (mainCamera != null) mainCamera.SetActive(true);
+            // กลับกล้องหลักเพื่อเล่นคัตซีน แต่ผู้เล่นยังล็อกอยู่
+            if (fp != null) fp.ShowMainCamera();
 
             exitCutscene.Play();
             waitTime = (float)exitCutscene.duration;
@@ -129,27 +122,18 @@ public class MiniGameManager : MonoBehaviour
 
     public void SolvePuzzleAndExit()
     {
-        if (fpsController != null) fpsController.enabled = false;
-        if (fpsCamera != null) fpsCamera.SetActive(false);
-        if (mainCamera != null) mainCamera.SetActive(true);
+        if (fpsCrosshair != null) fpsCrosshair.SetActive(false);
 
-        if (mainHUD != null) mainHUD.SetActive(true);
+        FirstPersonModeController fp = FirstPersonModeController.Instance;
+        if (fp != null) fp.ExitMode();
+        else if (fpsController != null) fpsController.enabled = false;
 
-        if (playerController != null) playerController.enabled = true;
-        if (playerInteraction != null) playerInteraction.enabled = true;
-        if (playerCombat != null) playerCombat.enabled = true;
-        if (cameraAimScript != null) cameraAimScript.enabled = true;
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
         inMiniGame = false;
-
         hasPlayed = true;
 
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
 
-        // --- ส่วนที่เพิ่มเข้ามาใหม่: ส่งสัญญาณบอกระบบว่าเล่นผ่านแล้ว ---
         if (onCompleteFlag != null)
         {
             IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
@@ -163,6 +147,5 @@ public class MiniGameManager : MonoBehaviour
                 Debug.LogWarning("[MiniGameManager] ไม่พบระบบ IStoryFlags ในฉาก!");
             }
         }
-        // ---------------------------------------------------------
     }
 }
