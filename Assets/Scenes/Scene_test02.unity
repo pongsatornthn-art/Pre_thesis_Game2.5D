@@ -2777,6 +2777,60 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &40446806
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 40446808}
+  - component: {fileID: 40446807}
+  m_Layer: 0
+  m_Name: FirstPersonMode
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &40446807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 40446806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77ecddc3a0353204abc86e60a0b4248f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainCameraGroup: {fileID: 148809901}
+  playerRoot: {fileID: 0}
+  playerScriptsToDisable:
+  - {fileID: 1848288841}
+  - {fileID: 1848288839}
+  - {fileID: 1848288844}
+  - {fileID: 464801272}
+  objectsToHideInFP:
+  - {fileID: 1673461040}
+  - {fileID: 215916150}
+--- !u!4 &40446808
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 40446806}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -78.4987, y: 0.96165, z: -14.81}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &41656225
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -48137,7 +48191,7 @@ RectTransform:
   m_Father: {fileID: 1697232039}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -102193,19 +102247,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 302494cd9d6ef894d842c39ea7c0373e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainCameraGroup: {fileID: 148809901}
   fpsCamera: {fileID: 60663641}
-  mainHUD: {fileID: 215916150}
   radioMinigameUI: {fileID: 1756638707}
   interactPrompt: {fileID: 0}
-  crosshair: {fileID: 0}
   tapeSystem: {fileID: 173227065}
   playerStandPoint: {fileID: 411725381}
   returnToOriginalPosition: 1
-  playerController: {fileID: 1848288841}
-  playerInteraction: {fileID: 1848288839}
-  playerCombat: {fileID: 1848288844}
-  cameraAimScript: {fileID: 464801272}
   exitKey: 113
   onCompleteFlag: {fileID: 0}
 --- !u!65 &1260308657
@@ -121256,7 +121303,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1557412719
 RectTransform:
   m_ObjectHideFlags: 0
@@ -137321,15 +137368,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61cd63eac2c738f4dbb10e1c87f2277a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainCamera: {fileID: 148809901}
   fpsCamera: {fileID: 793365909}
-  mainHUD: {fileID: 0}
   fpsCrosshair: {fileID: 602140726}
-  playerController: {fileID: 1848288841}
-  playerInteraction: {fileID: 1848288839}
-  playerCombat: {fileID: 1848288844}
-  cameraAimScript: {fileID: 464801272}
   fpsController: {fileID: 793365910}
+  playerStandPoint: {fileID: 0}
+  returnToOriginalPosition: 0
   enterCutscene: {fileID: 1641282297}
   exitCutscene: {fileID: 132713280}
   onCompleteFlag: {fileID: 0}
@@ -141607,9 +141650,9 @@ GameObject:
   - component: {fileID: 1848288838}
   - component: {fileID: 1848288843}
   - component: {fileID: 1848288842}
-  - component: {fileID: 1848288839}
-  - component: {fileID: 1848288841}
   - component: {fileID: 1848288844}
+  - component: {fileID: 1848288841}
+  - component: {fileID: 1848288839}
   - component: {fileID: 1848288840}
   - component: {fileID: 1848288847}
   - component: {fileID: 1848288846}
@@ -142352,6 +142395,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1867090370}
   - component: {fileID: 1867090371}
+  - component: {fileID: 1867090373}
+  - component: {fileID: 1867090372}
   m_Layer: 5
   m_Name: Stamina
   m_TagString: Untagged
@@ -142431,6 +142476,35 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1867090372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1867090369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0959e3be4b6f1b346beea1e721c7310d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerMovement: {fileID: 1848288841}
+  staminaSlider: {fileID: 1867090371}
+  hideDelay: 1
+  fadeSpeed: 5
+  hideOnStart: 1
+--- !u!225 &1867090373
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1867090369}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1871035986
 GameObject:
   m_ObjectHideFlags: 0
@@ -163870,3 +163944,4 @@ SceneRoots:
   - {fileID: 1259968349}
   - {fileID: 1284062117}
   - {fileID: 1815562003}
+  - {fileID: 40446808}
