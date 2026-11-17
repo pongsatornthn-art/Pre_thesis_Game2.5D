@@ -51115,7 +51115,7 @@ PrefabInstance:
       objectReference: {fileID: 649204482}
     - target: {fileID: 6582895745746944292, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5.639
+      value: -5.627
       objectReference: {fileID: 0}
     - target: {fileID: 6582895745746944292, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       propertyPath: m_LocalPosition.y
@@ -51198,6 +51198,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 704682911}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 704682915}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &649204481 stripped
 Transform:
@@ -53730,8 +53733,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 690376367}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00020593403, y: -0.9999695, z: 0.007805413, w: -0.00024942166}
-  m_LocalPosition: {x: -65.25578, y: 1.5530503, z: 15.336641}
+  m_LocalRotation: {x: 0.03629786, y: 0.00096417987, z: 0.00026261195, w: 0.9993406}
+  m_LocalPosition: {x: -91.28, y: 1.6, z: 5.03}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -54080,6 +54083,74 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 704682906}
+--- !u!95 &704682913 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8890661106901132037, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+  m_PrefabInstance: {fileID: 649204480}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &704682915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704682905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 694c43cca8ead1741974bb1c39f90732, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  doorPanel: {fileID: 649204481}
+  openAngle: 45
+  hingeAxis: {x: 0, y: 1, z: 0}
+  doorController: {fileID: 704682906}
+  doorAnimator: {fileID: 704682913}
+  struggleCamera: {fileID: 690376367}
+  playerStandPoint: {fileID: 1869226046}
+  doorStartPos: 50
+  lockZoneMin: 80
+  winHoldSeconds: 1.5
+  mousePushSensitivity: 1.8
+  maxPushVelocity: 45
+  pushAcceleration: 260
+  pushInertiaDamping: 6.5
+  enemyBaseForce: 18
+  slamIntervalRange: {x: 1.5, y: 2}
+  slamImpulseRange: {x: 12, y: 18}
+  safeTimeReward: 20
+  startGraceSeconds: 0.6
+  tutorialForceMultiplier: 0.6
+  tutorialSlamMultiplier: 0.6
+  tutorialSlamIntervalMultiplier: 1.3
+  tutorialGraceSeconds: 1.5
+  tutorialRetryOnFail: 1
+  killPlayerOnFail: 1
+  failDelay: 1.2
+  audioSource: {fileID: 0}
+  slamSounds: []
+  enemyGrowls: []
+  growlIntervalRange: {x: 2.5, y: 4.5}
+  winSound: {fileID: 0}
+  failSound: {fileID: 0}
+  sfxVolume: 1
+  slamShakeAmplitude: 0.06
+  slamShakeDuration: 0.25
+  slamDoorRattle: 4
+  onStruggleStart:
+    m_PersistentCalls:
+      m_Calls: []
+  onSlam:
+    m_PersistentCalls:
+      m_Calls: []
+  onWin:
+    m_PersistentCalls:
+      m_Calls: []
+  onFail:
+    m_PersistentCalls:
+      m_Calls: []
+  onTutorialRetry:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &705561677
 GameObject:
   m_ObjectHideFlags: 0
@@ -56046,7 +56117,7 @@ Transform:
   m_GameObject: {fileID: 729866833}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -65.45, y: 0.98, z: 13.56}
+  m_LocalPosition: {x: -91.22, y: 0.98, z: 8.88}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -56064,7 +56135,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3e60556b99803e4a84a47b35d16e939, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  struggle: {fileID: 1512821003}
+  struggle: {fileID: 704682915}
   startWhen: 0
   tutorial: 1
   requirePtsd: 1
@@ -89150,7 +89221,7 @@ Transform:
   m_GameObject: {fileID: 1129418697}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -65.083, y: 0.072, z: 11.264}
+  m_LocalPosition: {x: -90.7, y: 0.35, z: 9.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -118786,9 +118857,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1512820999}
-    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1512821003}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &1512820990 stripped
 Transform:
@@ -118843,74 +118911,6 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1512820995}
---- !u!95 &1512821001 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 8890661106901132037, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
-  m_PrefabInstance: {fileID: 1512820989}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1512821003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1004281367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 694c43cca8ead1741974bb1c39f90732, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  doorPanel: {fileID: 1512820990}
-  openAngle: 45
-  hingeAxis: {x: 0, y: 1, z: 0}
-  doorController: {fileID: 1512820995}
-  doorAnimator: {fileID: 1512821001}
-  struggleCamera: {fileID: 690376367}
-  playerStandPoint: {fileID: 1869226046}
-  doorStartPos: 50
-  lockZoneMin: 80
-  winHoldSeconds: 1.5
-  mousePushSensitivity: 1.8
-  maxPushVelocity: 45
-  pushAcceleration: 260
-  pushInertiaDamping: 6.5
-  enemyBaseForce: 18
-  slamIntervalRange: {x: 1.5, y: 2}
-  slamImpulseRange: {x: 12, y: 18}
-  safeTimeReward: 20
-  startGraceSeconds: 0.6
-  tutorialForceMultiplier: 0.6
-  tutorialSlamMultiplier: 0.6
-  tutorialSlamIntervalMultiplier: 1.3
-  tutorialGraceSeconds: 1.5
-  tutorialRetryOnFail: 1
-  killPlayerOnFail: 1
-  failDelay: 1.2
-  audioSource: {fileID: 0}
-  slamSounds: []
-  enemyGrowls: []
-  growlIntervalRange: {x: 2.5, y: 4.5}
-  winSound: {fileID: 0}
-  failSound: {fileID: 0}
-  sfxVolume: 1
-  slamShakeAmplitude: 0.06
-  slamShakeDuration: 0.25
-  slamDoorRattle: 4
-  onStruggleStart:
-    m_PersistentCalls:
-      m_Calls: []
-  onSlam:
-    m_PersistentCalls:
-      m_Calls: []
-  onWin:
-    m_PersistentCalls:
-      m_Calls: []
-  onFail:
-    m_PersistentCalls:
-      m_Calls: []
-  onTutorialRetry:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1001 &1516410901
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -142638,7 +142638,7 @@ Transform:
   m_GameObject: {fileID: 1869226045}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -65.25578, y: 1.55305, z: 16.034}
+  m_LocalPosition: {x: -90.7, y: 0.35, z: 4.51}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
