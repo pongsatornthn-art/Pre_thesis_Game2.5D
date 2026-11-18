@@ -3699,6 +3699,7 @@ GameObject:
   - component: {fileID: 52201093}
   - component: {fileID: 52201092}
   - component: {fileID: 52201091}
+  - component: {fileID: 52201097}
   m_Layer: 7
   m_Name: Fragment_3
   m_TagString: Untagged
@@ -3854,6 +3855,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &52201097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 52201089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!224 &54690409 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4172515567342054201, guid: d558d198e3b1f2445b3959ff2afa9672, type: 3}
@@ -13192,6 +13221,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pickupId: f8474081203340fdb76cb72ee39e4587
+--- !u!114 &187634633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 187634626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!4 &189423761 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3508299435032136505, guid: ec36823f54148414288736f8bbfc2e20, type: 3}
@@ -24109,6 +24166,7 @@ GameObject:
   - component: {fileID: 345018320}
   - component: {fileID: 345018319}
   - component: {fileID: 345018318}
+  - component: {fileID: 345018323}
   m_Layer: 7
   m_Name: Ammo_Bedroom
   m_TagString: Untagged
@@ -24250,6 +24308,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &345018323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 345018316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &354956399
 GameObject:
   m_ObjectHideFlags: 2
@@ -31057,6 +31143,7 @@ GameObject:
   - component: {fileID: 367822344}
   - component: {fileID: 367822343}
   - component: {fileID: 367822342}
+  - component: {fileID: 367822347}
   m_Layer: 7
   m_Name: Ammo_BottomRight
   m_TagString: Untagged
@@ -31198,6 +31285,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &367822347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 367822340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &369048536
 GameObject:
   m_ObjectHideFlags: 0
@@ -56437,6 +56552,7 @@ GameObject:
   - component: {fileID: 741583808}
   - component: {fileID: 741583807}
   - component: {fileID: 741583806}
+  - component: {fileID: 741583811}
   m_Layer: 7
   m_Name: Heal_KitchenPantry
   m_TagString: Untagged
@@ -56578,6 +56694,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &741583811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 741583804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &742190844
 GameObject:
   m_ObjectHideFlags: 0
@@ -56786,6 +56930,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2396953643397409366, guid: 31ea8393377441c459c53df9727f7277, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1921379229}
+    - targetCorrespondingSourceObject: {fileID: 2396953643397409366, guid: 31ea8393377441c459c53df9727f7277, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1921379230}
   m_SourcePrefab: {fileID: 100100000, guid: 31ea8393377441c459c53df9727f7277, type: 3}
 --- !u!1 &745684209
 GameObject:
@@ -57042,6 +57189,7 @@ GameObject:
   - component: {fileID: 746318608}
   - component: {fileID: 746318607}
   - component: {fileID: 746318612}
+  - component: {fileID: 746318613}
   m_Layer: 7
   m_Name: Ammo_Test
   m_TagString: Untagged
@@ -57183,6 +57331,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pickupId: 7b88e72fb0c04ea48ad18b8181402cd3
+--- !u!114 &746318613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 746318606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &747175681
 GameObject:
   m_ObjectHideFlags: 0
@@ -75520,6 +75696,7 @@ GameObject:
   - component: {fileID: 1011728157}
   - component: {fileID: 1011728156}
   - component: {fileID: 1011728155}
+  - component: {fileID: 1011728160}
   m_Layer: 7
   m_Name: Heal_Dining
   m_TagString: Untagged
@@ -75661,6 +75838,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1011728160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1011728153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &1013237629
 GameObject:
   m_ObjectHideFlags: 0
@@ -76104,6 +76309,7 @@ GameObject:
   - component: {fileID: 1018170323}
   - component: {fileID: 1018170322}
   - component: {fileID: 1018170321}
+  - component: {fileID: 1018170327}
   m_Layer: 7
   m_Name: Fragment_5
   m_TagString: Untagged
@@ -76259,6 +76465,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1018170327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1018170319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1001 &1018772623
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -113121,6 +113355,7 @@ GameObject:
   - component: {fileID: 1418219209}
   - component: {fileID: 1418219208}
   - component: {fileID: 1418219207}
+  - component: {fileID: 1418219212}
   m_Layer: 7
   m_Name: Ammo_Office
   m_TagString: Untagged
@@ -113262,6 +113497,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1418219212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1418219205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1001 &1418591743
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -121769,6 +122032,7 @@ GameObject:
   - component: {fileID: 1562303169}
   - component: {fileID: 1562303168}
   - component: {fileID: 1562303167}
+  - component: {fileID: 1562303172}
   m_Layer: 7
   m_Name: Heal_Bedroom
   m_TagString: Untagged
@@ -121910,6 +122174,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1562303172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1562303165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1001 &1565424217
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -125695,6 +125987,7 @@ GameObject:
   - component: {fileID: 1618465646}
   - component: {fileID: 1618465645}
   - component: {fileID: 1618465644}
+  - component: {fileID: 1618465650}
   m_Layer: 7
   m_Name: Fragment_4
   m_TagString: Untagged
@@ -125850,6 +126143,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1618465650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1618465642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &1622042545
 GameObject:
   m_ObjectHideFlags: 0
@@ -131693,6 +132014,7 @@ GameObject:
   - component: {fileID: 1715830965}
   - component: {fileID: 1715830964}
   - component: {fileID: 1715830963}
+  - component: {fileID: 1715830969}
   m_Layer: 7
   m_Name: Fragment_2
   m_TagString: Untagged
@@ -131848,6 +132170,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1715830969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1715830961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!4 &1716632047 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6885177296313920868, guid: 90b099b220c09fc40a10aada97db7cd5, type: 3}
@@ -144771,6 +145121,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pickupId: 14bf821155194045a66e2857cf117321
+--- !u!114 &1921379230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1921379223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &1921724939
 GameObject:
   m_ObjectHideFlags: 0
@@ -153881,6 +154259,7 @@ GameObject:
   - component: {fileID: 1983191335}
   - component: {fileID: 1983191334}
   - component: {fileID: 1983191339}
+  - component: {fileID: 1983191340}
   m_Layer: 7
   m_Name: AXE_Test
   m_TagString: Untagged
@@ -154022,6 +154401,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pickupId: 7292ac800e5f4b308483e1649c6f25ad
+--- !u!114 &1983191340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1983191333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1001 &1983670178
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -157421,6 +157828,7 @@ GameObject:
   - component: {fileID: 2025856373}
   - component: {fileID: 2025856372}
   - component: {fileID: 2025856371}
+  - component: {fileID: 2025856377}
   m_Layer: 7
   m_Name: Fragment_6
   m_TagString: Untagged
@@ -157576,6 +157984,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &2025856377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025856369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 0
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.01
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1001 &2026558024
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -160811,6 +161247,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2396953643397409366, guid: 31ea8393377441c459c53df9727f7277, type: 3}
       insertIndex: -1
       addedObject: {fileID: 187634632}
+    - targetCorrespondingSourceObject: {fileID: 2396953643397409366, guid: 31ea8393377441c459c53df9727f7277, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 187634633}
   m_SourcePrefab: {fileID: 100100000, guid: 31ea8393377441c459c53df9727f7277, type: 3}
 --- !u!1 &2098938790
 GameObject:
