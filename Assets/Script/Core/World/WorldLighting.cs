@@ -129,7 +129,13 @@ public class WorldLighting : MonoBehaviour
             lamp.glowBaseColor = glow != null && glow.sharedMaterial != null && glow.sharedMaterial.HasProperty(BaseColorId)
                 ? glow.sharedMaterial.GetColor(BaseColorId) : Color.white;
             lamps.Add(lamp);
+            LampOverrides.RegisterManaged(l);   // [ข้อ 11] ให้ไฟโซน (ZoneLighting) ย้อมสีผ่านตัวนี้ ไม่ตีกัน
         }
+    }
+
+    private void OnDestroy()
+    {
+        foreach (Lamp lamp in lamps) LampOverrides.UnregisterManaged(lamp.light);
     }
 
     private void OnEnable() => GameEventBus.Subscribe<WorldVisualsSwappedEvent>(OnSwapped);
@@ -296,18 +302,30 @@ public class WorldLighting : MonoBehaviour
         {
             if (lamp.light == null) continue;
             float flick = lamp.flickOn ? 1f : flickerDimLevel;
-            float value = lamp.level * flick;
+
+            // [ข้อ 11] ไฟโซน (ZoneLighting) ฝากสี/ความแรงไว้ → ผสมทับบรรยากาศโลก (กระพริบยังทำงานตามเดิม)
+            Color color = lamp.color;
+            float level = lamp.level;
+            float glowLit = lamp.glowLit;
+            if (LampOverrides.TryGet(lamp.light, out LampOverrides.Entry o))
+            {
+                color = Color.Lerp(lamp.color, o.color, o.amount);
+                level = Mathf.Lerp(lamp.level, lamp.baseIntensity * o.intensityMul, o.amount);
+                glowLit = Mathf.Lerp(lamp.glowLit, 1f, o.amount);
+            }
+
+            float value = level * flick;
             lamp.light.intensity = value;
-            lamp.light.color = lamp.color;
+            lamp.light.color = color;
             lamp.light.enabled = value > 0.001f;
 
             Renderer glow = lamp.tag != null ? lamp.tag.glowVisual : null;
             if (glow == null) continue;
             // สีโคม = สีไฟ (ย้อมแดงตามไฟ) · ดับ/กระพริบดับ = เทาเข้ม
-            Color lit = lamp.glowBaseColor * new Color(lamp.color.r / Mathf.Max(lamp.baseColor.r, 0.01f),
-                                                       lamp.color.g / Mathf.Max(lamp.baseColor.g, 0.01f),
-                                                       lamp.color.b / Mathf.Max(lamp.baseColor.b, 0.01f), 1f);
-            Color c = Color.Lerp(GlowOffColor, lit, lamp.glowLit * flick);
+            Color lit = lamp.glowBaseColor * new Color(color.r / Mathf.Max(lamp.baseColor.r, 0.01f),
+                                                       color.g / Mathf.Max(lamp.baseColor.g, 0.01f),
+                                                       color.b / Mathf.Max(lamp.baseColor.b, 0.01f), 1f);
+            Color c = Color.Lerp(GlowOffColor, lit, glowLit * flick);
             glow.GetPropertyBlock(block);
             block.SetColor(BaseColorId, c);
             glow.SetPropertyBlock(block);

@@ -2679,6 +2679,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 809972977}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 809972978}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &39963732 stripped
 Transform:
@@ -2968,8 +2971,8 @@ Transform:
   m_GameObject: {fileID: 42613559}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7155099, z: -0, w: 0.6986027}
-  m_LocalPosition: {x: -78.4277, y: 0.5799999, z: 0.06786919}
-  m_LocalScale: {x: 4.2599998, y: 0.84704, z: 12.137805}
+  m_LocalPosition: {x: -73.6616, y: 0.5799999, z: 0.06786919}
+  m_LocalScale: {x: 4.2599998, y: 0.84704, z: 21.593155}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 787732983}
@@ -21721,6 +21724,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1623095309}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1623095310}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &307303061 stripped
 Transform:
@@ -35449,6 +35455,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1284978583}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1284978584}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &424729061 stripped
 Transform:
@@ -51316,6 +51325,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 704682915}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 704682916}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &649204481 stripped
 Transform:
@@ -54266,6 +54278,41 @@ MonoBehaviour:
   onTutorialRetry:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &704682916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704682905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 649204481}
+  doorController: {fileID: 704682906}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &705561677
 GameObject:
   m_ObjectHideFlags: 0
@@ -58540,6 +58587,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1703471609}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1703471610}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &755267755 stripped
 Transform:
@@ -60463,6 +60513,7 @@ Transform:
   - {fileID: 1365207063}
   - {fileID: 547445271}
   - {fileID: 42613560}
+  - {fileID: 1993903251}
   - {fileID: 1604448767}
   - {fileID: 1552593997}
   m_Father: {fileID: 27703287}
@@ -62998,6 +63049,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 809972973}
+--- !u!114 &809972978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 809972968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 39963732}
+  doorController: {fileID: 809972973}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &810100840
 GameObject:
   m_ObjectHideFlags: 0
@@ -68542,6 +68628,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1101087674}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1101087675}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &889058573 stripped
 Transform:
@@ -77864,6 +77953,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1260889223}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1260889224}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &1042688623 stripped
 Transform:
@@ -82040,6 +82132,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1101087669}
+--- !u!114 &1101087675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1101087668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 889058573}
+  doorController: {fileID: 1101087669}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &1101727506
 GameObject:
   m_ObjectHideFlags: 0
@@ -83344,6 +83471,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1114757369}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1114757370}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &1114757356 stripped
 Transform:
@@ -83408,6 +83538,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1114757365}
+--- !u!114 &1114757370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 90557398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 1114757356}
+  doorController: {fileID: 1114757365}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &1114831868
 GameObject:
   m_ObjectHideFlags: 0
@@ -102814,6 +102979,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1260889219}
+--- !u!114 &1260889224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1260889214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 1042688623}
+  doorController: {fileID: 1260889219}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!4 &1261408907 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2852694764104474002, guid: 8df4459a6932f0c44b44aa5e9eae0d9e, type: 3}
@@ -104289,6 +104489,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1284978578}
+--- !u!114 &1284978584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1284978577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 424729061}
+  doorController: {fileID: 1284978578}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &1285702382
 GameObject:
   m_ObjectHideFlags: 0
@@ -108253,6 +108488,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1336863782}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1336863783}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &1336863769 stripped
 Transform:
@@ -108317,6 +108555,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1336863778}
+--- !u!114 &1336863783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456843923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 1336863769}
+  doorController: {fileID: 1336863778}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &1342308349
 GameObject:
   m_ObjectHideFlags: 0
@@ -119120,6 +119393,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1512820999}
+    - targetCorrespondingSourceObject: {fileID: 1988253031706851258, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1512821000}
   m_SourcePrefab: {fileID: 100100000, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
 --- !u!4 &1512820990 stripped
 Transform:
@@ -119174,6 +119450,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1512820995}
+--- !u!114 &1512821000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1004281367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 1512820990}
+  doorController: {fileID: 1512820995}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1001 &1516410901
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -121198,8 +121509,8 @@ Transform:
   m_GameObject: {fileID: 1552593996}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7155099, z: -0, w: 0.6986027}
-  m_LocalPosition: {x: -78.00394, y: 0.5799999, z: 14.41787}
-  m_LocalScale: {x: 4.2599998, y: 0.84704, z: 12.225969}
+  m_LocalPosition: {x: -73.4445, y: 0.5799999, z: 14.6397}
+  m_LocalScale: {x: 3.864394, y: 0.84704, z: 21.271963}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 787732983}
@@ -126255,6 +126566,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1623095305}
+--- !u!114 &1623095310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623095300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 307303061}
+  doorController: {fileID: 1623095305}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &1623453406
 GameObject:
   m_ObjectHideFlags: 0
@@ -131105,6 +131451,41 @@ MonoBehaviour:
   anchor: {fileID: 0}
   height: 2
   onlyWhileEnabled: {fileID: 1703471605}
+--- !u!114 &1703471610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1703471600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44229fbd13021646b16566f3380dd97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mode: 0
+  randomInterval: {x: 10, y: 30}
+  randomDuration: {x: 2.5, y: 6}
+  randomOnlyWithin: 14
+  randomNotCloserThan: 1.5
+  maxRandomAtOnce: 2
+  panel: {fileID: 755267755}
+  doorController: {fileID: 1703471605}
+  ajarAngle: 14
+  openSeconds: 1.2
+  swayDegrees: 1.2
+  swaySpeed: 0.7
+  radius: 3
+  requirePtsd: 1
+  onlyIfUnlocked: 1
+  onlyWhileFirstChaseActive: {fileID: 0}
+  closeWhenPlayerLeaves: 1
+  stopAfterOpened: 1
+  creakSound: {fileID: 0}
+  creakVolume: 0.8
+  guideLight: {fileID: 0}
+  guideColor: {r: 1, g: 0.9, b: 0.72, a: 1}
+  guideIntensity: 1.5
 --- !u!1 &1705123729
 GameObject:
   m_ObjectHideFlags: 0
@@ -155119,6 +155500,114 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1992289251}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1993903250
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1993903251}
+  - component: {fileID: 1993903254}
+  - component: {fileID: 1993903253}
+  - component: {fileID: 1993903252}
+  m_Layer: 0
+  m_Name: RoomA_Fog1 (4)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1993903251
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1993903250}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7155099, z: -0, w: 0.6986027}
+  m_LocalPosition: {x: -78.4277, y: 0.5799999, z: 5.74}
+  m_LocalScale: {x: 4.2599998, y: 0.84704, z: 12.137805}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 787732983}
+  m_LocalEulerAnglesHint: {x: 0, y: 91.37, z: 0}
+--- !u!65 &1993903252
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1993903250}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1993903253
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1993903250}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 24b54371f2a5a484bbf43d07b924841a, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1993903254
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1993903250}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1001 &1998534617
 PrefabInstance:
   m_ObjectHideFlags: 0

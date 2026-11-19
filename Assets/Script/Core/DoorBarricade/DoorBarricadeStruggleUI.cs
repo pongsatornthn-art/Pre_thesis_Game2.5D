@@ -20,6 +20,12 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
     public string holdLabel = "HOLD";
     public string retryText = "TRY AGAIN";
 
+    [Header("ฟอนต์")]
+    [Tooltip("ฟอนต์ของข้อความทั้งหมด — เว้นว่าง = หาจากชื่อด้านล่าง (ฟอนต์ที่ซีนโหลดไว้แล้ว)")]
+    public TMP_FontAsset font;
+    [Tooltip("ชื่อฟอนต์ที่ใช้หาเอง เมื่อช่อง Font ว่าง (UI สร้างอัตโนมัติจะใช้ทางนี้)")]
+    public string fontAssetName = "Iannnnn-COW-Bold SDF 1";
+
     [Header("Custom Sprites (เว้นว่าง = สี่เหลี่ยมสีล้วน)")]
     public Sprite gaugeFrameSprite;
     public Sprite gaugeFillSprite;
@@ -52,6 +58,7 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
     private float retryTimer;
     private float shake;
     private bool built;
+    private TMP_FontAsset resolvedFont;
 
     /// <summary>มี UI ในซีนหรือยัง ถ้าไม่มีสร้างให้</summary>
     public static void Ensure()
@@ -177,6 +184,7 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         rootGroup.blocksRaycasts = false;
 
         RectTransform root = (RectTransform)transform;
+        resolvedFont = ResolveFont();
 
         // จอแดงวาบตอนโดนกระแทก
         flash = NewImage("Flash", root, null, new Color(0.6f, 0f, 0f, 0f));
@@ -238,7 +246,8 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         // คำใบ้ลากเมาส์ขึ้น
         RectTransform hint = NewRect("DragHint", root);
         Place(hint, new Vector2(0.5f, 0.5f), gaugePosition + new Vector2(130f, 0f), new Vector2(160f, 200f));
-        TextMeshProUGUI arrow = NewText("Arrow", hint, "▲", 46, FontStyles.Bold, TextAlignmentOptions.Center);
+        TextMeshProUGUI arrow = NewText("Arrow", hint, "\u25B2", 46, FontStyles.Bold, TextAlignmentOptions.Center);
+        if (TMP_Settings.defaultFontAsset != null) arrow.font = TMP_Settings.defaultFontAsset; // ฟอนต์ไทยอาจไม่มีตัว ▲ → ใช้ฟอนต์มาตรฐานเฉพาะลูกศร
         hintArrow = arrow.rectTransform;
         Place(hintArrow, new Vector2(0.5f, 0.5f), new Vector2(0f, 30f), new Vector2(80f, 60f));
         if (mouseIconSprite != null)
@@ -280,10 +289,24 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         return img;
     }
 
-    private static TextMeshProUGUI NewText(string name, Transform parent, string text, float size, FontStyles style, TextAlignmentOptions align)
+    private TMP_FontAsset ResolveFont()
+    {
+        if (font != null) return font;
+        if (!string.IsNullOrEmpty(fontAssetName))
+        {
+            // ฟอนต์นี้ใช้ทั่วซีนอยู่แล้ว (ถูกโหลดในหน่วยความจำ) → หาจากชื่อได้ ทั้งใน Editor และตอน Build
+            foreach (TMP_FontAsset f in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
+                if (f != null && f.name == fontAssetName) return f;
+            Debug.LogWarning($"[DoorBarricadeStruggleUI] หาฟอนต์ '{fontAssetName}' ไม่เจอ — ใช้ฟอนต์มาตรฐานแทน (ลากฟอนต์ใส่ช่อง Font ได้)", this);
+        }
+        return null;
+    }
+
+    private TextMeshProUGUI NewText(string name, Transform parent, string text, float size, FontStyles style, TextAlignmentOptions align)
     {
         RectTransform rt = NewRect(name, parent);
         TextMeshProUGUI t = rt.gameObject.AddComponent<TextMeshProUGUI>();
+        if (resolvedFont != null) t.font = resolvedFont;
         t.text = text;
         t.fontSize = size;
         t.fontStyle = style;
