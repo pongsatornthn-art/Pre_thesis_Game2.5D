@@ -80,6 +80,23 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
+    // [Claude 2026-11-19] กันท่าถือปืนหาย: ก้อน GFX (ที่มี Animator) ถูกปิด-เปิด เช่น มุม close-up รูปวาด/แผนที่
+    // → Unity รีเซ็ตพารามิเตอร์ Animator ทั้งหมด (HasGun กลับเป็น false) แต่ HasGun ถูกตั้งแค่ตอนสลับอาวุธ → ถือปืนอยู่แต่เดินท่าปกติ
+    // แก้: เช็คทุกเฟรมว่าค่าใน Animator ตรงกับอาวุธที่ถืออยู่ไหม ไม่ตรง = ตั้งใหม่ (ไม่ไปรีเซ็ตกระสุน/ท่าเล็งเหมือน HandleWeaponEquipped)
+    void OnEnable() => SyncWeaponAnimParams();
+
+    private void SyncWeaponAnimParams()
+    {
+        if (animator == null || !animator.isActiveAndEnabled || animator.runtimeAnimatorController == null) return;
+
+        ItemData weapon = GetEquippedWeapon();
+        bool holdingGun = weapon != null && weapon.itemType == ItemType.RangedWeapon;
+        bool holdingMelee = weapon != null && weapon.itemType == ItemType.MeleeWeapon;
+
+        if (animator.GetBool("HasGun") != holdingGun) animator.SetBool("HasGun", holdingGun);
+        if (animator.GetBool("HasMelee") != holdingMelee) animator.SetBool("HasMelee", holdingMelee);
+    }
+
     private void HandleWeaponEquipped(ItemData newWeapon)
     {
         isReloading = false;
@@ -121,6 +138,8 @@ public class PlayerCombat : MonoBehaviour
     void Update()
     {
         if (Time.timeScale == 0f) return;
+
+        SyncWeaponAnimParams();
 
         if (GameplayInputGate.Blocked || (playerMovement != null && (playerMovement.isStunned || playerMovement.IsActionLocked)))
         {
