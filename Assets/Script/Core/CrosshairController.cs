@@ -30,6 +30,11 @@ public class CrosshairController : MonoBehaviour
 
     private Vector2 targetSize;
 
+    // 🌟 [แก้ 2026-11-20] จำผลไว้แล้วค่อยสั่ง Cursor ใน LateUpdate
+    // เพราะ InventoryUI / สคริปต์อื่นเคยสั่ง Cursor.visible = true ทุกเฟรมแย่งกัน → เมาส์โผล่ตอนถือปืน
+    private bool applyCursor;
+    private bool wantCursorVisible = true;
+
     void Start()
     {
         if (crosshairImage == null && crosshairRect != null)
@@ -48,6 +53,7 @@ public class CrosshairController : MonoBehaviour
         // 0. 🌟 [ข้อ 9] ถ้ามินิเกมคุมเมาส์อยู่ ห้ามสั่ง Cursor.visible ทับ (เดิมทำให้เมาส์หายตอนถือปืนเข้ามินิเกม)
         if (IsCursorOverriddenByMinigame)
         {
+            applyCursor = false;
             if (crosshairRect != null && crosshairRect.gameObject.activeSelf)
                 crosshairRect.gameObject.SetActive(false);
             return;
@@ -70,7 +76,12 @@ public class CrosshairController : MonoBehaviour
         // 3. เงื่อนไขการโชว์เป้าเล็ง: ต้องถือปืนอยู่ และ ไม่ได้เปิดหน้าต่าง UI ใดๆ
         //    ⚠️ ต้องเช็คสมุด (JournalController) ด้วย ไม่งั้นบรรทัด Cursor.visible ข้างล่าง
         //    จะซ่อนเมาส์ทุกเฟรมตอนเปิดหน้า K/N แล้วกดอะไรในสมุดไม่ได้เลย
-        bool shouldShowCrosshair = hasGunEquipped && !isInventoryOpen && !JournalController.IsAnyOpen;
+        // 🌟 [แก้ 2026-11-20] หน้าจอที่ต้องใช้เมาส์คลิก (เลือกเซฟ/มินิเกม/ซูมดูของ/จัมป์สแกร์/เมนูหยุด) → ซ่อนเป้า โชว์เมาส์
+        bool uiNeedsMouse = GameplayInputGate.Blocked
+                            || StoryCloseUpView.Active != null
+                            || StalkerJumpscareUI.AnyActive
+                            || (PauseManager.Instance != null && PauseManager.Instance.IsPaused);
+        bool shouldShowCrosshair = hasGunEquipped && !isInventoryOpen && !JournalController.IsAnyOpen && !uiNeedsMouse;
 
         // เปิด/ปิด การแสดงผลของเป้าเล็ง
         if (crosshairRect.gameObject.activeSelf != shouldShowCrosshair)
@@ -79,7 +90,8 @@ public class CrosshairController : MonoBehaviour
         }
 
         // โชว์เมาส์ปกติของ Windows เมื่อไม่มีเป้าปืน (มือเปล่า/ถือขวาน/เปิดกระเป๋า)
-        Cursor.visible = !shouldShowCrosshair;
+        applyCursor = true;
+        wantCursorVisible = !shouldShowCrosshair;
 
         // 4. ถ้าเป้าเล็งเปิดใช้งานอยู่ ให้ทำงาน 2 อย่างนี้
         if (shouldShowCrosshair)
@@ -108,5 +120,12 @@ public class CrosshairController : MonoBehaviour
                 crosshairImage.color = Color.Lerp(crosshairImage.color, targetColor, Time.deltaTime * lerpSpeed);
             }
         }
+    }
+
+    // LateUpdate รันหลัง Update ของทุกสคริปต์ → ค่าของเราเป็นค่าสุดท้ายของเฟรม ไม่โดนทับ
+    void LateUpdate()
+    {
+        if (!applyCursor || IsCursorOverriddenByMinigame) return;
+        Cursor.visible = wantCursorVisible;
     }
 }

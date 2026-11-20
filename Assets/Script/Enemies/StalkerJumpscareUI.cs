@@ -30,6 +30,10 @@ public class StalkerJumpscareUI : MonoBehaviour
 
     private StalkerAI currentBoss;
     private bool isMinigameActive = false;
+    /// <summary>[แก้ 2026-11-20] มินิเกมจัมป์สแกร์เปิดอยู่ไหม — CrosshairController ใช้เช็คเพื่อโชว์เมาส์ให้กดได้</summary>
+    public static bool AnyActive { get; private set; }
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => AnyActive = false;
     private float currentValue;
     private CursorLockMode savedLock = CursorLockMode.Confined;
     private bool savedVisible = true;
@@ -44,6 +48,8 @@ public class StalkerJumpscareUI : MonoBehaviour
             originalAnchoredPos = shakeTarget.anchoredPosition;
         }
     }
+
+    void OnDisable() { if (isMinigameActive) AnyActive = false; }
 
     void Start()
     {
@@ -66,6 +72,7 @@ public class StalkerJumpscareUI : MonoBehaviour
 
         jumpscareCanvas.SetActive(true);
         isMinigameActive = true;
+        AnyActive = true;
 
         savedLock = Cursor.lockState;
         savedVisible = Cursor.visible;
@@ -126,6 +133,7 @@ public class StalkerJumpscareUI : MonoBehaviour
     private void EndMinigame(bool isWin)
     {
         isMinigameActive = false;
+        AnyActive = false;
 
         if (shakeTarget != null)
         {
