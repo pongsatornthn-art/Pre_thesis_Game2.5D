@@ -111,7 +111,9 @@ public class InventoryUI : MonoBehaviour
         bool uiOpen = (inventoryPanel != null && inventoryPanel.activeSelf) ||
                       (craftingPanel != null && craftingPanel.activeSelf);
 
-        Cursor.visible = true;
+        // 🌟 [แก้ 2026-11-20] ไม่สั่ง Cursor.visible ทุกเฟรมแล้ว ให้ CrosshairController เป็นคนตัดสิน
+        // (เดิมบังคับ true ทุกเฟรม → เมาส์ Windows โผล่ซ้อนเป้าตอนถือปืน)
+        if (uiOpen) Cursor.visible = true;
         Cursor.lockState = uiOpen ? CursorLockMode.None : CursorLockMode.Confined;
     }
 

@@ -14,29 +14,51 @@ public class PTSDMinigameCharger : MonoBehaviour
     private bool isCharging = false;
     private bool hasTriggeredMinigame = false;
 
-    // 🌟 เพิ่มตัวแปรเช็คว่าอยู่ใน SafeZone หรือยัง
     [HideInInspector] public bool isPlayerInSafeZone = false;
 
-    [Header("UI References")]
-    [Tooltip("ลาก UI Panel ทั้งก้อนมาใส่ (ที่มีหลอดกับข้อความเตือน)")]
+    [Header("UI Panel หลัก")]
+    [Tooltip("ลาก UI Panel ทั้งก้อนมาใส่ (ที่เป็นตัวแม่ของชิ้นส่วนทั้งหมด)")]
     public GameObject chargeUIPanel;
-    [Tooltip("ลาก Image หลอดสีเขียว (ตั้งค่าเป็น Filled 360) มาใส่")]
+
+    [Header("ชิ้นส่วน UI ทั้ง 4 ชิ้น")]
+    [Tooltip("1. กรอบวงแหวนทองเหลืองด้านนอก (ring_frame)")]
+    public Image ringFrameImage;
+    [Tooltip("2. วงแหวนหลอดโหลดสีแดง (red_ring_ful — ต้องตั้ง Image Type = Filled / Radial 360)")]
     public Image fillGaugeImage;
-    [Tooltip("ลากออบเจกต์ข้อความ Hold [SPACE] (PromptText) มาใส่ที่นี่")]
-    public GameObject promptTextObj;
+    [Tooltip("3. รูปคำว่า Hold (text_hold)")]
+    public Image holdTextImage;
+    [Tooltip("4. รูปปุ่ม SPACE (key_space)")]
+    public Image spaceKeyImage;
 
     [Header("UI Warning (ล็อคการซ่อนตัว Type B)")]
     [Tooltip("ลาก Text แจ้งเตือนสีแดง (เช่น 'สับสนเกินไป ต้องแก้ปริศนา') มาใส่")]
     public GameObject warningTextObj;
 
+    [Header("Key Press Feedback (ลูกเล่นตอนกดปุ่ม)")]
+    [Tooltip("ขนาดปุ่ม SPACE ตอนถูกกดค้าง (0.9 = ยุบลง 10%)")]
+    [Range(0.7f, 1f)] public float pressedKeyScale = 0.9f;
+    [Tooltip("สีปุ่ม SPACE ตอนถูกกดค้าง")]
+    public Color pressedKeyTint = new Color(0.8f, 0.8f, 0.8f, 1f);
+
     [Header("Events (สำหรับส่งไปบอกระบบอื่น)")]
     [Tooltip("ใส่ Event สั่งเปิดหน้าต่างมินิเกมของจริง หรือตัดเข้าฉากมินิเกม")]
     public UnityEvent OnChargeComplete;
+
+    private Vector3 defaultKeyScale = Vector3.one;
+
+    private void Awake()
+    {
+        if (spaceKeyImage != null)
+        {
+            defaultKeyScale = spaceKeyImage.rectTransform.localScale;
+        }
+    }
 
     private void Start()
     {
         if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
         if (warningTextObj != null) warningTextObj.SetActive(false);
+        UpdateUI();
     }
 
     private void Update()
@@ -53,19 +75,22 @@ public class PTSDMinigameCharger : MonoBehaviour
         // ถ้าเล่นมินิเกมผ่านไปแล้ว ก็ไม่ต้องทำอะไรต่อ
         if (hasTriggeredMinigame) return;
 
-        // 🌟 ถ้ายินอยู่ในโหมด PTSD แต่ "ยังไม่เข้า SafeZone" ก็ปิด UI ซ่อนไว้ก่อน
+        // ถ้าอยู่ในโหมด PTSD แต่ "ยังไม่เข้า SafeZone" ให้ปิด UI ซ่อนไว้ก่อน
         if (!isPlayerInSafeZone)
         {
             if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
-            currentCharge = 0f; // ไม่ให้แอบชาร์จตอนอยู่นอกโซน
+            currentCharge = 0f;
+            isCharging = false;
+            UpdateUI();
             return;
         }
 
-        // 🌟 ถ้าเข้า SafeZone แล้ว ถึงจะยอมเปิด UI ให้เห็น
+        // ถ้าเข้า SafeZone แล้ว ถึงจะยอมเปิด UI ให้เห็น
         if (chargeUIPanel != null && !chargeUIPanel.activeSelf)
         {
             chargeUIPanel.SetActive(true);
-            if (promptTextObj != null) promptTextObj.SetActive(true);
+            SetPromptVisible(true);
+            if (warningTextObj != null) warningTextObj.SetActive(false);
         }
 
         HandleCharging();
@@ -76,17 +101,19 @@ public class PTSDMinigameCharger : MonoBehaviour
     {
         if (PTSDManager.Instance.currentMode == PTSDMode.Narrative_TypeB)
         {
+            isCharging = false;
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 if (warningTextObj != null) warningTextObj.SetActive(true);
-                if (promptTextObj != null) promptTextObj.SetActive(false);
+                SetPromptVisible(false);
                 Debug.LogWarning("จิตใจของคุณสับสนเกินกว่าจะสงบสติอารมณ์ได้... ต้องแก้ปริศนาเท่านั้น!");
             }
 
             if (Input.GetKeyUp(KeyCode.Space))
             {
                 if (warningTextObj != null) warningTextObj.SetActive(false);
-                if (promptTextObj != null) promptTextObj.SetActive(true);
+                SetPromptVisible(true);
             }
 
             currentCharge = 0f;
@@ -115,17 +142,33 @@ public class PTSDMinigameCharger : MonoBehaviour
 
     private void UpdateUI()
     {
+        // อัปเดตวงแหวนโหลดสีแดง
         if (fillGaugeImage != null)
         {
-            fillGaugeImage.fillAmount = currentCharge / timeToFill;
+            fillGaugeImage.fillAmount = timeToFill > 0f ? (currentCharge / timeToFill) : 0f;
         }
+
+        // อัปเดตเอฟเฟกต์ปุ่ม SPACE ยุบตัวตอนกดค้าง
+        if (spaceKeyImage != null)
+        {
+            spaceKeyImage.rectTransform.localScale = isCharging ? (defaultKeyScale * pressedKeyScale) : defaultKeyScale;
+            spaceKeyImage.color = isCharging ? pressedKeyTint : Color.white;
+        }
+    }
+
+    private void SetPromptVisible(bool visible)
+    {
+        if (holdTextImage != null) holdTextImage.gameObject.SetActive(visible);
+        if (spaceKeyImage != null) spaceKeyImage.gameObject.SetActive(visible);
     }
 
     private void TriggerMinigame()
     {
         hasTriggeredMinigame = true;
-        Debug.Log("ชาร์จเต็มแล้ว! ตัดเข้ามินิเกมของจริง!");
+        isCharging = false;
+        UpdateUI();
 
+        Debug.Log("ชาร์จเต็มแล้ว! ตัดเข้ามินิเกมของจริง!");
         OnChargeComplete?.Invoke();
 
         if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
@@ -134,10 +177,10 @@ public class PTSDMinigameCharger : MonoBehaviour
     public void ResetCharge()
     {
         currentCharge = 0f;
+        isCharging = false;
         hasTriggeredMinigame = false;
-        // [แก้โดย Claude 2026-11-08] ห้องปลอดภัยถูกปิด (SetActive false) ตอนผู้เล่นยืนอยู่ข้างใน → OnTriggerExit ไม่ทำงาน ค่านี้ค้าง true
-        // → เข้า PTSD รอบหน้า (เช่น โต๊ะวาดรูป Type B) ป้าย "Hold [SPACE]" โผล่ทั้งที่ไม่ได้อยู่ห้องปลอดภัย · ล้างทิ้งทุกครั้งที่อยู่โลกปกติ
         isPlayerInSafeZone = false;
+        SetPromptVisible(true);
         UpdateUI();
     }
 }

@@ -8,5 +8,6 @@
 public static class GameplayInputGate
 {
     public static bool Blocked => RadioMiniGameManager.IsActive || SaveSlotPickerUI.IsOpen
-                                  || MinigameBase.AnyRunning || SafeMinigame.AnyActive || PTSDMinigameController.AnyActive;
+                                  || MinigameBase.AnyRunning || SafeMinigame.AnyActive || PTSDMinigameController.AnyActive
+                                    || DoorBarricadeStruggle.AnyActive; // [ข้อ 1] ยันประตูอยู่ = ห้ามเปิดสมุด/ฮอตบาร์
 }
