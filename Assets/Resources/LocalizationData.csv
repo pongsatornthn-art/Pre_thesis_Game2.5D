@@ -117,3 +117,4 @@ OFFICE_NOT_DONE_2;ลองดูที่โต๊ะทำงานอีก�
 NOTIFY_ITEM_OBTAINED;ได้รับ: {0};Obtained: {0}
 ITEM_MEDICINE;ยารักษาแผล;Medicine
 ITEM_MEDICINE_DESC;ฟื้นเลือด 35 หน่วย;Restores 35 health
+GRAB_STRUGGLE_HINT;สะบัดให้หลุด! คลิกซ้ายตอนเข็มอยู่ในช่อง;Break free! Left-click when the needle is in the zone

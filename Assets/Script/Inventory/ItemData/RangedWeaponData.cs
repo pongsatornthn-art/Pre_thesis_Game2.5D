@@ -36,6 +36,12 @@ public class RangedWeaponData : ItemData
     [Tooltip("รัศมีช่วยเล็งตรวจจับศัตรู (Aim Assist) เนื่องจากสไปรท์บิลบอร์ดมีความกว้างแคบ")]
     public float aimAssistRadius = 0.6f;
 
+    [Header("คริติคอล (ยืนนิ่งเล็งจนเป้าหุบสุด แล้วยิง = คริ 100%)")]
+    [Tooltip("ตัวคูณดาเมจนัดคริ: ดาเมจจริง = damage × ค่านี้ (ปัดเป็นจำนวนเต็ม) · GDD เริ่มที่ 2 · ลองปรับ 1.35 / 1.5 ตอนเพลย์เทสได้")]
+    public float critMultiplier = 2f;
+    [Tooltip("เสียงตอนกระสุนคริโดนศัตรู (เว้นว่าง = ไม่มีเสียงเพิ่ม)")]
+    public AudioClip critHitSfx;
+
     [Header("เสียง (เฟส 2)")]
     [Tooltip("ไฟล์เสียง SFX ขณะยิงกระสุนออกไป")]
     public AudioClip fireSfx;

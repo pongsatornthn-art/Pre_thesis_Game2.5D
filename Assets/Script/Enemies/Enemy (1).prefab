@@ -882,9 +882,18 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   attackDistance: 1.5
-  attackDamage: 35
+  attackDamage: 25
   attackCooldown: 2
   maxHealth: 100
+  grabStaminaThreshold: 20
+  grabDamage: 30
+  grabMissDamage: 10
+  grabCooldown: 8
+  grabWhiffCooldown: 3
+  grabStunDuration: 1.5
+  grabKnockbackDistance: 1.5
+  callBossChancePercent: 0
+  nextGrabTime: 0
   hasSuperArmor: 0
   superArmorDuration: 10
   hitSound: {fileID: 8300000, guid: c6344f359ac303c45baf256ea58e625e, type: 3}

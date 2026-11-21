@@ -27,6 +27,8 @@ public class CrosshairController : MonoBehaviour
     public Color normalColor = Color.white;
     [Tooltip("สีเป้าเล็งเมื่อโฟกัส (หยุดเดิน + เล็งโดนศัตรู)")]
     public Color focusColor = Color.yellow;
+    [Tooltip("[คริติคอล] สีเป้าตอนหุบสุด = นัดถัดไปคริแน่นอน (ตั้งให้ต่างจากสีโฟกัสพอสังเกตได้ แต่ไม่ฉูดฉาด)")]
+    public Color critReadyColor = new Color(1f, 0.32f, 0.28f);
 
     private Vector2 targetSize;
 
@@ -116,7 +118,8 @@ public class CrosshairController : MonoBehaviour
             if (crosshairImage != null)
             {
                 bool isFocusing = gunfire != null && gunfire.IsFocusing;
-                Color targetColor = isFocusing ? focusColor : normalColor;
+                bool isCritReady = gunfire != null && gunfire.IsCritReady;
+                Color targetColor = isCritReady ? critReadyColor : (isFocusing ? focusColor : normalColor);
                 crosshairImage.color = Color.Lerp(crosshairImage.color, targetColor, Time.deltaTime * lerpSpeed);
             }
         }

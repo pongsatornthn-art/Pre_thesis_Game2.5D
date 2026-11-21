@@ -44,6 +44,14 @@ namespace Combat.Gun
         /// <summary>ผู้เล่นยืนนิ่งและเมาส์ชี้อยู่บนตัวศัตรูหรือไม่ (สำหรับเปลี่ยนสีเป้าเล็ง)</summary>
         public bool IsFocusing { get; private set; }
 
+        /// <summary>
+        /// [คริติคอล] Is_Max_Focused — ยืนนิ่ง + เล็งโดนศัตรู + เป้าหุบสุดแล้ว → นัดถัดไปคริ 100%
+        /// หลุดทันทีเมื่อ: เดิน/Dash (ตัวขยับ) · โดนตี · ยิงนัดคริออกไปแล้ว (ต้องเล็งใหม่ครบเวลา)
+        /// </summary>
+        public bool IsCritReady { get; private set; }
+
+        private bool wasMoving;
+
         private void OnEnable()
         {
             // GDD Interrupt Condition: โดนศัตรูตี = เสียหลัก กรวยเด้งบานสุดทันที
@@ -97,9 +105,14 @@ namespace Combat.Gun
                 }
             }
 
-            if (currentGun == null) { IsFocusing = false; return; }
+            if (currentGun == null) { IsFocusing = false; IsCritReady = false; return; }
 
             bool isMoving = rb != null && rb.linearVelocity.magnitude > 0.1f;
+
+            // [คริติคอล] ขัดจังหวะ: เพิ่งเริ่มขยับตัว (WASD/Dash ทำให้ตัววิ่ง) = สมาธิเล็งหาย ต้องเริ่มนับใหม่จาก 0%
+            // (ถ้าไม่ล้าง แตะ W นิดเดียวกรวยบานแค่นิดเดียว แล้วหุบกลับเร็ว = ได้คริแทบไม่ต้องรอ)
+            if (isMoving && !wasMoving) spread.ResetFocus(currentGun.ToSpreadSettings());
+            wasMoving = isMoving;
             bool isSteady = playerCombat != null && playerCombat.isAiming;
             Vector3 muzzlePos = muzzle != null ? muzzle.position : transform.position;
             Vector3 flatAimDir = aimResolver != null ? aimResolver.GetFlatAimDirection(muzzlePos) : transform.forward;
@@ -115,6 +128,7 @@ namespace Combat.Gun
 
             IsFocusing = !isMoving && isAimingAtEnemy;
             spread.Tick(Time.deltaTime, ctx, currentGun.ToSpreadSettings());
+            IsCritReady = IsFocusing && spread.IsAtMinSpread(currentGun.ToSpreadSettings());
 
             if (animator != null) animator.SetBool("IsAiming", isSteady);
         }
@@ -123,6 +137,9 @@ namespace Combat.Gun
         public void Fire(RangedWeaponData gun)
         {
             if (gun == null) return;
+
+            // [คริติคอล] จับสถานะ "ก่อน" ยิง — นัดนี้คริไหม (หลังยิงจะล้างทิ้งข้างล่าง)
+            bool critical = IsCritReady;
 
             Transform muzzlePoint = muzzle != null ? muzzle : transform;
             Vector3 muzzlePos = muzzlePoint.position;
@@ -143,14 +160,18 @@ namespace Combat.Gun
                 if (bulletObj != null)
                 {
                     ProjectileBase proj = bulletObj.GetComponent<ProjectileBase>();
-                    if (proj != null) proj.Launch(muzzlePos, shotDir, gun, gameObject);
+                    if (proj != null) proj.Launch(muzzlePos, shotDir, gun, gameObject, critical);
                     else Debug.LogError($"[GunfireController] Prefab '{gun.projectilePrefab.name}' ไม่มีคอมโพเนนต์ ProjectileBase");
                 }
             }
             else Debug.LogWarning($"[GunfireController] อาวุธ '{gun.itemName}' ยังไม่ได้กำหนด projectilePrefab ใน Inspector");
 
             // 4. เพิ่มแรงดีดสะสมและรีเซ็ตเวลา Focus
-            spread.OnShotFired(gun.ToSpreadSettings());
+            // [คริติคอล] นัดคริ = เวลาโฟกัสกลับ 0% + เป้าบานสุด (กันคริรัว ต้องตั้งสติเล็งใหม่ทุกนัด)
+            //            นัดธรรมดา = แรงถีบเดิม (+recoilSpread)
+            if (critical) spread.ResetFocus(gun.ToSpreadSettings());
+            else spread.OnShotFired(gun.ToSpreadSettings());
+            IsCritReady = false;
 
             // 5. สั่งเล่นเอฟเฟกต์เสียงและแสงแฟลชผ่าน GunFeedback (แยกหน้าที่ตาม SRP)
             if (feedback != null) feedback.PlayShot(gun, muzzlePos);

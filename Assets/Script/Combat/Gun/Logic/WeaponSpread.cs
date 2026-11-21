@@ -76,6 +76,24 @@ namespace Combat.Gun
         }
 
         /// <summary>
+        /// [คริติคอล] เป้าหุบสุดแล้วหรือยัง (กรวย ≤ ค่าแคบสุด + เผื่อเศษทศนิยม)
+        /// ใช้คู่กับ "ยืนนิ่ง + เล็งโดนศัตรู" ที่ GunfireController เช็คเอง
+        /// </summary>
+        public bool IsAtMinSpread(SpreadSettings s)
+        {
+            return CurrentSpread <= s.minSpreadAngle + 0.05f;
+        }
+
+        /// <summary>
+        /// [คริติคอล] ล้างสมาธิเล็ง = เวลาโฟกัสกลับเป็น 0% → กรวยบานสุดทันที
+        /// เรียกตอน: ยิงนัดคริออกไป / เริ่มเดินหรือ Dash (ขัดจังหวะ) — ต้องเล็งใหม่ครบเวลาถึงจะคริได้อีก
+        /// </summary>
+        public void ResetFocus(SpreadSettings s)
+        {
+            CurrentSpread = s.maxSpreadAngle;
+        }
+
+        /// <summary>
         /// ถูกเรียกเมื่อสลับอาวุธ: ตั้งค่าเริ่มต้นของปืนกระบอกใหม่
         /// </summary>
         public void OnWeaponChanged(SpreadSettings s)

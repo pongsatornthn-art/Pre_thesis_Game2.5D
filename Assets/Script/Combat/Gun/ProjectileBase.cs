@@ -19,9 +19,14 @@ namespace Combat.Gun
         protected float speed = 25f, radius = 0.08f, maxRange = 50f, travelled = 0f;
         protected bool isLaunched = false;
 
+        /// <summary>[คริติคอล] นัดนี้เป็นนัดคริไหม (ตั้งตอน Launch · กระสุนลูกหลานเอาไปคูณดาเมจเอง)</summary>
+        protected bool isCritical = false;
+
         /// <summary>เริ่มยิงกระสุนออกจาก origin ไปในทิศทาง flatDir (ห้าม override เพื่อรักษา lifecycle)</summary>
-        public void Launch(Vector3 origin, Vector3 flatDir, RangedWeaponData gunData, GameObject ownerObj)
+        /// <param name="critical">true = นัดคริ (ดาเมจ × critMultiplier ของปืน)</param>
+        public void Launch(Vector3 origin, Vector3 flatDir, RangedWeaponData gunData, GameObject ownerObj, bool critical = false)
         {
+            isCritical = critical;
             transform.position = origin;
             // บังคับให้กระสุนวิ่งในระนาบแนวนอนล้วน (y = 0) ป้องกันมุมกล้อง 2.5D หลอกตา
             flatDir.y = 0f;

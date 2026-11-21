@@ -32,6 +32,67 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
     public int maxHealth = 100;
     private int currentHealth;
 
+    [Header("ตะครุบ + กรีดร้อง (Grab & Scream) — [2026-11-21] ตามเอกสาร Minions")]
+    [Tooltip("ผู้เล่นสตามิน่าเหลือ ≤ กี่ % ถึงจะโดนท่าตะครุบ (GDD = 20)")]
+    [Range(0f, 100f)] public float grabStaminaThreshold = 20f;
+    [Tooltip("ดาเมจทันทีที่โดนจับ (GDD = 30)")]
+    public int grabDamage = 30;
+    [Tooltip("กดมินิเกมพลาด 1 ครั้ง เสียเลือดเพิ่ม (GDD = 10)")]
+    public int grabMissDamage = 10;
+    [Tooltip("สะบัดหลุดแล้ว มินเนียนตัวนี้ใช้ท่าตะครุบซ้ำไม่ได้กี่วินาที (GDD = 8)")]
+    public float grabCooldown = 8f;
+    [Tooltip("พุ่งตะครุบไม่โดน → รอกี่วิถึงลองใหม่ (กันพุ่งรัวไม่หยุด)")]
+    public float grabWhiffCooldown = 3f;
+    [Tooltip("สะบัดหลุดแล้ว มินเนียนมึนกี่วินาที (GDD = 1.5)")]
+    public float grabStunDuration = 1.5f;
+    [Tooltip("สะบัดหลุดแล้ว มินเนียนกระเด็นถอยกี่เมตร")]
+    public float grabKnockbackDistance = 1.5f;
+    [Tooltip("โอกาส (%) ที่ตีปกติจะกลายเป็นยืนกรีดร้องเรียกบอส (ระบบเก่า) · GDD ใหม่ให้ร้องเฉพาะตอนตะครุบ → 0")]
+    [Range(0, 100)] public int callBossChancePercent = 0;
+
+    /// <summary>เวลาที่ใช้ท่าตะครุบได้อีกครั้ง</summary>
+    [HideInInspector] public float nextGrabTime;
+
+    public PlayerMovement Player => playerScript;
+
+    /// <summary>ใช้ท่าตะครุบตอนนี้ได้ไหม (สตามิน่าผู้เล่นต่ำ + พ้นคูลดาวน์ + มีมินิเกมในซีน + ไม่มีใครจับผู้เล่นอยู่)</summary>
+    public bool CanGrab()
+    {
+        if (playerScript == null || Time.time < nextGrabTime) return false;
+        if (MinionGrabStruggle.Instance == null || MinionGrabStruggle.AnyActive) return false;
+        return playerScript.StaminaRatio * 100f <= grabStaminaThreshold;
+    }
+
+    /// <summary>มินิเกมสะบัดจบ — success = ผู้เล่นสะบัดหลุด (กระเด็น + มึน + คูลดาวน์) · false = ยกเลิก (บอสมาจับแทน/ผู้เล่นตาย)</summary>
+    public void OnGrabReleased(bool success, Vector3 awayFromPlayer)
+    {
+        if (currentHealth <= 0 || !gameObject.activeInHierarchy) return;
+        nextGrabTime = Time.time + grabCooldown;
+        if (success)
+        {
+            ChangeState(new StateStun(grabStunDuration));
+            StartCoroutine(KnockbackRoutine(awayFromPlayer, grabKnockbackDistance, 0.2f));
+        }
+        else
+        {
+            ChangeState(new StateChase());
+        }
+    }
+
+    // กระเด็นถอยแบบไถลสั้นๆ (ใช้ Agent.Move → ไม่ทะลุกำแพง/ไม่หลุด NavMesh)
+    private System.Collections.IEnumerator KnockbackRoutine(Vector3 dir, float distance, float duration)
+    {
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f || Agent == null) yield break;
+        dir.Normalize();
+        float speed = distance / Mathf.Max(duration, 0.01f);
+        for (float t = 0f; t < duration; t += Time.deltaTime)
+        {
+            if (Agent.isOnNavMesh) Agent.Move(dir * speed * Time.deltaTime);
+            yield return null;
+        }
+    }
+
     [Header("Super Armor")]
     public bool hasSuperArmor = false;
     public float superArmorDuration = 3f; // ตั้งเวลาได้ว่ามันจะอยู่กี่วิ
@@ -262,6 +323,7 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
             // [เพิ่มโดย Claude 2026-11-11 งานข้อ 10] โดนตี/ยิง = รู้ตัวเต็มหลอดทันที แล้วหันมาไล่ (ไม่ต้องรอหลอดค่อยๆ ขึ้น)
             // ตีหนักติดสตันอยู่ → ปล่อยให้สตันจบก่อน (StateStun จะสั่งไล่เอง)
             Awareness.ForceMaxAwareness();
+            if (PlayerTransform != null) LastKnownPlayerPos = PlayerTransform.position;   // [2026-11-21] โดนตี = รู้ว่าผู้เล่นอยู่ไหน
             if (!(currentState is StateStun) && !(currentState is StateChase) && !(currentState is StateAttack))
             {
                 ChangeState(new StateChase());
@@ -399,6 +461,8 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
         // อัปเดตลงหลอดเกจ (ถ้าเห็นให้เพิ่ม ถ้าไม่เห็นให้ลด)
         if (canSeeOrHear)
         {
+            // [2026-11-21] จำ "จุดสุดท้ายที่รู้ว่าผู้เล่นอยู่" — ตอนไล่จะวิ่งไปจุดนี้ ไม่ใช่ตำแหน่งจริงทะลุกำแพง
+            LastKnownPlayerPos = PlayerTransform.position;
             // [แก้โดย Claude 2026-11-11 งานข้อ 10] ยิ่งยืนใกล้ ยิ่งรู้ตัวไว — แม้อยู่ข้างหลัง (ไม่ต้องอยู่ในพัดสายตา)
             // ระยะประชิด (Instant Notice Radius) = รู้ตัวทันที · ในวงได้ยิน = เร็วขึ้นตามความใกล้ (ขอบวง x1 → ชิดตัว x Close Range Multiplier)
             if (distToPlayer <= instantNoticeRadius)
@@ -419,6 +483,16 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
         {
             Awareness.DecayAwareness();
         }
+    }
+
+    /// <summary>[2026-11-21] จุดสุดท้ายที่มอนเห็น/ได้ยินผู้เล่น (ไม่มีกำแพงคั่น) — StateChase วิ่งไปที่นี่</summary>
+    public Vector3 LastKnownPlayerPos { get; set; }
+
+    /// <summary>[2026-11-21] ไม่มีกำแพงคั่นระหว่างมอนกับผู้เล่น — ใช้ก่อนเริ่มตี/ตะครุบ (กันพุ่งใส่กำแพงตอนผู้เล่นอยู่อีกห้องชิดผนัง)</summary>
+    public bool ClearLineToPlayer()
+    {
+        if (PlayerTransform == null) return false;
+        return !WallBetween(transform.position + Vector3.up * 1f, PlayerTransform.position + Vector3.up * 1f);
     }
 
     // [Claude 2026-11-12] เช็คกำแพงคั่น — นับทั้ง Obstacle Mask + เลเยอร์ Default (กำแพงในแมพ 22 ชิ้นอยู่ Default → เดิมมองทะลุ)

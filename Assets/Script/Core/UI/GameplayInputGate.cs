@@ -9,5 +9,6 @@ public static class GameplayInputGate
 {
     public static bool Blocked => RadioMiniGameManager.IsActive || SaveSlotPickerUI.IsOpen
                                   || MinigameBase.AnyRunning || SafeMinigame.AnyActive || PTSDMinigameController.AnyActive
-                                    || DoorBarricadeStruggle.AnyActive; // [ข้อ 1] ยันประตูอยู่ = ห้ามเปิดสมุด/ฮอตบาร์
+                                    || DoorBarricadeStruggle.AnyActive // [ข้อ 1] ยันประตูอยู่ = ห้ามเปิดสมุด/ฮอตบาร์
+                                    || MinionGrabStruggle.AnyActive;   // [2026-11-21] โดนมินเนียนตะครุบ = คลิกซ้ายใช้สะบัด ไม่ใช่ยิง/ตี
 }

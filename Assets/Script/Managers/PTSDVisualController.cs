@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using System.Collections;
 
 public class PTSDVisualController : MonoBehaviour
@@ -36,6 +37,7 @@ public class PTSDVisualController : MonoBehaviour
     {
         isPTSDActive = isActive;
         if (visualCoroutine != null) StopCoroutine(visualCoroutine);
+        RestoreVignette();   // [2026-11-21] หยุดกลางจังหวะเต้น → คืนขอบดำเป็นค่าเดิมก่อน
 
         if (isActive && ptsdAudio != null && !ptsdAudio.isPlaying)
         {
@@ -44,6 +46,21 @@ public class PTSDVisualController : MonoBehaviour
         }
 
         visualCoroutine = StartCoroutine(FadeAndPulseRoutine(isActive ? 1f : 0f));
+    }
+
+    // [2026-11-21] ใช้ .profile (สำเนาตอนเล่น) ไม่ใช่ .sharedProfile → แก้ค่าระหว่างเล่นไม่ไปเขียนทับไฟล์ profile จริง
+    private Vignette runtimeVignette;
+    private float baseVignette;   // ค่าขอบดำตั้งต้น (จำครั้งเดียว — กันค่าไหลลงทุกรอบที่เข้า-ออก PTSD)
+    private Vignette GetRuntimeVignette()
+    {
+        if (runtimeVignette == null && ptsdVolume != null && ptsdVolume.profile.TryGet(out runtimeVignette))
+            baseVignette = runtimeVignette.intensity.value;
+        return runtimeVignette;
+    }
+
+    private void RestoreVignette()
+    {
+        if (runtimeVignette != null) runtimeVignette.intensity.value = baseVignette;
     }
 
     private IEnumerator FadeAndPulseRoutine(float targetWeight)
@@ -62,15 +79,21 @@ public class PTSDVisualController : MonoBehaviour
         }
 
         // 2. ช่วงจอมืดเต็มที่ -> เริ่มทำการวูบวาบ (Pulse)
+        // [แก้ 2026-11-21 นา] เดิมเต้นด้วย ptsdVolume.weight → โทนสีทั้งจอ (เกรดสีแบบหนัง) เต้นตามไปด้วย
+        //   ตอนนี้: weight ค้างที่ 1 (สีนิ่ง) แล้วเต้นเฉพาะความแรงขอบดำ (Vignette) แทน — ผลที่เห็นเหมือนเดิม
         if (isPTSDActive && enablePulse && ptsdVolume != null)
         {
+            Vignette vignette = GetRuntimeVignette();
+
             while (isPTSDActive)
             {
                 // สร้างคลื่นความถี่ขึ้นลงตามเวลา
                 float wave = (Mathf.Sin(Time.time * pulseSpeed) + 1f) / 2f;
-                ptsdVolume.weight = 1f - (wave * pulseAmount);
+                if (vignette != null) vignette.intensity.value = baseVignette * (1f - wave * pulseAmount);
                 yield return null;
             }
+
+            RestoreVignette();   // คืนค่าเดิมก่อนเฟดออก
         }
 
         if (!isPTSDActive && ptsdAudio != null) ptsdAudio.Stop();

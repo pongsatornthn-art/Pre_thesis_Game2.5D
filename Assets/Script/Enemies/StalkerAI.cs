@@ -57,6 +57,15 @@ public class StalkerAI : MonoBehaviour, IDamageable
 
     public IStalkerState CurrentState => currentState;
 
+    /// <summary>[2026-11-21] จุดสุดท้ายที่บอสเห็น/ได้ยินผู้เล่น — ตอนไล่จะวิ่งไปจุดนี้ (เดิมวิ่งตามตำแหน่งจริงทะลุกำแพง)</summary>
+    public Vector3 LastKnownPlayerPos { get; set; }
+
+    /// <summary>[2026-11-21] ไม่มีกำแพงคั่นระหว่างบอสกับผู้เล่น (ใช้ก่อนจับ / ก่อนวาร์ปแก้ติด)</summary>
+    public bool ClearLineTo(Vector3 worldPos)
+    {
+        return !WallBetween(transform.position + Vector3.up * 1f, worldPos + Vector3.up * 1f);
+    }
+
     [Header("Debug UI")]
     public TMPro.TMP_Text debugStateText;
 
@@ -240,6 +249,7 @@ public class StalkerAI : MonoBehaviour, IDamageable
             Vector3 t = PlayerTransform.position + Vector3.up * 1f;
             if (!WallBetween(o, t))
             {
+                LastKnownPlayerPos = PlayerTransform.position;
                 Awareness.ForceMaxAwareness();
                 return;
             }
@@ -258,6 +268,7 @@ public class StalkerAI : MonoBehaviour, IDamageable
                 Vector3 target = PlayerTransform.position + Vector3.up * 1f;
                 if (!WallBetween(origin, target))   // [Claude 2026-11-12] นับกำแพงเลเยอร์ Default ด้วย
                 {
+                    LastKnownPlayerPos = PlayerTransform.position;
                     Awareness.ForceMaxAwareness();
                     return;
                 }
@@ -273,6 +284,7 @@ public class StalkerAI : MonoBehaviour, IDamageable
             if (distToPlayer <= hearRadius && WallBetween(transform.position + Vector3.up, PlayerTransform.position + Vector3.up)) hearRadius *= 0.5f;
             if (distToPlayer <= hearRadius)
             {
+                LastKnownPlayerPos = PlayerTransform.position;   // ได้ยินเสียงเท้า = รู้ทิศ (ต้องอยู่ในระยะได้ยินจริง)
                 Awareness.FillAwareness();
                 return;
             }

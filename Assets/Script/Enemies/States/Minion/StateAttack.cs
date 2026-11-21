@@ -28,9 +28,10 @@ public class StateAttack : IMonsterState
         timer = 0f; 
         hasHitPlayer = false;
 
-        // 🌟 สุ่มกาชาการโจมตีตาม GDD (90% พุ่งตี / 10% เรียก Stalker)
+        // 🌟 สุ่มกาชาการโจมตี (เดิม 10% เรียก Stalker)
+        // [2026-11-21] GDD ใหม่: กรีดร้องเรียกบอสเฉพาะตอนตะครุบ (StateGrabScream) → โอกาสตั้งที่ ai.callBossChancePercent (ค่าเริ่ม 0)
         int rand = Random.Range(1, 101);
-        if (rand <= 10)
+        if (rand <= ai.callBossChancePercent)
         {
             currentPhase = AttackPhase.CallBoss;
             ai.hasSuperArmor = true; // ได้รับ Super Armor ทันทีตอนง้างตะโกน
@@ -115,7 +116,10 @@ public class StateAttack : IMonsterState
             if (!hasHitPlayer)
             {
                 // ใช้ OverlapSphere รัศมี 1.2 รอบตัวมอนสเตอร์ ถ้าระยะชนถึงผู้เล่น ให้ทำดาเมจ
-                Collider[] hits = Physics.OverlapSphere(ai.transform.position, 1.2f, ai.playerMask);
+                // [2026-11-21] แก้บั๊ก: playerMask ใน prefab = เลเยอร์ "Payer" แต่ตัวผู้เล่นอยู่เลเยอร์ Default → ตีปกติไม่เคยโดน
+                //   ตอนนี้รวมเลเยอร์ของตัวผู้เล่นจริงเข้าไปด้วยเสมอ (ข้างล่างยังกรองเฉพาะตัวผู้เล่นอยู่ ไม่โดนของอื่น)
+                int mask = ai.playerMask.value | (1 << ai.PlayerTransform.gameObject.layer);
+                Collider[] hits = Physics.OverlapSphere(ai.transform.position, 1.2f, mask);
                 foreach (var hit in hits)
                 {
                     if (hit.transform == ai.PlayerTransform || hit.transform.root == ai.PlayerTransform.root)

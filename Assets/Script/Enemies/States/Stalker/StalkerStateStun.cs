@@ -11,6 +11,7 @@ public class StalkerStateStun : IStalkerState
     {
         if (ai.Agent.isOnNavMesh) ai.Agent.isStopped = true;
         timer = 0f;
+        if (ai.PlayerTransform != null) ai.LastKnownPlayerPos = ai.PlayerTransform.position;   // [2026-11-21] โดนผู้เล่นเล่นงาน = รู้ว่าอยู่ไหน
         ai.ShowDebugText("BOSS_STUN", Color.cyan);
     }
 

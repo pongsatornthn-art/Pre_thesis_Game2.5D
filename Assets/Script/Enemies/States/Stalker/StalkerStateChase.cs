@@ -12,6 +12,7 @@ public class StalkerStateChase : IStalkerState
     {
         roarTimer = 0f;
         hasRoared = false;
+        if (ai.PlayerTransform != null && ai.ClearLineTo(ai.PlayerTransform.position)) ai.LastKnownPlayerPos = ai.PlayerTransform.position;
 
         // 🌟 ไอเดียที่ 4: บอสโผล่มาต้องยืนคำรามขู่ก่อน 3 วินาที ให้ผู้เล่นตั้งตัวทัน
         if (ai.Agent.isOnNavMesh) 
@@ -60,31 +61,43 @@ public class StalkerStateChase : IStalkerState
         if (!ai.Awareness.IsActive) 
         {
             // ถ้าหลุดสายตา ไปค้นหาตรงจุดที่คลาดกัน
-            ai.ChangeState(new StalkerStateAlert(ai.PlayerTransform.position));
+            // [2026-11-21] ไปค้นที่จุดสุดท้ายที่เห็น (เดิมใช้ตำแหน่งจริงของผู้เล่น = รู้ทะลุกำแพง)
+            ai.ChangeState(new StalkerStateAlert(ai.LastKnownPlayerPos));
             return;
         }
 
         // อัปเดตปลายทางทุกๆ 0.2 วินาที แทนการอัปเดตทุกเฟรม (ป้องกัน NavMeshAgent เอ๋อเวลาวิ่งเร็วจัดและเลี้ยวไม่พ้นมุม)
+        // [2026-11-21] เป้า = จุดสุดท้ายที่เห็น/ได้ยินผู้เล่น (UpdateDetection อัปเดตให้) ไม่ใช่ตำแหน่งจริงทะลุกำแพง
         pathUpdateTimer += Time.deltaTime;
         if (pathUpdateTimer >= 0.2f)
         {
-            ai.Agent.SetDestination(ChaseTarget.OnNavMesh(ai.PlayerTransform.position)); // [Claude 2026-11-11] ปลายทางบนพื้นเดินได้เสมอ
+            ai.Agent.SetDestination(ChaseTarget.OnNavMesh(ai.LastKnownPlayerPos)); // [Claude 2026-11-11] ปลายทางบนพื้นเดินได้เสมอ
             pathUpdateTimer = 0f;
         }
 
         // Anti-Stuck: ถ้ามีเป้าหมายแต่ความเร็วเกือบ 0 (ติดกล่องที่ไม่ได้ Bake NavMesh)
-        if (ai.Agent.hasPath && ai.Agent.velocity.sqrMagnitude < 0.1f)
+        bool wantsToMove = ai.Agent.hasPath && !ai.Agent.pathPending && ai.Agent.remainingDistance > ai.Agent.stoppingDistance + 0.3f;
+        if (wantsToMove && ai.Agent.velocity.sqrMagnitude < 0.1f)
         {
             stuckTimer += Time.deltaTime;
-            if (stuckTimer > 3f)
+            if (stuckTimer > 1.5f)
             {
-                Debug.LogWarning("🦇 Stalker เดินติดกำแพงนานเกิน 3 วินาที! ระบบกำลังวาร์ปแก้บัค...");
-                // วาร์ปขยับเข้าหาผู้เล่นนิดนึงเพื่อหลุดจากจุดที่บัค
-                Vector3 unstuckPos = Vector3.Lerp(ai.transform.position, ai.PlayerTransform.position, 0.3f);
-                if (UnityEngine.AI.NavMesh.SamplePosition(unstuckPos, out UnityEngine.AI.NavMeshHit hit, 5f, UnityEngine.AI.NavMesh.AllAreas))
+                // [2026-11-21] เดิมวาร์ปเข้าหาผู้เล่น 30% → บางทีวาร์ปข้ามกำแพงไปอีกห้อง ดูทะลุ
+                // ตอนนี้: ขยับไปจุดเดินได้ข้างๆ ตัว ที่ไม่มีกำแพงคั่น (สุ่ม 6 ครั้ง) · หาไม่ได้ = ล้างทางคำนวณใหม่
+                Debug.LogWarning("🦇 Stalker เดินติด → ขยับเลี่ยงข้างๆ");
+                bool moved = false;
+                for (int i = 0; i < 6 && !moved; i++)
                 {
-                    ai.Agent.Warp(hit.position);
+                    Vector2 c = Random.insideUnitCircle.normalized * Random.Range(0.8f, 1.6f);
+                    Vector3 p = ai.transform.position + new Vector3(c.x, 0f, c.y);
+                    if (UnityEngine.AI.NavMesh.SamplePosition(p, out UnityEngine.AI.NavMeshHit hit, 1f, UnityEngine.AI.NavMesh.AllAreas) && ai.ClearLineTo(hit.position))
+                    {
+                        ai.Agent.Warp(hit.position);
+                        moved = true;
+                    }
                 }
+                ai.Agent.ResetPath();
+                pathUpdateTimer = 0.2f;   // หาทางใหม่เฟรมหน้า
                 stuckTimer = 0f;
             }
         }
@@ -93,7 +106,8 @@ public class StalkerStateChase : IStalkerState
             stuckTimer = 0f;
         }
 
-        if (Vector3.Distance(ai.transform.position, ai.PlayerTransform.position) <= ai.killDistance)
+        // [2026-11-21] จับได้เฉพาะไม่มีกำแพงคั่น (เดิมยืนคนละฝั่งผนังก็จับได้)
+        if (Vector3.Distance(ai.transform.position, ai.PlayerTransform.position) <= ai.killDistance && ai.ClearLineTo(ai.PlayerTransform.position))
         {
             ai.CatchPlayer(); // [แก้โดย Claude 2026-11-11] จุดจับเดียว — มีหน้ามือผีของปอใช้อันนั้น ไม่มีค่อยใช้กด E เดิม
         }

@@ -24,6 +24,17 @@ namespace Combat.Gun
                 int dmg = gun != null ? gun.damage : 20;
                 float kb = gun != null ? gun.knockback : 0f;
 
+                // [คริติคอล] นัดคริ: ดาเมจ × ตัวคูณของปืน (ปัดเป็นจำนวนเต็ม เพราะ TakeDamage รับ int)
+                if (isCritical && gun != null)
+                {
+                    dmg = Mathf.RoundToInt(gun.damage * gun.critMultiplier);
+                    if (gun.critHitSfx != null)
+                    {
+                        IAudioService audio = ServiceLocator.GetOptional<IAudioService>();
+                        if (audio != null) audio.PlaySFX(gun.critHitSfx, hit.point);
+                    }
+                }
+
                 // สร้างความเสียหายและแรงกระเด็นตามสเปกของปืน
                 damageable.TakeDamage(dmg, kb);
 

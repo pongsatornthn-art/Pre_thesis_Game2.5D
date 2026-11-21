@@ -71,6 +71,11 @@ public class WorldLighting : MonoBehaviour
     [SerializeField] private Vector2 bossOnSeconds = new Vector2(0.9f, 0.35f);
     [Tooltip("บอสใกล้: ไฟดับนานกี่วินาที (ไกล → ใกล้) — ดับนานๆ ให้เห็นชัด")]
     [SerializeField] private Vector2 bossOffSeconds = new Vector2(0.3f, 0.7f);
+    [Tooltip("[2026-11-21] ไฟที่มีกำแพงขวางระหว่างบอสกับไฟ = ไม่กระพริบ (กันโซนบน+โซนล่างกระพริบพร้อมกันทั้งที่บอสอยู่ฝั่งเดียว)\n" +
+             "ใส่เลเยอร์กำแพง (Wall) · Nothing = ปิดการเช็ค วัดแค่ระยะแบบเดิม")]
+    [SerializeField] private LayerMask flickerBlockedBy = 1 << 6;   // 6 = เลเยอร์ Wall
+    [Tooltip("ความสูงที่ใช้ลากเส้นเช็คกำแพง (ระดับอกบอส — ต่ำกว่าเพดาน ไม่งั้นเส้นลอยข้ามหัวกำแพง)")]
+    [SerializeField] private float flickerCheckHeight = 1.5f;
 
     [Tooltip("สุ่มดวงแดงมากระพริบทุกกี่วินาที (ต่ำสุด–สูงสุด)")]
     [SerializeField] private Vector2 randomFlickerEvery = new Vector2(2f, 6f);
@@ -104,6 +109,8 @@ public class WorldLighting : MonoBehaviour
         public float glowLit, fromGlowLit;       // 0 = โคมดับ · 1 = โคมติด
 
         public bool flickOn = true;
+        public float sightCheckedAt = -99f;   // [2026-11-21] เช็คกำแพงขวางบอสล่าสุดเมื่อไหร่
+        public bool sightClear;
         public float flickTimer;
         public float burstUntil;
 
@@ -280,7 +287,8 @@ public class WorldLighting : MonoBehaviour
     }
 
     // ตัวรบกวนไฟ (LampDisturber) ที่ใกล้ไฟดวงนี้สุด → 0..1 (วัดแนวราบ ไม่สนความสูง)
-    private static float DisturbanceAt(Lamp lamp)
+    // [2026-11-21] + ต้องไม่มีกำแพงขวาง (เช็คทุก 0.2 วิ ต่อดวง เก็บผลไว้ ไม่ยิงเส้นทุกเฟรม)
+    private float DisturbanceAt(Lamp lamp)
     {
         if (lamp.light == null || LampDisturber.Active.Count == 0) return 0f;
         Vector3 p = lamp.light.transform.position;
@@ -291,9 +299,28 @@ public class WorldLighting : MonoBehaviour
             if (r <= 0f) continue;
             Vector3 q = d.transform.position;
             float dist = Mathf.Sqrt((p.x - q.x) * (p.x - q.x) + (p.z - q.z) * (p.z - q.z));
-            if (dist < r) best = Mathf.Max(best, 1f - dist / r);
+            if (dist >= r) continue;
+            if (!SeesLamp(lamp, q, dist)) continue;
+            best = Mathf.Max(best, 1f - dist / r);
         }
         return best;
+    }
+
+    // บอส "มองเห็น" ไฟดวงนี้ไหม = ลากเส้นแนวราบที่ความสูงอก ไม่ชนกำแพง
+    // หยุดเส้นก่อนถึงไฟ 0.6 ม. — ไฟติดผนังฝังอยู่ในกำแพงตัวเอง ถ้าลากถึงตัวไฟจะชนกำแพงของมันเองทุกครั้ง
+    private bool SeesLamp(Lamp lamp, Vector3 boss, float flatDist)
+    {
+        if (flickerBlockedBy.value == 0) return true;
+        if (Time.time < lamp.sightCheckedAt + 0.2f) return lamp.sightClear;
+        lamp.sightCheckedAt = Time.time;
+
+        Vector3 p = lamp.light.transform.position;
+        Vector3 from = new Vector3(boss.x, boss.y + flickerCheckHeight, boss.z);
+        Vector3 to = new Vector3(p.x, from.y, p.z);
+        float len = flatDist - 0.6f;
+        lamp.sightClear = len <= 0f ||
+            !Physics.Raycast(from, (to - from).normalized, len, flickerBlockedBy, QueryTriggerInteraction.Ignore);
+        return lamp.sightClear;
     }
 
     private void Render()
