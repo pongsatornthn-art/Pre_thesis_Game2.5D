@@ -21,9 +21,11 @@ public class PTSDMinigameCharger : MonoBehaviour
     public GameObject chargeUIPanel;
 
     [Header("ชิ้นส่วน UI ทั้ง 4 ชิ้น")]
-    [Tooltip("1. กรอบวงแหวนทองเหลืองด้านนอก (ring_frame)")]
+    [Tooltip("1. กรอบ (แบบเครื่องวัดหัวใจ = ECG_Frame · แบบวงแหวนเดิม = ring_frame)")]
     public Image ringFrameImage;
-    [Tooltip("2. วงแหวนหลอดโหลดสีแดง (red_ring_ful — ต้องตั้ง Image Type = Filled / Radial 360)")]
+    [Tooltip("2. ตัวหลอดที่เต็มขึ้นตอนกดค้าง\n" +
+             "แบบเครื่องวัดหัวใจ = ECG_Screen_Green (Image Type = Filled / Horizontal / Origin Left) → จอสีเขียวไล่จากซ้ายไปขวา\n" +
+             "แบบวงแหวนเดิม = red_ring_ful (Filled / Radial 360)")]
     public Image fillGaugeImage;
     [Tooltip("3. รูปคำว่า Hold (text_hold)")]
     public Image holdTextImage;
@@ -40,11 +42,28 @@ public class PTSDMinigameCharger : MonoBehaviour
     [Tooltip("สีปุ่ม SPACE ตอนถูกกดค้าง")]
     public Color pressedKeyTint = new Color(0.8f, 0.8f, 0.8f, 1f);
 
+    [Header("ปอดเต้นตุบๆ (แบบเครื่องวัดหัวใจ — เว้นว่างได้ถ้าใช้แบบวงแหวนเดิม)")]
+    [Tooltip("รูปปอด (ECG_Lungs) — เต้นเป็นจังหวะหัวใจ ตุบ-ตุบ")]
+    public RectTransform lungsIcon;
+    [Tooltip("วงแสงแดงหลังปอด (ECG_LungGlow) — สว่างวูบตามจังหวะเต้น")]
+    public Image lungGlowImage;
+    [Tooltip("จังหวะเต้นตอนตื่นตระหนก (ยังไม่ได้กด / หลอดว่าง) ครั้งต่อนาที")]
+    public float panicBPM = 120f;
+    [Tooltip("จังหวะเต้นตอนสงบ (หลอดเต็ม) ครั้งต่อนาที — กดค้างนานขึ้น หัวใจจะค่อยๆ ช้าลง")]
+    public float calmBPM = 55f;
+    [Tooltip("ปอดขยายตอนเต้นกี่ % (0.12 = ใหญ่ขึ้น 12%)")]
+    [Range(0f, 0.4f)] public float beatScale = 0.12f;
+    [Tooltip("ความสว่างวงแสง ตอนพัก / ตอนเต้นสุด")]
+    [Range(0f, 1f)] public float glowMinAlpha = 0.35f;
+    [Range(0f, 1f)] public float glowMaxAlpha = 1f;
+
     [Header("Events (สำหรับส่งไปบอกระบบอื่น)")]
     [Tooltip("ใส่ Event สั่งเปิดหน้าต่างมินิเกมของจริง หรือตัดเข้าฉากมินิเกม")]
     public UnityEvent OnChargeComplete;
 
     private Vector3 defaultKeyScale = Vector3.one;
+    private Vector3 defaultLungsScale = Vector3.one;
+    private float beatPhase;   // 0–1 = หนึ่งรอบการเต้น
 
     private void Awake()
     {
@@ -52,6 +71,7 @@ public class PTSDMinigameCharger : MonoBehaviour
         {
             defaultKeyScale = spaceKeyImage.rectTransform.localScale;
         }
+        if (lungsIcon != null) defaultLungsScale = lungsIcon.localScale;
     }
 
     private void Start()
@@ -95,6 +115,42 @@ public class PTSDMinigameCharger : MonoBehaviour
 
         HandleCharging();
         UpdateUI();
+        UpdateHeartbeat();
+    }
+
+    // ───────── ปอดเต้นตุบๆ ─────────
+    /// <summary>
+    /// เต้นแบบหัวใจจริง "ตุบ-ตุบ" (ครั้งแรกแรง ครั้งที่สองเบากว่า) แล้วพัก
+    /// หลอดว่าง = เต้นรัว (Panic BPM) · กดค้างจนหลอดเต็ม = ค่อยๆ ช้าลงเหลือ Calm BPM (สงบสติได้แล้ว)
+    /// โหมด Type B (สงบไม่ได้) = เต้นรัวตลอด
+    /// </summary>
+    private void UpdateHeartbeat()
+    {
+        if (lungsIcon == null && lungGlowImage == null) return;
+
+        float charge01 = timeToFill > 0f ? Mathf.Clamp01(currentCharge / timeToFill) : 0f;
+        bool typeB = PTSDManager.Instance != null && PTSDManager.Instance.currentMode == PTSDMode.Narrative_TypeB;
+        float bpm = typeB ? panicBPM : Mathf.Lerp(panicBPM, calmBPM, charge01);
+
+        beatPhase = (beatPhase + Time.deltaTime * bpm / 60f) % 1f;
+        float beat = HeartbeatCurve(beatPhase);
+
+        if (lungsIcon != null) lungsIcon.localScale = defaultLungsScale * (1f + beat * beatScale);
+        if (lungGlowImage != null)
+        {
+            Color c = lungGlowImage.color;
+            c.a = Mathf.Lerp(glowMinAlpha, glowMaxAlpha, beat);
+            lungGlowImage.color = c;
+        }
+    }
+
+    /// <summary>ตุบแรง (ที่ 0) + ตุบเบา (ที่ 0.2) แล้วนิ่ง — คืนค่า 0–1</summary>
+    private static float HeartbeatCurve(float p)
+    {
+        float lub = Mathf.Exp(-Mathf.Pow(p / 0.06f, 2f));
+        float dub = 0.6f * Mathf.Exp(-Mathf.Pow((p - 0.2f) / 0.06f, 2f));
+        float wrap = Mathf.Exp(-Mathf.Pow((p - 1f) / 0.06f, 2f)); // ให้ต่อรอบเนียน
+        return Mathf.Clamp01(lub + dub + wrap);
     }
 
     private void HandleCharging()
