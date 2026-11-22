@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// [ข้อ 1] UI ของ Door Barricade Struggle — หลอดแนวตั้ง 0–100 + โซนล็อก 80–100 + ตัวนับ HOLD + คำใบ้ลากเมาส์ขึ้น
+/// [แก้ 2026-11-20] เพิ่มปุ่มวงกลมด้านขวาสำหรับแบบใหม่ (กดค้างที่ปุ่ม → ลากขึ้น · ปุ่มอยู่กับที่)
+///   แบบเก่า = โชว์ลูกศรข้างหลอดเหมือนเดิม · แบบใหม่ = โชว์ปุ่มวงกลม · สลับเองตามแบบที่ใช้อยู่
 ///
 /// ไม่ต้องตั้งค่าอะไร: เริ่มยันประตูครั้งแรก สคริปต์สร้าง Canvas ให้เอง
 /// อยากใช้รูปของตัวเอง (เช่น healthbar_frame / healthbar_fill_red จากชุด UI ที่แยกไว้):
@@ -17,6 +19,12 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
     public string title = "DOOR BARRICADE STRUGGLE";
     public string dragHint = "DRAG MOUSE UP";
     public string tutorialHint = "Drag the mouse UP to push the door shut.\nKeep it in the top zone until it locks!";
+    [Tooltip("คำแนะนำ Tutorial ของแบบใหม่ (ปุ่มวงกลม)")]
+    public string tutorialHintButton = "Click and HOLD the circle, then drag UP to push the door shut.\nKeep it in the top zone until it locks!";
+    [Tooltip("ข้อความใต้ปุ่มวงกลม (แบบใหม่)")]
+    public string buttonHint = "HOLD + DRAG UP";
+    [Tooltip("โชว์ป้ายมุมจอว่ากำลังใช้แบบไหน + ปุ่มสลับ (ไว้ทดสอบ ตอนส่งงานจริงปิดได้)")]
+    public bool showControlModeLabel = true;
     public string holdLabel = "HOLD";
     public string retryText = "TRY AGAIN";
 
@@ -42,6 +50,17 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
     public Vector2 gaugePosition = new Vector2(-260f, 0f);
     public Vector2 gaugeSize = new Vector2(34f, 340f);
 
+    [Header("ปุ่มวงกลม (แบบใหม่)")]
+    [Tooltip("ตำแหน่งปุ่ม วัดจากขอบขวากลางจอ (x ติดลบ = เข้ามาทางซ้าย · y ติดลบ = ต่ำลง)")]
+    public Vector2 buttonPosition = new Vector2(-300f, -140f);
+    [Tooltip("เส้นผ่านศูนย์กลางปุ่ม (หน่วย UI ที่จอ 1920×1080)")]
+    public float buttonDiameter = 170f;
+    [Tooltip("ขยายพื้นที่กดออกไปรอบปุ่ม (กดพลาดขอบนิดหน่อยก็ยังนับ)")]
+    public float buttonHitPadding = 20f;
+    public Sprite buttonSprite;
+    public Color buttonIdle = new Color(0.92f, 0.9f, 0.85f, 0.85f);
+    public Color buttonPressed = new Color(0.95f, 0.75f, 0.25f, 1f);
+
     private Canvas canvas;
     private CanvasGroup rootGroup;
     private RectTransform fillRect;
@@ -53,6 +72,17 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
     private TextMeshProUGUI retryLabel;
     private Image flash;
     private RectTransform gaugeRoot;
+    private RectTransform dragHintRoot;      // แบบเก่า: ลูกศรข้างหลอด
+    private RectTransform buttonRoot;        // แบบใหม่: ปุ่มวงกลม
+    private RectTransform buttonCircle;
+    private Image buttonCore;
+    private Image buttonRing;
+    private RectTransform buttonArrow;
+    private TextMeshProUGUI modeLabel;
+    private DoorBarricadeStruggle.PushControl? shownControl;
+    private bool lastTutorial;
+    private static Sprite generatedCircle;
+    private static Sprite generatedRing;
 
     private float flashAlpha;
     private float retryTimer;
@@ -101,7 +131,9 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
     private void HandleStarted(DoorBarricadeStruggle s)
     {
         SetVisible(true);
-        if (tutorialText != null) tutorialText.gameObject.SetActive(s.IsTutorial);
+        lastTutorial = s.IsTutorial;
+        shownControl = null; // บังคับจัดหน้าใหม่ตามแบบที่ใช้
+        RefreshControlLayout(s);
         retryTimer = 0f;
     }
 
@@ -141,8 +173,24 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         holdGroup.alpha = Mathf.MoveTowards(holdGroup.alpha, inZone ? 1f : 0.25f, dt * 6f);
         holdBarFill.anchorMax = new Vector2(Mathf.Clamp01(s.WinProgress01), 1f);
 
+        // แบบเก่า/ใหม่ (สลับด้วย F8 ได้ระหว่างเล่น)
+        if (shownControl != s.CurrentControl) RefreshControlLayout(s);
+
         // ลูกศรเด้งขึ้นลง
-        if (hintArrow != null) hintArrow.anchoredPosition = new Vector2(0f, 30f + Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 18f);
+        float bob = Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 18f;
+        if (hintArrow != null) hintArrow.anchoredPosition = new Vector2(0f, 30f + bob);
+
+        // ปุ่มวงกลม: กดค้าง = ยุบ + เปลี่ยนสี · ไม่ได้กด = เต้นเบาๆ ชวนให้กด (ปุ่มไม่ขยับตำแหน่ง)
+        if (buttonRoot != null && buttonRoot.gameObject.activeSelf)
+        {
+            bool held = s.IsHoldingButton;
+            float targetScale = held ? 0.9f : 1f + Mathf.Sin(Time.unscaledTime * 5f) * 0.03f;
+            buttonCircle.localScale = Vector3.one * Mathf.Lerp(buttonCircle.localScale.x, targetScale, dt * 18f);
+            buttonCore.color = Color.Lerp(buttonCore.color, held ? buttonPressed : buttonIdle, dt * 14f);
+            buttonRing.color = Color.Lerp(buttonRing.color, held ? buttonPressed : new Color(1f, 1f, 1f, 0.6f), dt * 14f);
+            if (buttonArrow != null)
+                buttonArrow.anchoredPosition = new Vector2(0f, buttonDiameter * 0.5f + 40f + (held ? bob * 1.6f : bob * 0.6f));
+        }
 
         // กระแทก: จอแดงวาบ + หลอดสั่น
         flashAlpha = Mathf.MoveTowards(flashAlpha, 0f, dt * 1.6f);
@@ -155,6 +203,38 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         {
             retryTimer = Mathf.Max(0f, retryTimer - dt);
             retryLabel.gameObject.SetActive(retryTimer > 0f);
+        }
+    }
+
+    /// <summary>แบบใหม่: จุดบนจอ (พิกัดเมาส์) อยู่บนปุ่มวงกลมไหม</summary>
+    public bool IsOverPushButton(Vector2 screenPos)
+    {
+        if (!built || buttonCircle == null || !buttonRoot.gameObject.activeInHierarchy) return false;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(buttonCircle, screenPos, null, out Vector2 local)) return false;
+        float r = buttonDiameter * 0.5f + buttonHitPadding;
+        return local.sqrMagnitude <= r * r;
+    }
+
+    /// <summary>โชว์ส่วนที่ตรงกับแบบที่ใช้อยู่ (แบบเก่า = ลูกศรข้างหลอด · แบบใหม่ = ปุ่มวงกลม)</summary>
+    private void RefreshControlLayout(DoorBarricadeStruggle s)
+    {
+        if (!built || s == null) return;
+        DoorBarricadeStruggle.PushControl mode = s.CurrentControl;
+        shownControl = mode;
+        bool isButton = mode == DoorBarricadeStruggle.PushControl.HoldButtonDrag;
+
+        if (dragHintRoot != null) dragHintRoot.gameObject.SetActive(!isButton);
+        if (buttonRoot != null) buttonRoot.gameObject.SetActive(isButton);
+        if (tutorialText != null)
+        {
+            tutorialText.gameObject.SetActive(lastTutorial);
+            tutorialText.text = isButton ? tutorialHintButton : tutorialHint;
+        }
+        if (modeLabel != null)
+        {
+            modeLabel.gameObject.SetActive(showControlModeLabel);
+            string key = s.toggleControlKey != KeyCode.None ? $"  [{s.toggleControlKey}] switch" : "";
+            modeLabel.text = (isButton ? "CONTROL: NEW (hold circle)" : "CONTROL: OLD (drag mouse)") + key;
         }
     }
 
@@ -243,8 +323,9 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         holdBarFill.anchorMax = new Vector2(0f, 1f);
         holdBarFill.offsetMin = holdBarFill.offsetMax = Vector2.zero;
 
-        // คำใบ้ลากเมาส์ขึ้น
+        // คำใบ้ลากเมาส์ขึ้น (แบบเก่า)
         RectTransform hint = NewRect("DragHint", root);
+        dragHintRoot = hint;
         Place(hint, new Vector2(0.5f, 0.5f), gaugePosition + new Vector2(130f, 0f), new Vector2(160f, 200f));
         TextMeshProUGUI arrow = NewText("Arrow", hint, "\u25B2", 46, FontStyles.Bold, TextAlignmentOptions.Center);
         if (TMP_Settings.defaultFontAsset != null) arrow.font = TMP_Settings.defaultFontAsset; // ฟอนต์ไทยอาจไม่มีตัว ▲ → ใช้ฟอนต์มาตรฐานเฉพาะลูกศร
@@ -259,6 +340,38 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         TextMeshProUGUI drag = NewText("Text", hint, dragHint, 18, FontStyles.Bold, TextAlignmentOptions.Center);
         Place(drag.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(200f, 26f));
 
+        // ปุ่มวงกลมด้านขวา (แบบใหม่) — ตัวปุ่มอยู่กับที่ ลากเมาส์ขึ้นแล้วปุ่มไม่ขยับตาม
+        buttonRoot = NewRect("PushButton", root);
+        buttonRoot.anchorMin = buttonRoot.anchorMax = new Vector2(1f, 0.5f);
+        buttonRoot.pivot = new Vector2(0.5f, 0.5f);
+        buttonRoot.anchoredPosition = buttonPosition;
+        buttonRoot.sizeDelta = new Vector2(buttonDiameter, buttonDiameter);
+
+        buttonCircle = NewRect("Circle", buttonRoot);
+        Stretch(buttonCircle);
+        buttonRing = NewImage("Ring", buttonCircle, buttonSprite != null ? null : GetRingSprite(), new Color(1f, 1f, 1f, 0.6f));
+        Stretch(buttonRing.rectTransform, -10f);
+        buttonCore = NewImage("Core", buttonCircle, buttonSprite != null ? buttonSprite : GetCircleSprite(), buttonIdle);
+        Stretch(buttonCore.rectTransform);
+        if (buttonSprite != null) buttonRing.enabled = false;
+
+        TextMeshProUGUI btnArrow = NewText("Arrow", buttonRoot, "\u25B2", 44, FontStyles.Bold, TextAlignmentOptions.Center);
+        if (TMP_Settings.defaultFontAsset != null) btnArrow.font = TMP_Settings.defaultFontAsset;
+        buttonArrow = btnArrow.rectTransform;
+        Place(buttonArrow, new Vector2(0.5f, 0.5f), new Vector2(0f, buttonDiameter * 0.5f + 40f), new Vector2(80f, 60f));
+
+        TextMeshProUGUI btnText = NewText("Text", buttonRoot, buttonHint, 20, FontStyles.Bold, TextAlignmentOptions.Center);
+        Place(btnText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -buttonDiameter * 0.5f - 26f), new Vector2(320f, 28f));
+        buttonRoot.gameObject.SetActive(false);
+
+        // ป้ายบอกแบบที่ใช้อยู่ (ไว้ทดสอบ)
+        modeLabel = NewText("ControlMode", root, "", 16, FontStyles.Normal, TextAlignmentOptions.Right);
+        modeLabel.color = new Color(1f, 1f, 1f, 0.55f);
+        modeLabel.rectTransform.anchorMin = modeLabel.rectTransform.anchorMax = new Vector2(1f, 0f);
+        modeLabel.rectTransform.pivot = new Vector2(1f, 0f);
+        modeLabel.rectTransform.anchoredPosition = new Vector2(-24f, 18f);
+        modeLabel.rectTransform.sizeDelta = new Vector2(700f, 26f);
+
         // Tutorial
         tutorialText = NewText("Tutorial", root, tutorialHint, 26, FontStyles.Normal, TextAlignmentOptions.Center);
         Place(tutorialText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(1100f, 90f));
@@ -270,6 +383,40 @@ public class DoorBarricadeStruggleUI : MonoBehaviour
         retryLabel.gameObject.SetActive(false);
 
         built = true;
+    }
+
+    // ───────── วงกลม (สร้างเอง ไม่ต้องมีไฟล์รูป) ─────────
+    private static Sprite GetCircleSprite()
+    {
+        if (generatedCircle == null) generatedCircle = MakeDisc("UI_PushCircle", 0f);
+        return generatedCircle;
+    }
+
+    private static Sprite GetRingSprite()
+    {
+        if (generatedRing == null) generatedRing = MakeDisc("UI_PushRing", 0.86f);
+        return generatedRing;
+    }
+
+    /// <summary>วาดวงกลมขอบนุ่ม — inner > 0 = เป็นวงแหวน (เจาะกลาง)</summary>
+    private static Sprite MakeDisc(string name, float inner)
+    {
+        const int size = 256;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = name, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+        Color32[] px = new Color32[size * size];
+        float c = (size - 1) * 0.5f;
+        float edge = 1.5f / c;
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;
+                float a = Mathf.Clamp01((1f - d) / edge);
+                if (inner > 0f) a *= Mathf.Clamp01((d - inner) / edge);
+                px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+            }
+        tex.SetPixels32(px);
+        tex.Apply(false, true);
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
     }
 
     private static RectTransform NewRect(string name, Transform parent)

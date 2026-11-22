@@ -11,6 +11,9 @@ using UnityEngine.Events;
 ///
 /// Door_Pos: 100 = ปิดสนิท · 50 = จุดเริ่ม · 0 = ประตูพัง (แพ้)
 /// ลากเมาส์ขึ้น → เพิ่ม PushVelocity (มีเพดาน + แรงเฉื่อย) · ลากลงไม่หักค่า (ยกเมาส์ตั้งหลักได้)
+/// วิธีควบคุม 2 แบบ (ช่อง Push Control / กด F8 ระหว่างเล่นเพื่อสลับ):
+///   DragMouse      = แบบเก่า ลากเมาส์ขึ้นได้เลย (เมาส์ถูกล็อกกลางจอ)
+///   HoldButtonDrag = แบบใหม่ กดคลิกค้างที่ปุ่มวงกลมด้านขวาก่อน แล้วลากขึ้น (ปุ่มอยู่กับที่ ไม่ขยับตาม)
 /// ศัตรูดันคงที่ตลอด + กระแทกเป็นระยะ · อยู่ในโซน 80–100 ครบ 1.5 วิ = ชนะ
 ///
 /// ใช้ FirstPersonModeController (ข้อ 4) สลับกล้อง/ล็อกผู้เล่น/ล็อกเมาส์กลางจอ
@@ -18,6 +21,13 @@ using UnityEngine.Events;
 public class DoorBarricadeStruggle : MonoBehaviour
 {
     public enum Result { Win, Fail, Aborted }
+    /// <summary>วิธีควบคุม — DragMouse = แบบเก่า · HoldButtonDrag = แบบใหม่ (กดค้างที่ปุ่มวงกลมก่อน)</summary>
+    public enum PushControl { DragMouse, HoldButtonDrag }
+
+    /// <summary>ค่าที่สลับด้วยปุ่ม F8 ระหว่างเล่น — จำไว้ทั้งรอบที่กด Play (ประตูบานอื่นใช้แบบเดียวกัน) · null = ใช้ค่าใน Inspector</summary>
+    private static PushControl? sessionControlOverride;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() { sessionControlOverride = null; Active = null; safeUntil = -1f; }
 
     // ───────── สถานะรวม (ให้ระบบอื่นเช็คได้) ─────────
     /// <summary>ประตูที่กำลังยันอยู่ (null = ไม่มี)</summary>
@@ -39,8 +49,10 @@ public class DoorBarricadeStruggle : MonoBehaviour
     [Header("ประตู")]
     [Tooltip("ตัวที่หมุนเป็นบานประตู — เว้นว่าง = ตัวที่มี Animator ของประตู (อนิเมชันเปิด/ปิดเดิมหมุนตัวนี้) หรือตัวเอง")]
     public Transform doorPanel;
-    [Tooltip("องศาที่บานแง้มตอน Door_Pos = 0 (ใส่ติดลบถ้าประตูแง้มผิดทาง)")]
+    [Tooltip("องศาที่บานแง้มตอน Door_Pos = 0")]
     public float openAngle = 45f;
+    [Tooltip("หาทิศแง้มให้เอง: บานจะเปิด \"เข้าหาฝั่งผู้เล่น\" (ศัตรูดันจากนอกห้องเข้ามา)\nปิด = ใช้เครื่องหมาย +/- ของ Open Angle ตามที่ใส่เอง")]
+    public bool autoOpenTowardPlayer = true;
     [Tooltip("แกนบานพับในพิกัดโลก — ปกติชี้ขึ้น (0,1,0)")]
     public Vector3 hingeAxis = Vector3.up;
     [Tooltip("เว้นว่าง = หาในตัวเอง/ตัวแม่")]
@@ -53,6 +65,12 @@ public class DoorBarricadeStruggle : MonoBehaviour
     public GameObject struggleCamera;
     [Tooltip("จุดยืนผู้เล่นตอนยันประตู (ฝั่งในห้อง ชิดประตู)")]
     public Transform playerStandPoint;
+
+    [Header("วิธีควบคุม (ลองเทียบแบบเก่า/ใหม่)")]
+    [Tooltip("DragMouse = แบบเก่า ลากเมาส์ขึ้นได้เลย\nHoldButtonDrag = แบบใหม่ กดคลิกค้างที่ปุ่มวงกลมด้านขวา แล้วลากขึ้น")]
+    public PushControl pushControl = PushControl.HoldButtonDrag;
+    [Tooltip("กดระหว่างมินิเกมเพื่อสลับแบบเก่า/ใหม่ทันที (None = ปิดปุ่มนี้ ตอนส่งงานจริงควรปิด)")]
+    public KeyCode toggleControlKey = KeyCode.F8;
 
     [Header("ค่าตาม GDD")]
     [Range(0f, 100f)] public float doorStartPos = 50f;
@@ -123,8 +141,15 @@ public class DoorBarricadeStruggle : MonoBehaviour
     public float WinTimerRemaining { get; private set; }
     public float WinProgress01 => winHoldSeconds > 0f ? 1f - WinTimerRemaining / winHoldSeconds : 0f;
     public bool InLockZone => DoorPos >= lockZoneMin;
+    /// <summary>วิธีควบคุมที่ใช้อยู่ตอนนี้ (รวมผลจากการกด F8)</summary>
+    public PushControl CurrentControl => sessionControlOverride ?? pushControl;
+    /// <summary>แบบใหม่: กำลังกดค้างที่ปุ่มวงกลมอยู่ไหม (UI ใช้ทำปุ่มยุบ)</summary>
+    public bool IsHoldingButton { get; private set; }
 
     private Quaternion closedRotation;
+    private Vector3 leafCenterClosed;   // จุดกลางบานประตูตอนปิด (ใช้หาทิศแง้ม)
+    private bool hasLeafCenter;
+    private float signedOpenAngle;
     private float slamTimer;
     private float growlTimer;
     private float graceTimer;
@@ -143,6 +168,8 @@ public class DoorBarricadeStruggle : MonoBehaviour
         if (doorAnimator == null) doorAnimator = GetComponentInParent<Animator>();
         if (doorPanel == null) doorPanel = doorAnimator != null ? doorAnimator.transform : transform;
         closedRotation = doorPanel.rotation; // ตอนเริ่มเกมประตูต้องปิดอยู่ (ท่าในซีน = ท่าปิด)
+        CacheLeafCenter();
+        signedOpenAngle = openAngle;
 
         if (audioSource == null)
         {
@@ -182,6 +209,8 @@ public class DoorBarricadeStruggle : MonoBehaviour
         ending = false;
 
         ResetRound();
+        signedOpenAngle = ResolveOpenAngle();
+        IsHoldingButton = false;
 
         // ประตู: ห้ามกด E เปิด/ปิด และห้าม Animator แย่งหมุนบาน
         if (doorController != null) { doorControllerWasEnabled = doorController.enabled; doorController.enabled = false; }
@@ -191,16 +220,15 @@ public class DoorBarricadeStruggle : MonoBehaviour
         FirstPersonModeController fp = FirstPersonModeController.Instance;
         if (fp != null)
         {
-            fp.EnterMode(struggleCamera, unlockCursor: false, lookController: null,
+            fp.EnterMode(struggleCamera, unlockCursor: CurrentControl == PushControl.HoldButtonDrag, lookController: null,
                          standPoint: playerStandPoint, returnToOriginalPosition: false);
         }
         else
         {
             Debug.LogWarning("[DoorBarricadeStruggle] ไม่พบ FirstPersonModeController — ล็อกเมาส์อย่างเดียว ไม่สลับกล้อง", this);
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
         }
 
+        ApplyCursorForControl();
         ApplyDoorVisual();
         DoorBarricadeStruggleUI.Ensure();
 
@@ -228,14 +256,22 @@ public class DoorBarricadeStruggle : MonoBehaviour
         bool paused = Time.timeScale == 0f || (PauseManager.Instance != null && PauseManager.Instance.IsPaused);
         if (paused) return;
 
-        // กลับจากเมนูหยุด → ล็อกเมาส์กลับ (ไม่งั้นเมาส์ชนขอบจอแล้วดันต่อไม่ได้)
-        if (Cursor.lockState != CursorLockMode.Locked) { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+        // สลับแบบเก่า/ใหม่ระหว่างเล่น (ไว้ทดสอบ)
+        if (toggleControlKey != KeyCode.None && Input.GetKeyDown(toggleControlKey))
+        {
+            sessionControlOverride = CurrentControl == PushControl.DragMouse ? PushControl.HoldButtonDrag : PushControl.DragMouse;
+            IsHoldingButton = false;
+            Debug.Log($"[DoorBarricadeStruggle] สลับวิธีควบคุม → {CurrentControl}", this);
+        }
+
+        // กลับจากเมนูหยุด/สลับแบบ → ตั้งเมาส์ให้ตรงแบบที่ใช้ (แบบเก่าล็อกกลางจอ · แบบใหม่โชว์เมาส์ให้กดปุ่ม)
+        ApplyCursorForControl();
 
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
         // 1) แรงผู้เล่น: นับเฉพาะลากขึ้น (ลากลง = ตั้งหลัก ไม่หักค่า)
-        float mouseUp = Mathf.Max(0f, Input.GetAxisRaw("Mouse Y"));
+        float mouseUp = ReadPushInput();
         if (mouseUp > 0f)
         {
             float target = Mathf.Min(maxPushVelocity, (mouseUp / dt) * mousePushSensitivity);
@@ -367,7 +403,7 @@ public class DoorBarricadeStruggle : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float a = Mathf.Lerp(startAngle, 1f, elapsed / 0.15f);
-            doorPanel.rotation = Quaternion.AngleAxis(openAngle * (1f + a * 1.5f), hingeAxis) * closedRotation;
+            doorPanel.rotation = Quaternion.AngleAxis(signedOpenAngle * (1f + a * 1.5f), hingeAxis) * closedRotation;
             yield return null;
         }
         ShakeCamera();
@@ -397,6 +433,7 @@ public class DoorBarricadeStruggle : MonoBehaviour
     {
         IsRunning = false;
         ending = false;
+        IsHoldingButton = false;
 
         if (shakeRoutine != null) { StopCoroutine(shakeRoutine); shakeRoutine = null; }
         if (struggleCamera != null) struggleCamera.transform.localPosition = cameraBaseLocalPos;
@@ -425,9 +462,95 @@ public class DoorBarricadeStruggle : MonoBehaviour
     private void ApplyDoorVisual()
     {
         if (doorPanel == null) return;
-        float angle = Mathf.Lerp(openAngle, 0f, DoorPos / 100f);
+        float angle = Mathf.Lerp(signedOpenAngle, 0f, DoorPos / 100f);
         angle += UnityEngine.Random.Range(-rattle, rattle);
         doorPanel.rotation = Quaternion.AngleAxis(angle, hingeAxis) * closedRotation;
+    }
+
+    // ───────── การควบคุม ─────────
+    /// <summary>อ่านแรงลากขึ้นของเฟรมนี้ ตามวิธีควบคุมที่เลือก (0 = ไม่ได้ดัน)</summary>
+    private float ReadPushInput()
+    {
+        float up = Mathf.Max(0f, Input.GetAxisRaw("Mouse Y"));
+
+        if (CurrentControl == PushControl.DragMouse) return up; // แบบเก่า: ลากได้เลย
+
+        // แบบใหม่: ต้อง "เริ่มกด" บนปุ่มวงกลม แล้วค้างไว้ · ปล่อยคลิก = ต้องกลับไปกดที่ปุ่มใหม่
+        if (Input.GetMouseButtonDown(0))
+        {
+            DoorBarricadeStruggleUI ui = DoorBarricadeStruggleUI.Instance;
+            IsHoldingButton = ui != null && ui.IsOverPushButton(Input.mousePosition);
+        }
+        if (!Input.GetMouseButton(0)) IsHoldingButton = false;
+
+        return IsHoldingButton ? up : 0f;
+    }
+
+    private void ApplyCursorForControl()
+    {
+        if (CurrentControl == PushControl.DragMouse)
+        {
+            // ล็อกเมาส์กลางจอ เพื่ออ่าน Mouse Y ได้ไม่สุดขอบจอ
+            if (Cursor.lockState != CursorLockMode.Locked) Cursor.lockState = CursorLockMode.Locked;
+            if (Cursor.visible) Cursor.visible = false;
+        }
+        else
+        {
+            // โชว์เมาส์ให้เลื่อนไปกดปุ่ม · Confined = เมาส์ไม่หลุดออกนอกหน้าต่างเกม
+            if (Cursor.lockState != CursorLockMode.Confined) Cursor.lockState = CursorLockMode.Confined;
+            if (!Cursor.visible) Cursor.visible = true;
+        }
+    }
+
+    // ───────── ทิศแง้มประตู ─────────
+    /// <summary>จำจุดกลางบานตอนปิด (รวมกรอบของ Renderer ทุกชิ้นใต้บาน)</summary>
+    private void CacheLeafCenter()
+    {
+        hasLeafCenter = false;
+        if (doorPanel == null) return;
+        Bounds b = default;
+        bool any = false;
+        foreach (Renderer r in doorPanel.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r is ParticleSystemRenderer) continue;
+            if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
+        }
+        if (!any)
+        {
+            foreach (Collider c in doorPanel.GetComponentsInChildren<Collider>(true))
+            {
+                if (c.isTrigger) continue;
+                if (!any) { b = c.bounds; any = true; } else b.Encapsulate(c.bounds);
+            }
+        }
+        if (any) { leafCenterClosed = b.center; hasLeafCenter = true; }
+    }
+
+    /// <summary>เลือก +/- ของ Open Angle ให้บานแง้มเข้าหาจุดยืนผู้เล่น</summary>
+    private float ResolveOpenAngle()
+    {
+        if (!autoOpenTowardPlayer || !hasLeafCenter || doorPanel == null) return openAngle;
+
+        Vector3 target;
+        if (playerStandPoint != null) target = playerStandPoint.position;
+        else if (struggleCamera != null) target = struggleCamera.transform.position;
+        else
+        {
+            PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
+            if (pm == null) return openAngle;
+            target = pm.transform.position;
+        }
+
+        Vector3 axis = hingeAxis.sqrMagnitude > 0.0001f ? hingeAxis.normalized : Vector3.up;
+        Vector3 pivot = doorPanel.position;
+        Vector3 offset = Vector3.ProjectOnPlane(leafCenterClosed - pivot, axis);
+        if (offset.sqrMagnitude < 0.0004f) return openAngle; // จุดหมุนอยู่กลางบาน → เดาไม่ได้ ใช้ค่าที่ใส่
+
+        float a = Mathf.Abs(openAngle);
+        Vector3 toTarget = Vector3.ProjectOnPlane(target - pivot, axis);
+        float dPlus = (Quaternion.AngleAxis(a, axis) * offset - toTarget).sqrMagnitude;
+        float dMinus = (Quaternion.AngleAxis(-a, axis) * offset - toTarget).sqrMagnitude;
+        return dPlus <= dMinus ? a : -a;
     }
 
     private void ShakeCamera()

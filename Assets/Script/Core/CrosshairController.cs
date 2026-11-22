@@ -3,6 +3,9 @@ using UnityEngine.UI;
 
 public class CrosshairController : MonoBehaviour
 {
+    /// <summary>[แก้ 2026-11-20] Image = รูปเป้าเดิม (ขยายทั้งรูป) · Lines = เป้าแบบใหม่ 4 ขีด + จุดกลาง (ขีดถ่างออกตามความบานกระสุน)</summary>
+    public enum CrosshairStyle { Image, Lines }
+
     /// <summary>
     /// 🌟 [ข้อ 9] true = มีระบบอื่นคุมเมาส์อยู่ (FirstPersonModeController ตอนเข้ามินิเกม/โต๊ะ/วิทยุ/ดันประตู)
     /// สคริปต์นี้จะซ่อนเป้าและ "ไม่ยุ่งกับ Cursor" จนกว่าจะคืนเป็น false
@@ -30,7 +33,29 @@ public class CrosshairController : MonoBehaviour
     [Tooltip("[คริติคอล] สีเป้าตอนหุบสุด = นัดถัดไปคริแน่นอน (ตั้งให้ต่างจากสีโฟกัสพอสังเกตได้ แต่ไม่ฉูดฉาด)")]
     public Color critReadyColor = new Color(1f, 0.32f, 0.28f);
 
+    [Header("รูปแบบเป้า (แก้ 2026-11-20)")]
+    [Tooltip("Image = รูปเป้าเดิม · Lines = เป้าแบบใหม่ 4 ขีด + จุดกลาง (สร้างเอง ไม่ต้องมีไฟล์รูป)")]
+    public CrosshairStyle style = CrosshairStyle.Lines;
+    [Tooltip("ความยาวแต่ละขีด (พิกเซล UI)")]
+    public float lineLength = 10f;
+    [Tooltip("ความหนาขีด")]
+    public float lineThickness = 3f;
+    [Tooltip("ช่องว่างจากจุดกลางถึงขีด ตอนยืนนิ่งเล็งแม่นสุด")]
+    public float minGap = 5f;
+    [Tooltip("ขีดถ่างออกเพิ่มกี่พิกเซล ต่อความบานกระสุน 1 องศา (เดินอยู่/เพิ่งยิง = บานมาก)")]
+    public float gapPerSpreadDegree = 2.5f;
+    public bool showCenterDot = true;
+    public float centerDotSize = 3f;
+    [Tooltip("ขอบดำรอบเป้า ให้เห็นชัดบนพื้นสว่าง")]
+    public bool outline = true;
+    public Color outlineColor = new Color(0f, 0f, 0f, 0.8f);
+
     private Vector2 targetSize;
+    private RectTransform linesRoot;
+    private RectTransform lineTop, lineBottom, lineLeft, lineRight;
+    private Image[] lineImages;
+    private float currentGap;
+    private Color currentColor = Color.white;
 
     // 🌟 [แก้ 2026-11-20] จำผลไว้แล้วค่อยสั่ง Cursor ใน LateUpdate
     // เพราะ InventoryUI / สคริปต์อื่นเคยสั่ง Cursor.visible = true ทุกเฟรมแย่งกัน → เมาส์โผล่ตอนถือปืน
@@ -48,6 +73,64 @@ public class CrosshairController : MonoBehaviour
         {
             gunfire = playerCombat.GetComponent<Combat.Gun.GunfireController>();
         }
+
+        currentColor = normalColor;
+        currentGap = minGap;
+        if (style == CrosshairStyle.Lines) BuildLines();
+    }
+
+    // ───────── เป้าแบบใหม่: 4 ขีด + จุดกลาง ─────────
+    private void BuildLines()
+    {
+        if (crosshairRect == null || linesRoot != null) return;
+
+        // ซ่อนรูปเป้าเดิม (เก็บไว้ไม่ลบ สลับกลับเป็น Image ได้)
+        if (crosshairImage != null) crosshairImage.enabled = false;
+
+        GameObject root = new GameObject("CH_Lines", typeof(RectTransform));
+        linesRoot = (RectTransform)root.transform;
+        linesRoot.SetParent(crosshairRect, false);
+        linesRoot.anchorMin = linesRoot.anchorMax = linesRoot.pivot = new Vector2(0.5f, 0.5f);
+        linesRoot.anchoredPosition = Vector2.zero;
+        linesRoot.sizeDelta = Vector2.zero;
+
+        lineTop = NewLine("Top", new Vector2(lineThickness, lineLength));
+        lineBottom = NewLine("Bottom", new Vector2(lineThickness, lineLength));
+        lineLeft = NewLine("Left", new Vector2(lineLength, lineThickness));
+        lineRight = NewLine("Right", new Vector2(lineLength, lineThickness));
+        if (showCenterDot) NewLine("Dot", new Vector2(centerDotSize, centerDotSize));
+
+        lineImages = linesRoot.GetComponentsInChildren<Image>(true);
+        PlaceLines(currentGap);
+    }
+
+    private RectTransform NewLine(string n, Vector2 size)
+    {
+        GameObject go = new GameObject(n, typeof(RectTransform), typeof(Image));
+        RectTransform rt = (RectTransform)go.transform;
+        rt.SetParent(linesRoot, false);
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = size;
+        Image img = go.GetComponent<Image>();
+        img.raycastTarget = false;
+        img.color = currentColor;
+        if (outline)
+        {
+            Outline o = go.AddComponent<Outline>();
+            o.effectColor = outlineColor;
+            o.effectDistance = new Vector2(1f, -1f);
+        }
+        return rt;
+    }
+
+    private void PlaceLines(float gap)
+    {
+        if (linesRoot == null) return;
+        float off = gap + lineLength * 0.5f;
+        lineTop.anchoredPosition = new Vector2(0f, off);
+        lineBottom.anchoredPosition = new Vector2(0f, -off);
+        lineLeft.anchoredPosition = new Vector2(-off, 0f);
+        lineRight.anchoredPosition = new Vector2(off, 0f);
     }
 
     void Update()
@@ -115,11 +198,24 @@ public class CrosshairController : MonoBehaviour
 
             // 🌟 [ข้อ 12] เปลี่ยนสีเป้าเล็งตามสถานะกำลังโฟกัสศัตรู
             // เมื่อผู้เล่นหยุดเดิน + เมาส์เล็งอยู่บนศัตรู เป้าจะเปลี่ยนเป็นสีโฟกัส (เช่น สีเหลือง)
-            if (crosshairImage != null)
+            bool isFocusing = gunfire != null && gunfire.IsFocusing;
+            bool isCritReady = gunfire != null && gunfire.IsCritReady;   // [นา 2026-11-21] เป้าหุบสุด = นัดถัดไปคริ
+            Color targetColor = isCritReady ? critReadyColor : (isFocusing ? focusColor : normalColor);
+
+            if (style == CrosshairStyle.Lines && linesRoot != null)
             {
-                bool isFocusing = gunfire != null && gunfire.IsFocusing;
-                bool isCritReady = gunfire != null && gunfire.IsCritReady;
-                Color targetColor = isCritReady ? critReadyColor : (isFocusing ? focusColor : normalColor);
+                // ขีดถ่างออกตามความบานกระสุน (ใช้ unscaled กันค้างตอนสโลว์โมชัน)
+                float spreadNow = playerCombat != null ? playerCombat.currentSpreadAngle : 0f;
+                float targetGap = minGap + spreadNow * gapPerSpreadDegree;
+                float k = Time.unscaledDeltaTime * lerpSpeed;
+                currentGap = Mathf.Lerp(currentGap, targetGap, k);
+                PlaceLines(currentGap);
+
+                currentColor = Color.Lerp(currentColor, targetColor, k);
+                foreach (Image img in lineImages) if (img != null) img.color = currentColor;
+            }
+            else if (crosshairImage != null)
+            {
                 crosshairImage.color = Color.Lerp(crosshairImage.color, targetColor, Time.deltaTime * lerpSpeed);
             }
         }

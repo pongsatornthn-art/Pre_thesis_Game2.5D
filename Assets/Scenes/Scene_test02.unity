@@ -15816,6 +15816,7 @@ GameObject:
   - component: {fileID: 215916159}
   - component: {fileID: 215916160}
   - component: {fileID: 215916161}
+  - component: {fileID: 215916162}
   m_Layer: 5
   m_Name: UI_Manager
   m_TagString: Untagged
@@ -16047,6 +16048,26 @@ MonoBehaviour:
   clickPowerMultiplier: 3
   startingValue: 50
   maxValue: 100
+--- !u!114 &215916162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 215916150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52320b0de8fd8184b95a236acd504182, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hotbar: {fileID: 0}
+  showSeconds: 2.5
+  fadeInSpeed: 10
+  fadeOutSpeed: 3
+  ignoreFirstSeconds: 1
+  showOnInventoryChange: 1
+  stayVisibleWhileHoldingItem: 0
+  hiddenAlpha: 0
 --- !u!1 &216527743
 GameObject:
   m_ObjectHideFlags: 0
@@ -55450,11 +55471,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   doorPanel: {fileID: 649204481}
   openAngle: 45
+  autoOpenTowardPlayer: 1
   hingeAxis: {x: 0, y: 1, z: 0}
   doorController: {fileID: 704682906}
   doorAnimator: {fileID: 704682913}
   struggleCamera: {fileID: 690376367}
   playerStandPoint: {fileID: 1869226046}
+  pushControl: 1
+  toggleControlKey: 289
   doorStartPos: 50
   lockZoneMin: 80
   winHoldSeconds: 1.5
@@ -156062,6 +156086,15 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   focusColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   critReadyColor: {r: 1, g: 0.32, b: 0.28, a: 1}
+  style: 1
+  lineLength: 10
+  lineThickness: 3
+  minGap: 5
+  gapPerSpreadDegree: 2.5
+  showCenterDot: 1
+  centerDotSize: 3
+  outline: 1
+  outlineColor: {r: 0, g: 0, b: 0, a: 0.8}
 --- !u!4 &1957784561 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4495262813440991436, guid: fec606199a164ae43ba2df2781c0be70, type: 3}
