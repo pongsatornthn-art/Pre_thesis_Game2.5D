@@ -9,6 +9,10 @@ public class PTSDMinigameController : MonoBehaviour
     [HideInInspector] public bool canStartMinigame = false;
     private bool isPrompting = false;
 
+    [Header("ปุ่ม ESC (แก้ 2026-11-22)")]
+    [Tooltip("ปิด = กด ESC ระหว่างเล่นแล้วไม่มีอะไรเกิดขึ้น (ออกกลางคันไม่ได้ + เมนูหยุดเกมไม่เด้ง)\nเปิด = ESC ยกเลิกมินิเกมได้เหมือนเดิม")]
+    public bool allowEscCancel = false;
+
     [Header("Win/Loss Conditions")]
     public int requiredSuccesses = 3;
     public int maxFailures = 3;
@@ -195,6 +199,11 @@ public class PTSDMinigameController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             EscapeGuard.MarkHandled(); // [Claude 2026-11-11] ใช้ ESC แล้ว → เมนูหยุดเกมไม่เด้งซ้อน
+
+            // [แก้ 2026-11-22] ห้ามออกกลางคัน — กลืนปุ่ม ESC ทิ้ง (MarkHandled ข้างบนกันเมนูหยุดเกมเด้งด้วย
+            // ไม่งั้นเกมหยุดเวลาแต่ยังรับ Spacebar → ปล่อยปุ่มตอนเมนูเปิดก็นับโดน/พลาดได้)
+            if (!allowEscCancel) return;
+
             isMinigameActive = false;
             OnMinigameCanceled?.Invoke();
             Debug.Log("ยกเลิกการตั้งสติกลางคัน! เตรียมตัววิ่งหนี");
