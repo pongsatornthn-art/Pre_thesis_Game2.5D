@@ -26,7 +26,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 854739430056995572}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0}
+  m_LocalPosition: {x: 0, y: 0, z: -0.63}
   m_LocalScale: {x: 0.013594596, y: 0.013594596, z: 0.013594596}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.61, y: -0.78}
+  m_AnchoredPosition: {x: 0.61, y: -0.25}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6224245405254099077
@@ -276,6 +276,7 @@ GameObject:
   - component: {fileID: 996945733147457447}
   - component: {fileID: 2797870592920055144}
   - component: {fileID: 2733913348488118590}
+  - component: {fileID: 4756314684545605592}
   m_Layer: 0
   m_Name: StalkerAI
   m_TagString: Untagged
@@ -293,10 +294,9 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.2665556, y: -0.008326613, z: 0.0023029153, w: 0.9637808}
   m_LocalPosition: {x: 0, y: 1.27, z: 0}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 1
-  m_Children:
-  - {fileID: 7914698053651703285}
+  m_Children: []
   m_Father: {fileID: 3765777243916969090}
   m_LocalEulerAnglesHint: {x: 30.92, y: -0.99, z: 0}
 --- !u!212 &2797870592920055144
@@ -343,7 +343,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 20
-  m_Sprite: {fileID: 21300000, guid: ca1e9dafa72460b4aa930e296d9f12f7, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1d2def2f8e2af5542b3c3c48ec193840, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -367,6 +367,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pitchTiltAmount: 0
+--- !u!114 &4756314684545605592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4027826041529324490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b293fe652736594fae92c3c5fbb4732, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animSet: {fileID: 11400000, guid: 8e620ff953243c747ae56a3adadf4f23, type: 2}
+  playSpeed: 1
+  moveThreshold: 0.15
+  runThreshold: 0
+  scaleWalkWithSpeed: 1
+  directionHysteresis: 12
+  forceNoFlip: 1
+  currentAction: 
+  currentDir: 0
 --- !u!1 &4233863844581827302
 GameObject:
   m_ObjectHideFlags: 0
@@ -535,6 +556,7 @@ Transform:
   - {fileID: 996945733147457447}
   - {fileID: 4335600472049602622}
   - {fileID: 4377034743894441279}
+  - {fileID: 7914698053651703285}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!136 &3206486435692193693
@@ -716,17 +738,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8312709196746604537}
-  m_LocalRotation: {x: -0.2665556, y: 0.008326613, z: -0.0023029153, w: 0.9637808}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalRotation: {x: -0, y: -0, z: -2.3283064e-10, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.8374357}
+  m_LocalScale: {x: 0.40000004, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7206172443154937534}
-  m_Father: {fileID: 996945733147457447}
+  m_Father: {fileID: 3765777243916969090}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 8.150001}
+  m_AnchoredPosition: {x: -0.014471054, y: 2.668353}
   m_SizeDelta: {x: 14.8549, y: 5.8342}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &4490079402493529258

@@ -237,6 +237,7 @@ GameObject:
   - component: {fileID: 834405048083063616}
   - component: {fileID: 1041718046585484194}
   - component: {fileID: 7087680265834856974}
+  - component: {fileID: 7468704572773786523}
   m_Layer: 0
   m_Name: GFX
   m_TagString: Untagged
@@ -253,7 +254,7 @@ Transform:
   m_GameObject: {fileID: 2155493189600635552}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.14, y: 4.93, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -303,7 +304,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: e8d883a3ff482aa469ab3cf6bec76d48, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 08fb06ffbd1c3514187dfd335ff026c4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -349,6 +350,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pitchTiltAmount: 0
+--- !u!114 &7468704572773786523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2155493189600635552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b293fe652736594fae92c3c5fbb4732, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animSet: {fileID: 11400000, guid: 425e76ea4ad95ab4f910d57bc6b4ac07, type: 2}
+  playSpeed: 1
+  moveThreshold: 0.15
+  runThreshold: 0
+  scaleWalkWithSpeed: 1
+  directionHysteresis: 12
+  forceNoFlip: 1
+  currentAction: 
+  currentDir: 0
 --- !u!1 &3359115249735845229
 GameObject:
   m_ObjectHideFlags: 0
@@ -796,8 +818,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 7.31, y: 1.16, z: -15.58}
-  m_LocalScale: {x: 0.37244, y: 0.37244, z: 0.37244}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.27, y: 0.27, z: 0.27}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2672966002586914959}
   - {fileID: 1660838132043528678}

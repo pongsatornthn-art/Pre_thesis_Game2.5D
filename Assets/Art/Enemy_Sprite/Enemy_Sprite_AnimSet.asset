@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be1f35257018875408c9f5d7c3f2858c, type: 3}
+  m_Name: Enemy_Sprite_AnimSet
+  m_EditorClassIdentifier: 
+  clips:
+  - action: Idle
+    dir: 2
+    frames:
+    - {fileID: 21300000, guid: 1d2def2f8e2af5542b3c3c48ec193840, type: 3}
+    - {fileID: 21300000, guid: b87bcca7e6d6b5a4a8ec91ba33b1901c, type: 3}
+    - {fileID: 21300000, guid: 5dce2540e472ad54cb3686a16a9883c1, type: 3}
+    - {fileID: 21300000, guid: 190c9e4229bd7af498e7e57084573ea6, type: 3}
+    - {fileID: 21300000, guid: 7ee97688cbd819f408b11cb8fa0463b8, type: 3}
+    - {fileID: 21300000, guid: f693050d8877d904799fae2372db1300, type: 3}
+    - {fileID: 21300000, guid: 7933d7b5cd199e844903d9c83dbb1c55, type: 3}
+    - {fileID: 21300000, guid: b811f516a7451fb4b8f604c1378370e2, type: 3}
+    fps: 8
+    loop: 1
+  - action: Idle
+    dir: 6
+    frames:
+    - {fileID: 21300000, guid: 6b427476e4b533a4f99b38d06a694e62, type: 3}
+    - {fileID: 21300000, guid: 6abe310dabab7004da441a2d634ddb35, type: 3}
+    - {fileID: 21300000, guid: 273d66adc152c9147b4e72c9f29d7108, type: 3}
+    - {fileID: 21300000, guid: 82924fc6c0c40b841a98c04d9be9c97e, type: 3}
+    - {fileID: 21300000, guid: 7644ce0ab944a9c4d812cf052bbb9dc1, type: 3}
+    - {fileID: 21300000, guid: aa269e5cf2dd0f244be559cd84478a70, type: 3}
+    - {fileID: 21300000, guid: 16fc07b61e537fc48896c3aa5dd5a06e, type: 3}
+    - {fileID: 21300000, guid: 27176b7421a00c040978ef98740bd3d4, type: 3}
+    fps: 8
+    loop: 1
