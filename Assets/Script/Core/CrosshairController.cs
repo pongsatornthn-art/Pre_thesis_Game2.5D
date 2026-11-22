@@ -3,8 +3,9 @@ using UnityEngine.UI;
 
 public class CrosshairController : MonoBehaviour
 {
-    /// <summary>[แก้ 2026-11-20] Image = รูปเป้าเดิม (ขยายทั้งรูป) · Lines = เป้าแบบใหม่ 4 ขีด + จุดกลาง (ขีดถ่างออกตามความบานกระสุน)</summary>
-    public enum CrosshairStyle { Image, Lines }
+    /// <summary>[แก้ 2026-11-20] Image = รูปเป้าเดิม (ขยายทั้งรูป) · Lines = 4 ขีด + จุดกลาง
+    /// [2026-11-22] Circle = วงกลมเส้นบาง + จุดกลาง · ไม่เล็ง = วงใหญ่ · กดคลิกขวาค้าง = วงหดลงตามความแม่นจริงของกระสุน</summary>
+    public enum CrosshairStyle { Image, Lines, Circle }
 
     /// <summary>
     /// 🌟 [ข้อ 9] true = มีระบบอื่นคุมเมาส์อยู่ (FirstPersonModeController ตอนเข้ามินิเกม/โต๊ะ/วิทยุ/ดันประตู)
@@ -50,7 +51,28 @@ public class CrosshairController : MonoBehaviour
     public bool outline = true;
     public Color outlineColor = new Color(0f, 0f, 0f, 0.8f);
 
+    [Header("เป้าแบบวงกลม (Style = Circle)")]
+    [Tooltip("รัศมีวงตอนไม่ได้กดคลิกขวา (วงใหญ่)")]
+    public float circleIdleRadius = 55f;
+    [Tooltip("รัศมีเล็กสุด ตอนเล็งนิ่งจนแม่นสุด (เป้าหุบสุด = นัดคริ)")]
+    public float circleMinRadius = 6f;
+    [Tooltip("รัศมีตอนกดคลิกขวาค้าง แต่กระสุนยังบานสุด (เล็งที่ว่าง/เพิ่งขยับ) — ยิ่งต่างจาก Idle มาก ยิ่งเห็นวงหดชัดตอนกดคลิกขวา\n" +
+             "จากนั้นเล็งโดนศัตรูแล้วยืนนิ่ง วงจะหดต่อจนถึง Min Radius (= นัดคริ)")]
+    public float circleAimRadius = 30f;
+    [HideInInspector] public float circleRadiusPerDegree = 3f; // ค่าเก่า (v1) ไม่ใช้แล้ว
+    [Tooltip("ความหนาเส้นวง")]
+    public float circleThickness = 1.2f;
+    [Tooltip("ขนาดจุดกลาง (0 = ไม่มีจุด)")]
+    public float circleDotSize = 2.5f;
+    [Tooltip("เส้นเงาดำจางๆ ใต้วง ให้เห็นชัดบนพื้นสว่าง")]
+    public bool circleShadow = true;
+    [Tooltip("ความเร็ววงหด/ขยาย (ยิ่งเยอะยิ่งไว)")]
+    public float circleLerpSpeed = 12f;
+
     private Vector2 targetSize;
+    private RectTransform circleRoot;
+    private UIRingGraphic circleRing, circleRingShadow, circleDot;
+    private float currentRadius;
     private RectTransform linesRoot;
     private RectTransform lineTop, lineBottom, lineLeft, lineRight;
     private Image[] lineImages;
@@ -76,7 +98,69 @@ public class CrosshairController : MonoBehaviour
 
         currentColor = normalColor;
         currentGap = minGap;
+        currentRadius = circleIdleRadius;
         if (style == CrosshairStyle.Lines) BuildLines();
+        else if (style == CrosshairStyle.Circle) BuildCircle();
+    }
+
+    // ───────── เป้าแบบวงกลม ─────────
+    private void BuildCircle()
+    {
+        if (crosshairRect == null || circleRoot != null) return;
+        if (crosshairImage != null) crosshairImage.enabled = false; // เก็บรูปเดิมไว้ สลับกลับได้
+
+        GameObject root = new GameObject("CH_Circle", typeof(RectTransform));
+        circleRoot = (RectTransform)root.transform;
+        circleRoot.SetParent(crosshairRect, false);
+        circleRoot.anchorMin = circleRoot.anchorMax = circleRoot.pivot = new Vector2(0.5f, 0.5f);
+        circleRoot.anchoredPosition = Vector2.zero;
+        circleRoot.sizeDelta = Vector2.zero;
+        UndoParentScale(circleRoot);
+
+        if (circleShadow) circleRingShadow = NewRing("RingShadow", circleThickness + 2f, false, new Color(0f, 0f, 0f, 0.45f));
+        circleRing = NewRing("Ring", circleThickness, false, currentColor);
+        if (circleDotSize > 0f)
+        {
+            circleDot = NewRing("Dot", 0f, true, currentColor);
+            circleDot.rectTransform.sizeDelta = Vector2.one * circleDotSize;
+        }
+        SetCircleRadius(currentRadius);
+    }
+
+    /// <summary>
+    /// [2026-11-22] ในซีน CrosshairImage ถูกย่อไว้ที่ Scale 0.1 (ไว้ใช้กับรูป center_dot เดิม)
+    /// ถ้าไม่หักออก วง/ขีดจะเล็กลง 10 เท่า และเส้นบางจนหาย → ตัวเลขขนาดใน Inspector = พิกเซล UI จริงเสมอ
+    /// </summary>
+    private static void UndoParentScale(RectTransform child)
+    {
+        Vector3 ps = child.parent != null ? child.parent.localScale : Vector3.one;
+        child.localScale = new Vector3(
+            Mathf.Abs(ps.x) > 0.0001f ? 1f / ps.x : 1f,
+            Mathf.Abs(ps.y) > 0.0001f ? 1f / ps.y : 1f,
+            1f);
+    }
+
+    private UIRingGraphic NewRing(string n, float thick, bool fill, Color c)
+    {
+        GameObject go = new GameObject(n, typeof(RectTransform), typeof(CanvasRenderer), typeof(UIRingGraphic));
+        RectTransform rt = (RectTransform)go.transform;
+        rt.SetParent(circleRoot, false);
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
+        UIRingGraphic g = go.GetComponent<UIRingGraphic>();
+        g.raycastTarget = false;
+        g.Filled = fill;
+        g.Thickness = thick;
+        g.color = c;
+        return g;
+    }
+
+    private void SetCircleRadius(float r)
+    {
+        float d = r * 2f;
+        if (circleRing != null) circleRing.rectTransform.sizeDelta = new Vector2(d, d);
+        // เงาใหญ่กว่าเส้นจริง 1 พิกเซลรอบด้าน → เห็นเป็นขอบดำบางๆ ทั้งในและนอกเส้น
+        if (circleRingShadow != null) circleRingShadow.rectTransform.sizeDelta = new Vector2(d + 2f, d + 2f);
     }
 
     // ───────── เป้าแบบใหม่: 4 ขีด + จุดกลาง ─────────
@@ -93,6 +177,7 @@ public class CrosshairController : MonoBehaviour
         linesRoot.anchorMin = linesRoot.anchorMax = linesRoot.pivot = new Vector2(0.5f, 0.5f);
         linesRoot.anchoredPosition = Vector2.zero;
         linesRoot.sizeDelta = Vector2.zero;
+        UndoParentScale(linesRoot);
 
         lineTop = NewLine("Top", new Vector2(lineThickness, lineLength));
         lineBottom = NewLine("Bottom", new Vector2(lineThickness, lineLength));
@@ -202,7 +287,33 @@ public class CrosshairController : MonoBehaviour
             bool isCritReady = gunfire != null && gunfire.IsCritReady;   // [นา 2026-11-21] เป้าหุบสุด = นัดถัดไปคริ
             Color targetColor = isCritReady ? critReadyColor : (isFocusing ? focusColor : normalColor);
 
-            if (style == CrosshairStyle.Lines && linesRoot != null)
+            if (style == CrosshairStyle.Circle && circleRoot != null)
+            {
+                // ไม่กดคลิกขวา = วงใหญ่ · กดค้าง (เล็ง) = วงเท่าความบานกระสุนจริง
+                // (กรวยจะหุบตอนยืนนิ่ง + เล็งโดนศัตรู · คลิกขวาค้างหุบไวขึ้น 2 เท่า + แคบลงเหลือ 35% — ตามระบบปืนของนา)
+                bool aiming = playerCombat != null && playerCombat.isAiming;
+                float spreadNow = playerCombat != null ? playerCombat.currentSpreadAngle : 0f;
+
+                // ความบานเทียบกับบานสุดของปืนที่ถือ (0 = แม่นสุด · 1 = บานสุด)
+                float maxSpread = 15f;
+                if (Inventory.Instance != null && Inventory.Instance.currentEquippedItem is RangedWeaponData gun && gun.maxSpreadAngle > 0.01f)
+                    maxSpread = gun.maxSpreadAngle;
+                float spread01 = Mathf.Clamp01(spreadNow / maxSpread);
+
+                // ไม่กด = วงใหญ่ · กดค้าง = หดทันทีเหลือ Aim Radius แล้วหดต่อตามความแม่นจริง จนถึง Min Radius
+                float targetR = aiming
+                    ? Mathf.Lerp(circleMinRadius, Mathf.Min(circleAimRadius, circleIdleRadius), spread01)
+                    : circleIdleRadius;
+
+                float k = Time.unscaledDeltaTime * circleLerpSpeed;
+                currentRadius = Mathf.Lerp(currentRadius, targetR, k);
+                SetCircleRadius(currentRadius);
+
+                currentColor = Color.Lerp(currentColor, targetColor, Time.unscaledDeltaTime * lerpSpeed);
+                if (circleRing != null) circleRing.color = currentColor;
+                if (circleDot != null) circleDot.color = currentColor;
+            }
+            else if (style == CrosshairStyle.Lines && linesRoot != null)
             {
                 // ขีดถ่างออกตามความบานกระสุน (ใช้ unscaled กันค้างตอนสโลว์โมชัน)
                 float spreadNow = playerCombat != null ? playerCombat.currentSpreadAngle : 0f;
