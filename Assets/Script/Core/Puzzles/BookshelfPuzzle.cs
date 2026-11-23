@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -27,6 +28,12 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     public int startView = 0;
     [Tooltip("ซ่อนตัวผู้เล่นระหว่างเล่นปริศนา")]
     public bool hidePlayer = true;
+    [Tooltip("เปิดกำแพงที่ระบบซ่อนกำแพง (RoomWallFade / RoomWallSmoothHide) ปิดไว้ ระหว่างดูผ่านกล้องปริศนา แล้วคืนค่าตอนออก")]
+    public bool showHiddenWalls = true;
+    [Tooltip("ใส่เพิ่มเองได้: Renderer ที่ต้องเห็นเสมอในกล้องปริศนา (เว้นว่างได้)")]
+    public Renderer[] extraWallsToShow;
+    [Tooltip("ใส่เพิ่มเองได้: GameObject ที่ปิดไว้ แล้วให้เปิดเฉพาะตอนเล่นปริศนา (เช่นกำแพง/เพดานปลอมปิดช่องโหว่) — เว้นว่างได้")]
+    public GameObject[] extraObjectsToShow;
 
     [Header("หนังสือ / ประตูลับ")]
     [Tooltip("เว้นว่าง = หา PuzzleBook ใต้ Books Root (ถ้าไม่ใส่ Root = ทั้งฉาก)")]
@@ -130,6 +137,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         viewIndex = NextValid(Mathf.Clamp(startView, 0, views.Length - 1), 0);
         fp.EnterMode(views[viewIndex], unlockCursor: true, lookController: null, standPoint: null, returnToOriginalPosition: true);
         if (hidePlayer) PlayerVisibility.Hide(this);
+        if (showHiddenWalls) ShowWalls();
         SetHintsVisible(true);
         onEnter?.Invoke();
     }
@@ -144,6 +152,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         FirstPersonModeController fp = FirstPersonModeController.Instance;
         if (fp != null) fp.ExitMode();
         PlayerVisibility.Show(this);
+        RestoreWalls();
         onExit?.Invoke();
     }
 
@@ -200,9 +209,15 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         PuzzleBook hit = null;
         if (cam != null)
         {
+            // ยิงทะลุทุกอย่าง แล้วเอาหนังสือที่ใกล้สุด — หนังสือเสียบอยู่ในชั้น กล่องชนของตู้หนังสือจะบังถ้าใช้ Raycast ธรรมดา
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit h, 50f, ~0, QueryTriggerInteraction.Collide))
-                hit = h.collider.GetComponentInParent<PuzzleBook>();
+            RaycastHit[] hits = Physics.RaycastAll(ray, 50f, ~0, QueryTriggerInteraction.Collide);
+            float best = float.MaxValue;
+            foreach (RaycastHit h in hits)
+            {
+                PuzzleBook b = h.collider.GetComponentInParent<PuzzleBook>();
+                if (b != null && h.distance < best) { best = h.distance; hit = b; }
+            }
         }
         SetHover(hit);
 
@@ -263,6 +278,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
                 fp.ShowMainCamera();          // กลับกล้องหลักให้คัตซีนคุม (ผู้เล่นยังเดินไม่ได้)
             }
             PlayerVisibility.Show(this);      // ในคัตซีนต้องเห็นตัวละคร
+            RestoreWalls();                   // กลับกล้องหลัก = ซ่อนกำแพงเหมือนเดิม
             solvedCutscene.Play();
             yield return new WaitForSeconds((float)solvedCutscene.duration);
         }
@@ -347,4 +363,90 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         }
         counterText.text = $"{pos} / {total}";
     }
+
+    // ───────── กำแพงที่ถูกซ่อน ─────────
+    // ระบบกล้องหลักซ่อนกำแพงไว้ให้มองเห็นตัวละคร:
+    //   RoomWallFade / RoomWallSmoothHide = ปิด renderer ตอนผู้เล่นอยู่ในห้อง
+    //   CameraObstacleFader (บน Main Camera) = ทำกำแพงโปร่ง — พอกล้องหลักถูกปิดตอนเข้าโหมดปริศนา กำแพงจะค้างโปร่งไว้
+    // กล้องปริศนาอยู่ในห้อง ต้องเห็นกำแพงครบ → ทำให้ทึบชั่วคราว แล้วคืนค่าเดิมทุกอย่างตอนออก
+    private readonly Dictionary<Renderer, bool> wallStates = new Dictionary<Renderer, bool>();
+    private readonly Dictionary<Material, Material> matSnapshots = new Dictionary<Material, Material>();
+    private readonly List<GameObject> shownObjects = new List<GameObject>();
+
+    private void ShowWalls()
+    {
+        RestoreWalls();
+        var list = new List<Renderer>();
+        foreach (RoomWallFade w in FindObjectsByType<RoomWallFade>(FindObjectsSortMode.None))
+            if (w.wallsToHide != null) foreach (MeshRenderer r in w.wallsToHide) list.Add(r);
+        foreach (RoomWallSmoothHide w in FindObjectsByType<RoomWallSmoothHide>(FindObjectsSortMode.None))
+            if (w.wallsToFade != null) foreach (MeshRenderer r in w.wallsToFade) list.Add(r);
+        foreach (CameraObstacleFader f in FindObjectsByType<CameraObstacleFader>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            CollectFaderWalls(f, list);
+        if (extraWallsToShow != null) list.AddRange(extraWallsToShow);
+
+        foreach (Renderer r in list)
+        {
+            if (r == null || wallStates.ContainsKey(r)) continue;
+            wallStates[r] = r.enabled;
+            r.enabled = true;
+            foreach (Material m in r.sharedMaterials) MakeOpaque(m);
+        }
+
+        if (extraObjectsToShow != null)
+            foreach (GameObject g in extraObjectsToShow)
+                if (g != null && !g.activeSelf) { g.SetActive(true); shownObjects.Add(g); }
+    }
+
+    private void RestoreWalls()
+    {
+        foreach (var kv in matSnapshots)
+        {
+            if (kv.Key == null || kv.Value == null) continue;
+            kv.Key.CopyPropertiesFromMaterial(kv.Value);
+            kv.Key.shaderKeywords = kv.Value.shaderKeywords;
+            kv.Key.renderQueue = kv.Value.renderQueue;
+            Destroy(kv.Value);
+        }
+        foreach (var kv in wallStates) if (kv.Key != null) kv.Key.enabled = kv.Value;
+        foreach (GameObject g in shownObjects) if (g != null) g.SetActive(false);
+        matSnapshots.Clear();
+        wallStates.Clear();
+        shownObjects.Clear();
+    }
+
+    private void MakeOpaque(Material m)
+    {
+        if (m == null || matSnapshots.ContainsKey(m)) return;
+        bool faded = (m.HasProperty("_BaseColor") && m.GetColor("_BaseColor").a < 0.99f)
+                  || (m.HasProperty("_Color") && m.color.a < 0.99f)
+                  || (m.HasProperty("_Surface") && m.GetFloat("_Surface") > 0.5f && m.renderQueue >= 3000);
+        if (!faded) return;
+        matSnapshots[m] = new Material(m); // เก็บสภาพเดิม (รวมโหมดโปร่ง) ไว้คืนตอนออก
+
+        if (m.HasProperty("_BaseColor")) { Color c = m.GetColor("_BaseColor"); c.a = 1f; m.SetColor("_BaseColor", c); }
+        if (m.HasProperty("_Color")) { Color c = m.color; c.a = 1f; m.color = c; }
+        if (m.HasProperty("_Surface")) m.SetFloat("_Surface", 0f);
+        if (m.HasProperty("_SrcBlend")) m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        if (m.HasProperty("_DstBlend")) m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+        if (m.HasProperty("_ZWrite")) m.SetInt("_ZWrite", 1);
+        m.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        m.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        m.DisableKeyword("_ALPHABLEND_ON");
+        m.renderQueue = 2000;
+    }
+
+    // CameraObstacleFader เก็บกำแพงที่กำลังโปร่งไว้ในตัวแปร private — อ่านผ่าน reflection (ไม่ต้องแก้สคริปต์เดิม)
+    private static void CollectFaderWalls(CameraObstacleFader fader, List<Renderer> list)
+    {
+        var field = typeof(CameraObstacleFader).GetField("activeWalls",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (!(field?.GetValue(fader) is System.Collections.IDictionary dict)) return;
+        foreach (object fw in dict.Values)
+        {
+            var rf = fw?.GetType().GetField("renderer");
+            if (rf?.GetValue(fw) is Renderer r) list.Add(r);
+        }
+    }
+
 }

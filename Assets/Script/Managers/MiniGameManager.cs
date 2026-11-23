@@ -40,6 +40,7 @@ public class MiniGameManager : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!enabled) return;
         if (other.CompareTag("Player") && !inMiniGame && !hasPlayed)
         {
             StartCoroutine(StartMiniGameSequence());

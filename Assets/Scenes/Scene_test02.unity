@@ -120405,6 +120405,7 @@ GameObject:
   - component: {fileID: 1473769831}
   - component: {fileID: 1473769830}
   - component: {fileID: 1473769829}
+  - component: {fileID: 1473769833}
   m_Layer: 0
   m_Name: SecretBook
   m_TagString: Untagged
@@ -120421,7 +120422,7 @@ Transform:
   m_GameObject: {fileID: 1473769827}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -55.46, y: 2.336, z: 15.223}
+  m_LocalPosition: {x: -55.46, y: 2.336, z: 15.24}
   m_LocalScale: {x: 0.2348, y: 0.31441003, z: 0.1035}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -120440,11 +120441,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isCorrect: 1
-  pullDirection: {x: 0, y: 0, z: 1}
+  pullDirection: {x: -1, y: 0, z: 0}
   pullDistance: 0.12
   hoverAmount: 0.2
   pullTilt: 12
-  tiltAxis: {x: 1, y: 0, z: 0}
+  tiltAxis: {x: 0, y: 0, z: 1}
   pullSeconds: 0.35
   wrongHoldSeconds: 0.6
   pullSound: {fileID: 0}
@@ -120493,7 +120494,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 571b9726098bc0642b44ba411f318330, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -120523,6 +120524,34 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1473769827}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1473769833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1473769827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f1cce45d0904b34bb9cca6964b5ce72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  mode: 3
+  nearRadius: 3
+  hideWhenGameplayBlocked: 1
+  color: {r: 1, g: 0.82, b: 0.35, a: 1}
+  drawOnTop: 1
+  spriteOutlineThickness: 3
+  innerGlow: 0.2
+  spriteOnTop: 0
+  meshOutlineScale: 0.06
+  meshOutlineWidth: 0.08
+  pulseSpeed: 3
+  pulseMin: 0.55
+  fadeSpeed: 8
+  spriteShader: {fileID: 0}
+  meshShader: {fileID: 0}
 --- !u!1 &1474846446
 GameObject:
   m_ObjectHideFlags: 0
@@ -142453,6 +142482,9 @@ GameObject:
   - component: {fileID: 1792002352}
   - component: {fileID: 1792002354}
   - component: {fileID: 1792002353}
+  - component: {fileID: 1792002357}
+  - component: {fileID: 1792002356}
+  - component: {fileID: 1792002355}
   m_Layer: 0
   m_Name: MiniGameRoom (1)
   m_TagString: Untagged
@@ -142469,7 +142501,7 @@ Transform:
   m_GameObject: {fileID: 1792002351}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -1.839, y: 0, z: 4.07}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -142482,7 +142514,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1792002351}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 61cd63eac2c738f4dbb10e1c87f2277a, type: 3}
   m_Name: 
@@ -142516,6 +142548,87 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.4289742, y: 0.9474509, z: 2.285636}
   m_Center: {x: 1.0320339, y: 0.4414358, z: -2.8963675}
+--- !u!114 &1792002355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1792002351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91b32250da52bb04d9a817cb32de3021, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  key: 0
+  labelKey: PROMPT_USE
+  anchor: {fileID: 0}
+  height: 2
+  onlyWhileEnabled: {fileID: 1792002356}
+--- !u!114 &1792002356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1792002351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34cf6db87670c18479504a214f4e072c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  views:
+  - {fileID: 817857229}
+  - {fileID: 416535398}
+  - {fileID: 684518170}
+  - {fileID: 435247591}
+  startView: 3
+  hidePlayer: 1
+  showHiddenWalls: 1
+  extraWallsToShow: []
+  extraObjectsToShow: []
+  books: []
+  booksRoot: {fileID: 0}
+  passage: {fileID: 0}
+  solvedCutscene: {fileID: 132713280}
+  onCompleteFlag: {fileID: 0}
+  restoreCutsceneEndOnLoad: 1
+  exitDelayAfterSolve: 1.5
+  showPassageView: -1
+  enterKey: 101
+  showHints: 1
+  hintFont: {fileID: 0}
+  hintLeft: <  A
+  hintRight: D  >
+  hintExit: ESC
+  switchViewSound: {fileID: 0}
+  wrongSound: {fileID: 0}
+  solvedSound: {fileID: 0}
+  onEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  onExit:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongBook:
+    m_PersistentCalls:
+      m_Calls: []
+  onSolved:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1792002357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1792002351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df0479673f3e44841a32a9a7758b4a60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  uuid: debe6217-42a0-4949-a6a4-d25b4b13bb01
 --- !u!1 &1792654735
 GameObject:
   m_ObjectHideFlags: 0
@@ -146871,7 +146984,7 @@ Transform:
   m_GameObject: {fileID: 1848288836}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -78.37, y: 0.35, z: -14.81}
+  m_LocalPosition: {x: -58.82, y: 0.35, z: 15.3}
   m_LocalScale: {x: 0.65, y: 0.65, z: 0.65}
   m_ConstrainProportionsScale: 1
   m_Children:
