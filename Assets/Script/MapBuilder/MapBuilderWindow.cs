@@ -28,7 +28,7 @@ public class MapBuilderWindow : EditorWindow
     private Vector2 scroll;
 
     // ═════════════════════════ วางของ ═════════════════════════
-    private const string DefaultFolders = "Assets/Prefab/Furniture|Assets/Prefab/Atmos|Assets/Prefab/Door|Assets/Prefab";
+    private const string DefaultFolders = "Assets/Prefab/Furniture|Assets/Prefab/Atmos|Assets/Prefab/Door|Assets/Map/Wall/Wall_Assets/New_Wall|Assets/Prefab";
     private List<string> folders = new List<string>();
     private int folderIndex;
     private string search = "";
@@ -43,6 +43,16 @@ public class MapBuilderWindow : EditorWindow
     private bool randomYaw;
     private bool randomYaw90 = true;
     private Vector2 randomScale = new Vector2(1f, 1f);
+    private float baseScale = 1f;         // ขนาดพื้นฐาน (กำแพงในแมพใช้ 0.5)
+    private bool wallSnap = true;         // ต่อกำแพง: ดูดปลายชิ้นใหม่ไปติดปลายกำแพงเดิม
+    private float wallSnapRadius = 1.2f;
+
+    // ปลายกำแพงในฉาก (เก็บตอนเริ่มวาง + หลังวางทุกชิ้น)
+    private struct WallEnd { public Vector3 pos; public Quaternion rot; public float scale; public bool isMax; public GameObject owner; }
+    private readonly List<WallEnd> wallEnds = new List<WallEnd>();
+    private bool snappedToWall;
+    private Vector3 snapPoint;
+    private float placeScale = 1f;        // ตัวคูณขนาดของชิ้นที่กำลังจะวาง
     private float dragSpacing = 1f;
     private Transform parentOverride;
     private bool autoParent = true;
@@ -137,7 +147,7 @@ public class MapBuilderWindow : EditorWindow
         // ── โฟลเดอร์ ──
         EditorGUILayout.BeginHorizontal();
         EditorGUI.BeginChangeCheck();
-        string[] names = folders.ConvertAll(f => f.Replace("Assets/", "").Replace('/', '∕')).ToArray();
+        string[] names = folders.ConvertAll(f => f.Replace("Assets/", "").Replace("/", " › ")).ToArray(); // "/" ใน Popup = เมนูย่อย
         folderIndex = EditorGUILayout.Popup(folderIndex, names);
         if (EditorGUI.EndChangeCheck()) { SaveFolders(); RefreshPalette(); }
         if (GUILayout.Button(new GUIContent("+", "เพิ่มโฟลเดอร์ที่เลือกในหน้าต่าง Project"), GUILayout.Width(24))) AddSelectedFolder();
@@ -212,6 +222,15 @@ public class MapBuilderWindow : EditorWindow
         using (new EditorGUI.DisabledScope(autoParent))
             parentOverride = (Transform)EditorGUILayout.ObjectField(parentOverride, typeof(Transform), true);
         EditorGUILayout.EndHorizontal();
+        baseScale = Mathf.Max(0.01f, EditorGUILayout.FloatField(new GUIContent("ขนาดพื้นฐาน", "กำแพงในแมพตอนนี้ใช้ 0.5 — ตอนต่อกำแพงจะใช้ขนาดเดียวกับชิ้นที่ไปต่อให้เอง"), baseScale));
+        EditorGUILayout.BeginHorizontal();
+        wallSnap = EditorGUILayout.ToggleLeft(new GUIContent("ต่อกำแพง (ดูดติดปลาย)", "ชี้ใกล้ปลายกำแพงเดิม → ชิ้นใหม่ต่อท้ายพอดี ทิศ/ความสูง/ขนาดเดียวกัน · R = เลี้ยวมุม 90°"), wallSnap, GUILayout.Width(150));
+        using (new EditorGUI.DisabledScope(!wallSnap))
+        {
+            GUILayout.Label("ระยะดูด", GUILayout.Width(45));
+            wallSnapRadius = Mathf.Max(0.1f, EditorGUILayout.FloatField(wallSnapRadius, GUILayout.Width(40)));
+        }
+        EditorGUILayout.EndHorizontal();
         MapBuilderOps.GroundY = EditorGUILayout.FloatField(new GUIContent("ความสูงพื้นสำรอง", "ใช้ตอนชี้ที่ว่างที่ไม่มีพื้น"), MapBuilderOps.GroundY);
         if (EditorGUI.EndChangeCheck())
         {
@@ -282,9 +301,11 @@ public class MapBuilderWindow : EditorWindow
         if (folders.Count == 0) return;
         string folder = folders[Mathf.Clamp(folderIndex, 0, folders.Count - 1)];
         if (!AssetDatabase.IsValidFolder(folder)) return;
-        foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { folder }))
+        var seen = new HashSet<string>();
+        foreach (string guid in AssetDatabase.FindAssets("t:GameObject", new[] { folder }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!seen.Add(path)) continue;
             GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (go == null) continue;
             if (!string.IsNullOrEmpty(search) && go.name.IndexOf(search, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
@@ -343,6 +364,7 @@ public class MapBuilderWindow : EditorWindow
         if (!erase && brush == null) { ShowNotification(new GUIContent("เลือก prefab ก่อน")); return; }
         painting = true;
         eraseMode = erase;
+        RefreshWallEnds();
         Tools.hidden = true;  // ซ่อนลูกศรย้าย/หมุน ระหว่างวาง
         SceneView.lastActiveSceneView?.Focus();
         SceneView.RepaintAll();
@@ -447,7 +469,12 @@ public class MapBuilderWindow : EditorWindow
         hasPlacement = false;
         if (brush == null || !RaycastScene(mouse, out Vector3 p, out Vector3 n)) return;
 
-        float scale = rollScale;
+        snappedToWall = false;
+        placeScale = baseScale * rollScale;
+        if (wallSnap && TrySnapToWallEnd(p)) { hasPlacement = true; return; }
+
+        float scale = placeScale;
+        Vector3 ws = Vector3.Scale(brush.transform.localScale, Vector3.one * scale);
         placeOnWall = alignToWall && Mathf.Abs(n.y) < 0.5f;
 
         if (placeOnWall)
@@ -463,7 +490,7 @@ public class MapBuilderWindow : EditorWindow
                 p.y = MapBuilderOps.Snap(p.y, g);
             }
             // ดันออกจากผนังให้หลังของชิ้นแตะผนังพอดี (+ กัน z-fight นิดหน่อย)
-            Vector3 back = placeRot * new Vector3(0, 0, brushBounds.min.z * scale);
+            Vector3 back = placeRot * new Vector3(0, 0, brushBounds.min.z * ws.z);
             p += flatN * (-Vector3.Dot(back, flatN) + 0.005f);
         }
         else
@@ -475,7 +502,7 @@ public class MapBuilderWindow : EditorWindow
                 p.x = MapBuilderOps.Snap(p.x, g);
                 p.z = MapBuilderOps.Snap(p.z, g);
             }
-            p.y += -brushBounds.min.y * scale; // ฐานติดพื้น
+            p.y += -brushBounds.min.y * ws.y; // ฐานติดพื้น
         }
 
         placePos = p;
@@ -484,7 +511,8 @@ public class MapBuilderWindow : EditorWindow
 
     private void DrawGhost(Camera cam)
     {
-        Matrix4x4 m = Matrix4x4.TRS(placePos, placeRot, Vector3.one * rollScale);
+        Vector3 wscale = Vector3.Scale(brush.transform.localScale, Vector3.one * placeScale);
+        Matrix4x4 m = Matrix4x4.TRS(placePos, placeRot, wscale);
         foreach (GhostPart g in ghost)
         {
             Matrix4x4 mm = m * g.local;
@@ -496,12 +524,25 @@ public class MapBuilderWindow : EditorWindow
             }
         }
         Handles.matrix = m;
-        Handles.color = placeOnWall ? new Color(1f, 0.8f, 0.3f) : new Color(0.3f, 1f, 0.5f);
+        Handles.color = snappedToWall ? new Color(0.35f, 0.8f, 1f) : placeOnWall ? new Color(1f, 0.8f, 0.3f) : new Color(0.3f, 1f, 0.5f);
         Handles.DrawWireCube(brushBounds.center, brushBounds.size);
         Handles.matrix = Matrix4x4.identity;
+        if (snappedToWall)
+        {
+            Handles.color = new Color(0.35f, 0.8f, 1f);
+            Handles.SphereHandleCap(0, snapPoint, Quaternion.identity, HandleUtility.GetHandleSize(snapPoint) * 0.12f, EventType.Repaint);
+        }
+        else if (wallSnap)
+        {
+            // จุดปลายกำแพงที่ดูดได้ (จุดเล็กๆ)
+            Handles.color = new Color(0.35f, 0.8f, 1f, 0.5f);
+            foreach (WallEnd we in wallEnds)
+                if ((we.pos - placePos).sqrMagnitude < 400f)
+                    Handles.DotHandleCap(0, we.pos, Quaternion.identity, HandleUtility.GetHandleSize(we.pos) * 0.03f, EventType.Repaint);
+        }
         Handles.color = Color.white;
-        Handles.Label(placePos + Vector3.up * (brushBounds.size.y * rollScale + 0.2f),
-            $"{brush.name}  {Mathf.RoundToInt(placeRot.eulerAngles.y)}°" + (placeOnWall ? "  [ผนัง]" : ""), EditorStyles.whiteMiniLabel);
+        Handles.Label(placePos + placeRot * Vector3.Scale(brushBounds.center, wscale) + Vector3.up * (brushBounds.extents.y * wscale.y + 0.2f),
+            $"{brush.name}  {Mathf.RoundToInt(placeRot.eulerAngles.y)}°  ×{placeScale:0.##}" + (snappedToWall ? "  [ต่อกำแพง]" : placeOnWall ? "  [ผนัง]" : ""), EditorStyles.whiteMiniLabel);
     }
 
     private Transform PlacementParent()
@@ -520,8 +561,11 @@ public class MapBuilderWindow : EditorWindow
         Transform parent = PlacementParent();
         if (parent != null) inst.transform.SetParent(parent, true);
         inst.transform.SetPositionAndRotation(placePos, placeRot);
-        inst.transform.localScale = Vector3.Scale(brush.transform.localScale, Vector3.one * rollScale);
+        Vector3 worldScale = Vector3.Scale(brush.transform.localScale, Vector3.one * placeScale);
+        Vector3 ps = inst.transform.parent != null ? inst.transform.parent.lossyScale : Vector3.one;
+        inst.transform.localScale = new Vector3(worldScale.x / NonZero(ps.x), worldScale.y / NonZero(ps.y), worldScale.z / NonZero(ps.z));
         lastPlaced = placePos;
+        AddWallEnds(inst);
         Reroll();
     }
 
@@ -769,4 +813,86 @@ public class MapBuilderWindow : EditorWindow
             EditorGUILayout.EndHorizontal();
         }
     }
+
+    private static float NonZero(float v) => Mathf.Abs(v) < 1e-6f ? 1f : v;
+
+    // ─────────── ต่อกำแพง ───────────
+    // กำแพงทุกชิ้นยาวตามแกนใดแกนหนึ่ง (X หรือ Z ของตัวเอง) → หา "ปลาย 2 ข้าง" ที่ระดับฐาน กึ่งกลางความหนา
+    private static bool LocalBounds(GameObject root, out Bounds b)
+    {
+        b = default;
+        bool any = false;
+        Matrix4x4 inv = root.transform.worldToLocalMatrix;
+        foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>())
+            if (mf.sharedMesh != null) Encapsulate(ref b, ref any, inv * mf.transform.localToWorldMatrix, mf.sharedMesh.bounds);
+        return any;
+    }
+
+    /// <summary>ปลายของกล่อง (พิกัดของตัวเอง): isMax = ปลายด้านบวกของแกนยาว · ไม่ยาวกว่าแกนอื่นชัดเจน = เสา (คืนจุดกลาง)</summary>
+    private static Vector3 EndPoint(Bounds b, bool isMax, out bool isPost)
+    {
+        bool alongX = b.size.x >= b.size.z;
+        float longS = Mathf.Max(b.size.x, b.size.z), shortS = Mathf.Min(b.size.x, b.size.z);
+        isPost = longS < shortS * 1.5f;
+        if (isPost) return new Vector3(b.center.x, b.min.y, b.center.z);
+        return alongX ? new Vector3(isMax ? b.max.x : b.min.x, b.min.y, b.center.z)
+                      : new Vector3(b.center.x, b.min.y, isMax ? b.max.z : b.min.z);
+    }
+
+    private void RefreshWallEnds()
+    {
+        wallEnds.Clear();
+        if (folders.Count == 0) return;
+        foreach (GameObject root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            foreach (Transform t in root.GetComponentsInChildren<Transform>())
+                if (PrefabUtility.GetOutermostPrefabInstanceRoot(t.gameObject) == t.gameObject && CanErase(t.gameObject))
+                    AddWallEnds(t.gameObject);
+    }
+
+    private void AddWallEnds(GameObject go)
+    {
+        if (!LocalBounds(go, out Bounds b)) return;
+        float sc = go.transform.lossyScale.x;
+        for (int i = 0; i < 2; i++)
+        {
+            Vector3 local = EndPoint(b, i == 1, out bool post);
+            if (post) continue; // เสาไม่ใช่ปลายให้ต่อ (ต่อจากปลายกำแพงแทน)
+            wallEnds.Add(new WallEnd
+            {
+                pos = go.transform.TransformPoint(local),
+                rot = go.transform.rotation,
+                scale = sc,
+                isMax = i == 1,
+                owner = go
+            });
+        }
+    }
+
+    /// <summary>ชี้ใกล้ปลายกำแพง → วางชิ้นใหม่ต่อจากปลายนั้น (ทิศเดียวกัน + yaw ที่กด R) ขนาดเท่ากัน ฐานเท่ากัน</summary>
+    private bool TrySnapToWallEnd(Vector3 cursor)
+    {
+        float best = wallSnapRadius * wallSnapRadius;
+        int bi = -1;
+        for (int i = 0; i < wallEnds.Count; i++)
+        {
+            if (wallEnds[i].owner == null) continue;
+            Vector3 d = wallEnds[i].pos - cursor; d.y = 0f;
+            if (d.sqrMagnitude < best) { best = d.sqrMagnitude; bi = i; }
+        }
+        if (bi < 0) return false;
+
+        WallEnd we = wallEnds[bi];
+        placeScale = we.scale / NonZero(brush.transform.localScale.x);
+        Vector3 ws = Vector3.Scale(brush.transform.localScale, Vector3.one * placeScale);
+        placeRot = we.rot * Quaternion.Euler(0f, yaw, 0f);
+
+        // ปลายกำแพงเดิมด้านบวก → ชิ้นใหม่ต่อด้วยปลายลบของตัวเอง (และกลับกัน) · ชิ้นใหม่เป็นเสา → เอากลางเสาไว้ที่ปลาย
+        Vector3 startLocal = EndPoint(brushBounds, !we.isMax, out bool _);
+        placePos = we.pos - placeRot * Vector3.Scale(startLocal, ws);
+        placeOnWall = false;
+        snappedToWall = true;
+        snapPoint = we.pos;
+        return true;
+    }
+
 }
