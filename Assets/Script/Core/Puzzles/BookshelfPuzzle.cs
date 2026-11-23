@@ -34,6 +34,8 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     public Renderer[] extraWallsToShow;
     [Tooltip("ใส่เพิ่มเองได้: GameObject ที่ปิดไว้ แล้วให้เปิดเฉพาะตอนเล่นปริศนา (เช่นกำแพง/เพดานปลอมปิดช่องโหว่) — เว้นว่างได้")]
     public GameObject[] extraObjectsToShow;
+    [Tooltip("พิมพ์รายชื่อกำแพงที่ระบบดูแลลง Console ตอนเข้าปริศนา (ไว้เช็กว่าเจอกำแพงไหนบ้าง)")]
+    public bool logWalls = true;
 
     [Header("หนังสือ / ประตูลับ")]
     [Tooltip("เว้นว่าง = หา PuzzleBook ใต้ Books Root (ถ้าไม่ใส่ Root = ทั้งฉาก)")]
@@ -101,6 +103,12 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     // ───────── เข้า/ออก ─────────
     private void OnTriggerEnter(Collider other) { if (other.CompareTag("Player")) playerNear = true; }
     private void OnTriggerExit(Collider other) { if (other.CompareTag("Player")) playerNear = false; }
+
+    // ระหว่างอยู่ในกล้องปริศนา: กันระบบซ่อนกำแพงมาปิดซ้ำ (เช่น Trigger ห้องยิง OnTriggerEnter อีกรอบตอนล็อกตัวผู้เล่น)
+    private void LateUpdate()
+    {
+        if (IsActive && wallsShown) KeepWallsVisible();
+    }
 
     private void Update()
     {
@@ -373,9 +381,12 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     private readonly Dictionary<Material, Material> matSnapshots = new Dictionary<Material, Material>();
     private readonly List<GameObject> shownObjects = new List<GameObject>();
 
+    private bool wallsShown;
+
     private void ShowWalls()
     {
         RestoreWalls();
+        wallsShown = true;
         var list = new List<Renderer>();
         foreach (RoomWallFade w in FindObjectsByType<RoomWallFade>(FindObjectsSortMode.None))
             if (w.wallsToHide != null) foreach (MeshRenderer r in w.wallsToHide) list.Add(r);
@@ -396,7 +407,34 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         if (extraObjectsToShow != null)
             foreach (GameObject g in extraObjectsToShow)
                 if (g != null && !g.activeSelf) { g.SetActive(true); shownObjects.Add(g); }
+
+        if (logWalls)
+        {
+            var sb = new System.Text.StringBuilder("[BookshelfPuzzle] กำแพงที่ดูแลระหว่างปริศนา: ");
+            foreach (var kv in wallStates) if (kv.Key != null) sb.Append(kv.Key.name).Append(kv.Value ? "(เปิดอยู่) " : "(ถูกซ่อน→เปิดให้) ");
+            sb.Append(" | วัสดุที่โปร่งอยู่→ทำทึบ: ").Append(matSnapshots.Count);
+            Debug.Log(sb.ToString(), this);
+        }
     }
+
+    // เรียกทุกเฟรม: ถ้ามีสคริปต์ไหนปิด/ทำโปร่งกำแพงซ้ำ → จำไว้ว่า "ตอนออกต้องซ่อน" แล้วเปิดกลับทันที
+    private void KeepWallsVisible()
+    {
+        tmpKeys.Clear();
+        tmpKeys.AddRange(wallStates.Keys);
+        foreach (Renderer r in tmpKeys)
+        {
+            if (r == null) continue;
+            if (!r.enabled)
+            {
+                wallStates[r] = false;
+                r.enabled = true;
+                if (logWalls) Debug.Log($"[BookshelfPuzzle] มีสคริปต์ซ่อน {r.name} ซ้ำ — เปิดกลับให้แล้ว", r);
+            }
+            foreach (Material m in r.sharedMaterials) MakeOpaque(m);
+        }
+    }
+    private readonly List<Renderer> tmpKeys = new List<Renderer>();
 
     private void RestoreWalls()
     {
@@ -413,16 +451,17 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         matSnapshots.Clear();
         wallStates.Clear();
         shownObjects.Clear();
+        wallsShown = false;
     }
 
     private void MakeOpaque(Material m)
     {
-        if (m == null || matSnapshots.ContainsKey(m)) return;
+        if (m == null) return;
         bool faded = (m.HasProperty("_BaseColor") && m.GetColor("_BaseColor").a < 0.99f)
                   || (m.HasProperty("_Color") && m.color.a < 0.99f)
                   || (m.HasProperty("_Surface") && m.GetFloat("_Surface") > 0.5f && m.renderQueue >= 3000);
         if (!faded) return;
-        matSnapshots[m] = new Material(m); // เก็บสภาพเดิม (รวมโหมดโปร่ง) ไว้คืนตอนออก
+        if (!matSnapshots.ContainsKey(m)) matSnapshots[m] = new Material(m); // เก็บสภาพเดิม (รวมโหมดโปร่ง) ไว้คืนตอนออก
 
         if (m.HasProperty("_BaseColor")) { Color c = m.GetColor("_BaseColor"); c.a = 1f; m.SetColor("_BaseColor", c); }
         if (m.HasProperty("_Color")) { Color c = m.color; c.a = 1f; m.color = c; }

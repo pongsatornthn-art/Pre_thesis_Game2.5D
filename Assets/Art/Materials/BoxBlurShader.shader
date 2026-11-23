@@ -82,9 +82,12 @@ Shader "Custom/BoxBlurShader"
                 dir /= len;
 
                 // กล่อง Cube ของ Unity = -0.5 ถึง 0.5 ทุกแกน → หาจุดที่สายตาทะลุออกอีกฝั่ง
-                float3 safeD = dir + (abs(dir) < 1e-5) * 1e-5;   // กันหารศูนย์
-                float3 invD = 1.0 / safeD;
-                float3 tExit3 = (sign(dir) * 0.5 - posOS) * invD;
+                // [แก้ 2026-11-23] เดิมใช้ sign(dir) → แกนไหนสายตาตั้งฉากพอดี (กลางจอ) sign = 0
+                //   ทำให้คิดว่าทะลุออกทันที ความหนา = 0 → เห็นเป็นเส้นใสกลางจอ
+                //   ตอนนี้: ทิศไม่มีวันเป็น 0 และแกนที่เกือบตั้งฉากจะได้ระยะไกลมาก (ไม่ใช่ระยะที่ใช้)
+                float3 s = step(0.0, dir) * 2.0 - 1.0;   // +1 หรือ -1 เท่านั้น
+                float3 safeD = abs(dir) < 1e-6 ? s * 1e-6 : dir;
+                float3 tExit3 = (s * 0.5 - posOS) / safeD;
                 float tExit = max(0, min(tExit3.x, min(tExit3.y, tExit3.z)));
 
                 float3 entryWS = TransformObjectToWorld(posOS);
