@@ -178,13 +178,21 @@ public class DoorBarricadeStruggle : MonoBehaviour
             audioSource.spatialBlend = 0f;
         }
 
-        if (struggleCamera != null)
-        {
-            if (struggleCamera.GetComponentInChildren<AudioListener>(true) == null)
-                struggleCamera.AddComponent<AudioListener>(); // กล้องหลักถูกปิด → ต้องมีหูฟังที่กล้องนี้ ไม่งั้นเงียบ
-            cameraBaseLocalPos = struggleCamera.transform.localPosition;
-            struggleCamera.SetActive(false);
-        }
+        if (struggleCamera != null) SetupCamera(struggleCamera);
+    }
+
+    /// <summary>
+    /// [2026-11-22] ใส่กล้องตอนเกมรัน (ใช้กับ PTSDDoorAmbush ที่สร้างกล้อง/จุดยืนเองตามทิศที่ผู้เล่นเดินผ่าน)
+    /// เตรียมหูฟัง + จำตำแหน่งตั้งต้นไว้สั่นกล้อง + ปิดกล้องไว้ก่อน — เรียกก่อน Begin
+    /// </summary>
+    public void SetupCamera(GameObject cam)
+    {
+        struggleCamera = cam;
+        if (cam == null) return;
+        if (cam.GetComponentInChildren<AudioListener>(true) == null)
+            cam.AddComponent<AudioListener>(); // กล้องหลักถูกปิด → ต้องมีหูฟังที่กล้องนี้ ไม่งั้นเงียบ
+        cameraBaseLocalPos = cam.transform.localPosition;
+        cam.SetActive(false);
     }
 
     private void OnDisable()

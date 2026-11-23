@@ -15,6 +15,10 @@ public class DoorController : MonoBehaviour
     public bool isUnlocked = false;
     public bool isOpen = false;
 
+    [Header("กันกด E รัว (แก้ 2026-11-22)")]
+    [Tooltip("ต้องรอนานเท่านี้ (วินาที) ก่อนกด E เปิด/ปิดซ้ำได้ — และต้องรอให้ท่าเปิด/ปิดเล่นจบก่อนด้วย\nเดิม: กด E รัว ท่าประตูกระตุกกลับไปเริ่มใหม่")]
+    [Min(0f)] public float toggleCooldown = 0.4f;
+
     [Header("UI & Effects")]
     public GameObject interactPrompt;
 
@@ -28,6 +32,7 @@ public class DoorController : MonoBehaviour
     private bool isPlayerNear = false;
     private Animator animator;
     private Coroutine notificationCoroutine; // ตัวเก็บค่าเวลานับถอยหลัง
+    private float nextToggleTime;            // [แก้ 2026-11-22] กดได้อีกครั้งเมื่อไหร่
 
     void Start()
     {
@@ -44,6 +49,9 @@ public class DoorController : MonoBehaviour
         {
             if (isUnlocked)
             {
+                // [แก้ 2026-11-22] ท่าเปิด/ปิดยังเล่นไม่จบ หรือเพิ่งกดไป → ไม่รับ (กันท่ากระตุกรีเซ็ต)
+                if (Time.time < nextToggleTime || IsDoorAnimating()) return;
+                nextToggleTime = Time.time + toggleCooldown;
                 ToggleDoor();
             }
             else
@@ -76,6 +84,15 @@ public class DoorController : MonoBehaviour
             return;
         }
         ShowNotification($"The door is locked! need <color=yellow>{keyNameForPlayer}</color>");   // สำรอง: ซีนที่ไม่มีระบบบทพูด
+    }
+
+    /// <summary>[แก้ 2026-11-22] ประตูกำลังเล่นท่าเปิด/ปิดอยู่ไหม (กำลังเปลี่ยนท่า หรือท่าที่เล่นอยู่ยังไม่จบรอบ)</summary>
+    private bool IsDoorAnimating()
+    {
+        if (animator == null || !animator.isActiveAndEnabled || animator.runtimeAnimatorController == null) return false;
+        if (animator.IsInTransition(0)) return true;
+        AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(0);
+        return !st.loop && st.normalizedTime < 1f;
     }
 
     private void ToggleDoor()
