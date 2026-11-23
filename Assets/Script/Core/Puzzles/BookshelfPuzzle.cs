@@ -1,5 +1,7 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
@@ -30,8 +32,18 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     [Tooltip("เว้นว่าง = หา PuzzleBook ใต้ Books Root (ถ้าไม่ใส่ Root = ทั้งฉาก)")]
     public PuzzleBook[] books;
     public Transform booksRoot;
+    [Tooltip("ประตูลับแบบสคริปต์ (เว้นว่างได้ ถ้าใช้คัตซีนเปิดประตูแทน)")]
     public SecretPassage passage;
-    [Tooltip("แก้ได้แล้ว: รอกี่วินาทีแล้วออกจากปริศนาเอง (ให้เห็นหนังสือค้าง + ได้ยินเสียงประตูก่อน) · ติดลบ = ไม่ออกเอง")]
+
+    [Header("ต่อกับระบบเก่า (คัตซีนเปิดทาง)")]
+    [Tooltip("คัตซีนที่เล่นหลังแก้ได้ เช่น MiniGame_Cutscene_Exit (กล้องไปที่ประตู Door_Tast_Cutscene + Cube (2))\n" +
+             "ลำดับ: หนังสือค้าง → รอ Exit Delay → กลับกล้องหลัก (ผู้เล่นยังล็อก) → เล่นคัตซีนจนจบ → เดินได้")]
+    public PlayableDirector solvedCutscene;
+    [Tooltip("ธงเนื้อเรื่องตอนแก้ได้ (แบบเดียวกับ MiniGameManager เดิม) — เว้นว่างได้")]
+    public StoryFlagId onCompleteFlag;
+    [Tooltip("โหลดเซฟที่แก้แล้ว → ข้ามคัตซีนไปท่าจบทันที (ประตู/ของที่คัตซีนขยับ อยู่ท่าเปิด)")]
+    public bool restoreCutsceneEndOnLoad = true;
+    [Tooltip("แก้ได้แล้ว: รอกี่วินาทีก่อนออกจากมุมกล้อง / เข้าคัตซีน (ให้เห็นหนังสือค้างก่อน)")]
     public float exitDelayAfterSolve = 1.5f;
     [Tooltip("แก้ได้แล้ว: สลับไปมุมกล้องนี้ให้เห็นประตูลับเปิด (-1 = อยู่มุมเดิม)")]
     public int showPassageView = -1;
@@ -64,7 +76,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     private bool playerNear;
     private PuzzleBook hovered;
     private AudioSource audioSource;
-    private float exitAt = -1f;
+    private bool solving;
     private GameObject hintRoot;
     private TextMeshProUGUI counterText;
 
@@ -94,11 +106,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
             return;
         }
 
-        if (exitAt > 0f)
-        {
-            if (Time.unscaledTime >= exitAt) Exit();
-            return; // แก้เสร็จแล้ว รอออก — ไม่รับปุ่ม
-        }
+        if (solving) return; // แก้เสร็จแล้ว กำลังเล่นลำดับจบ — ไม่รับปุ่ม
 
         if (Input.GetKeyDown(KeyCode.Escape)) { EscapeGuard.MarkHandled(); Exit(); return; }
         if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) SwitchView(-1);
@@ -118,7 +126,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         }
 
         IsActive = true;
-        exitAt = -1f;
+        solving = false;
         viewIndex = NextValid(Mathf.Clamp(startView, 0, views.Length - 1), 0);
         fp.EnterMode(views[viewIndex], unlockCursor: true, lookController: null, standPoint: null, returnToOriginalPosition: true);
         if (hidePlayer) PlayerVisibility.Hide(this);
@@ -130,7 +138,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     {
         if (!IsActive) return;
         IsActive = false;
-        exitAt = -1f;
+        solving = false;
         SetHover(null);
         SetHintsVisible(false);
         FirstPersonModeController fp = FirstPersonModeController.Instance;
@@ -224,12 +232,42 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         SetHover(null);
         if (solvedSound != null) audioSource.PlayOneShot(solvedSound);
         if (passage != null) passage.Open();
-        else Debug.LogWarning("[BookshelfPuzzle] ยังไม่ได้ใส่ประตูลับ (Passage)", this);
+        else if (solvedCutscene == null) Debug.LogWarning("[BookshelfPuzzle] ยังไม่ได้ใส่ประตูลับ (Passage) หรือคัตซีน (Solved Cutscene)", this);
+
+        if (onCompleteFlag != null)
+        {
+            IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
+            if (flags != null) flags.Set(onCompleteFlag);
+            else Debug.LogWarning("[BookshelfPuzzle] ไม่พบระบบ IStoryFlags ในฉาก", this);
+        }
         onSolved?.Invoke();
 
         if (showPassageView >= 0 && showPassageView < views.Length && views[showPassageView] != null) ShowView(showPassageView);
-        if (exitDelayAfterSolve >= 0f) exitAt = Time.unscaledTime + exitDelayAfterSolve;
         SetHintsVisible(false);
+        solving = true;
+        StartCoroutine(SolvedSequence());
+    }
+
+    /// <summary>รอให้เห็นหนังสือค้าง → (มีคัตซีน) กลับกล้องหลักแล้วเล่นคัตซีน โดยผู้เล่นยังล็อก → ออก</summary>
+    private IEnumerator SolvedSequence()
+    {
+        yield return new WaitForSecondsRealtime(Mathf.Max(0f, exitDelayAfterSolve));
+
+        if (solvedCutscene != null)
+        {
+            FirstPersonModeController fp = FirstPersonModeController.Instance;
+            if (fp != null)
+            {
+                fp.SetLookLocked(true);
+                fp.SetCursorUnlocked(false);
+                fp.ShowMainCamera();          // กลับกล้องหลักให้คัตซีนคุม (ผู้เล่นยังเดินไม่ได้)
+            }
+            PlayerVisibility.Show(this);      // ในคัตซีนต้องเห็นตัวละคร
+            solvedCutscene.Play();
+            yield return new WaitForSeconds((float)solvedCutscene.duration);
+        }
+
+        Exit();
     }
 
     // ───────── เซฟ ─────────
@@ -243,6 +281,12 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         if (!d.solved) return;
         IsSolved = true;
         if (passage != null) passage.OpenInstant();
+        if (solvedCutscene != null && restoreCutsceneEndOnLoad)
+        {
+            // ข้ามไปเฟรมสุดท้ายของคัตซีน → ประตู/ของที่คัตซีนขยับ อยู่ท่าเปิดค้าง (ไม่เล่นกล้อง)
+            solvedCutscene.time = solvedCutscene.duration;
+            solvedCutscene.Evaluate();
+        }
         if (books != null) foreach (PuzzleBook b in books) if (b != null && b.isCorrect) b.SetPulledInstant();
     }
 

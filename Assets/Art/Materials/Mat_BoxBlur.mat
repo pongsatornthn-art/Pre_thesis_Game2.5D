@@ -27,7 +27,10 @@ Material:
     m_Floats:
     - _Blur: 2
     - _BlurAlpha: 1
+    - _EdgeFade: 0.8
     - _Scale: 2
+    - _SoftDistance: 0.5
+    - _UseSoftDepth: 0
     m_Colors:
     - _Color: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
   m_BuildTextureStacks: []
