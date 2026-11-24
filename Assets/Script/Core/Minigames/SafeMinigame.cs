@@ -26,6 +26,27 @@ public class SafeMinigame : MonoBehaviour
     [Header("ระบบ UI มินิเกม")]
     public RectTransform dialImage;
 
+    // [Claude 2026-11-24] หมุนหน้าปัดให้เลขตรงลูกศรเป๊ะ + หมุนนุ่ม
+    [Header("หน้าปัด (หมุนตรงเลข)")]
+    [Tooltip("SafeDialFace บน Dial Image — ใส่แล้วใช้จำนวนช่อง/ทิศตามหน้าปัด (เว้นว่าง = 10 ช่อง ตามเข็ม)")]
+    public SafeDialFace dialFace;
+    [Tooltip("ชดเชยมุม ถ้าเลข 0 ในรูปไม่ได้อยู่บนสุดพอดี (องศา)")]
+    public float dialZeroOffset = 0f;
+    [Tooltip("เวลาหมุนไป 1 ช่อง (วินาที) — 0 = กระโดดทันที")]
+    [Min(0f)] public float dialTurnTime = 0.12f;
+    [Tooltip("เสียงคลิกตอนหมุน (เว้นว่างได้)")]
+    public AudioClip dialClickSound;
+    public AudioClip wrongSound;
+    public AudioClip openSound;
+    [Range(0f, 1f)] public float sfxVolume = 0.8f;
+    [Tooltip("ใช้ A/D (←/→) หมุน · Space/Enter ยืนยัน · ลูกกลิ้งเมาส์หมุน")]
+    public bool keyboardControls = true;
+
+    private float dialAngle;        // มุมที่แสดงอยู่
+    private float dialTarget;       // มุมเป้าหมาย (สะสม ไม่วนกลับ → 9→0 หมุนแค่ 1 ช่อง)
+    private float dialVelocity;
+    private AudioSource sfx;
+
     // 🌟 2. เปลี่ยนจาก Text ธรรมดา เป็น TextMeshProUGUI
     public TextMeshProUGUI[] digitDisplays;
 
@@ -42,6 +63,18 @@ public class SafeMinigame : MonoBehaviour
         if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !isMinigameActive)
         {
             TryOpen();
+        }
+
+        if (isMinigameActive) UpdateDialMotion();
+
+        if (isMinigameActive && keyboardControls)
+        {
+            if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) RotateDialLeft();
+            if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) RotateDialRight();
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) ConfirmDigit();
+            float wheel = Input.mouseScrollDelta.y;
+            if (wheel > 0.01f) RotateDialRight();
+            else if (wheel < -0.01f) RotateDialLeft();
         }
 
         if (isMinigameActive && Input.GetKeyDown(KeyCode.Escape))
@@ -103,7 +136,9 @@ public class SafeMinigame : MonoBehaviour
         if (safeCanvasUI != null) safeCanvasUI.SetActive(true);
         currentInput = "";
         currentDialNumber = 0;
-        UpdateDialVisual();
+        dialTarget = dialAngle = AngleFor(0);
+        dialVelocity = 0f;
+        ApplyDialAngle();
         UpdateDisplay();
     }
 
@@ -114,22 +149,47 @@ public class SafeMinigame : MonoBehaviour
         if (safeCanvasUI != null) safeCanvasUI.SetActive(false);
     }
 
-    public void RotateDialLeft()
+    private int DialCount => dialFace != null ? Mathf.Max(1, dialFace.count) : 10;
+    private float DialStep => 360f / DialCount;
+    private float DialDir => dialFace != null && !dialFace.clockwise ? -1f : 1f;
+    private float AngleFor(int n) => DialDir * n * DialStep + dialZeroOffset;
+
+    public void RotateDialLeft() => StepDial(-1);
+    public void RotateDialRight() => StepDial(1);
+
+    /// <summary>เลื่อนเลข ±1 — มุมเป้าหมายสะสมต่อเนื่อง หน้าปัดเลยหมุนทางสั้นเสมอ (9→0 = 1 ช่อง ไม่หมุนย้อนเกือบรอบ)</summary>
+    private void StepDial(int delta)
     {
-        currentDialNumber = (currentDialNumber - 1 + 10) % 10;
-        UpdateDialVisual();
+        currentDialNumber = ((currentDialNumber + delta) % DialCount + DialCount) % DialCount;
+        dialTarget += DialDir * delta * DialStep;
+        if (dialTurnTime <= 0f) { dialAngle = dialTarget; ApplyDialAngle(); }
+        PlaySfx(dialClickSound);
     }
 
-    public void RotateDialRight()
+    private void UpdateDialMotion()
     {
-        currentDialNumber = (currentDialNumber + 1) % 10;
-        UpdateDialVisual();
+        if (Mathf.Abs(dialTarget - dialAngle) < 0.01f) { dialAngle = dialTarget; ApplyDialAngle(); return; }
+        // unscaledDeltaTime: หมุนได้แม้เกมหยุดเวลา
+        dialAngle = Mathf.SmoothDamp(dialAngle, dialTarget, ref dialVelocity, dialTurnTime * 0.5f, Mathf.Infinity, Time.unscaledDeltaTime);
+        ApplyDialAngle();
     }
 
-    private void UpdateDialVisual()
+    private void ApplyDialAngle()
     {
-        if (dialImage != null)
-            dialImage.localEulerAngles = new Vector3(0, 0, currentDialNumber * 36f);
+        if (dialImage != null) dialImage.localEulerAngles = new Vector3(0, 0, dialAngle);
+    }
+
+    private void PlaySfx(AudioClip clip)
+    {
+        if (clip == null) return;
+        if (sfx == null)
+        {
+            sfx = gameObject.AddComponent<AudioSource>();
+            sfx.playOnAwake = false;
+            sfx.spatialBlend = 0f;
+            sfx.ignoreListenerPause = true;
+        }
+        sfx.PlayOneShot(clip, sfxVolume);
     }
 
     public void ConfirmDigit()
@@ -165,6 +225,7 @@ public class SafeMinigame : MonoBehaviour
         if (currentInput == correctPasscode)
         {
             Debug.Log("รหัสถูกต้อง! ตู้เซฟเปิดแล้ว");
+            PlaySfx(openSound);
 
             if (rewardKey != null)
             {
@@ -183,6 +244,7 @@ public class SafeMinigame : MonoBehaviour
         else
         {
             Debug.Log("รหัสผิดพลาด! รีเซ็ตใหม่");
+            PlaySfx(wrongSound);
             currentInput = "";
             UpdateDisplay();
         }
