@@ -63597,6 +63597,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Atmos_Stain_Floor_A
       objectReference: {fileID: 0}
+    - target: {fileID: 393736161441247313, guid: 27799f44c37a244429f3ca9ad2cc1e51, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1025981098315623147, guid: 27799f44c37a244429f3ca9ad2cc1e51, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.25
