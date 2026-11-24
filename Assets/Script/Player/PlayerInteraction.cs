@@ -4,8 +4,12 @@ using TMPro; // เรียกใช้ระบบ TextMeshPro
 public class PlayerInteraction : MonoBehaviour
 {
     [Header("Pickup Settings")]
-    public float interactRange = 3f; // ระยะที่ผู้เล่นจะเก็บของได้ (ปรับได้ตามใจชอบ)
+    public float interactRange = 2f; // ระยะที่ผู้เล่นจะเก็บของได้ (ปรับได้ตามใจชอบ) · [2026-11-24] 3 → 2
     public LayerMask itemLayer;      // เลเยอร์ของไอเทม (ให้เลือก Layer "Item" ที่เราสร้างไว้)
+    [Tooltip("[2026-11-24] ของที่มีอะไรเหล่านี้ขวางระหว่างตัวกับของ = เก็บไม่ได้ (กันเก็บทะลุห้อง) · Default + Wall")]
+    public LayerMask blockedBy = (1 << 0) | (1 << 6);
+    [Tooltip("ของที่ขวางต้องสูงอย่างน้อยกี่เมตรถึงนับเป็นกำแพง (กำแพง/ตู้สูง) — เก้าอี้/โต๊ะไม่นับ")]
+    public float minBlockerHeight = 1.8f;
 
     [Header("UI Elements")]
     public TextMeshProUGUI promptText; // ลาก PickupPrompt_Text มาใส่ช่องนี้
@@ -36,6 +40,7 @@ public class PlayerInteraction : MonoBehaviour
             Vector3 d = item.transform.position - transform.position;
             d.y = 0f;
             float dist = d.sqrMagnitude;
+            if (dist >= bestDist || WallBetween(item, nearbyHits[i])) continue;   // [2026-11-24] มีกำแพงขวาง = อยู่อีกห้อง เก็บไม่ได้
             if (dist < bestDist) { bestDist = dist; nearest = item; nearestCol = nearbyHits[i]; }
         }
 
@@ -49,6 +54,27 @@ public class PlayerInteraction : MonoBehaviour
             worldPrompt.Show(this, nearest.transform, Vector3.up * height, PromptKey.Pickup, "PROMPT_PICKUP");
         }
         else worldPrompt?.Hide(this);
+    }
+
+    // [2026-11-24] เส้นจากอกผู้เล่น → กลางตัวของ ชนอะไรระหว่างทางไหม (ข้ามตัวผู้เล่น/ตัวของ/ตัวที่เป็น trigger)
+    private readonly RaycastHit[] wallHits = new RaycastHit[8];
+    private bool WallBetween(ItemPickup item, Collider itemCol)
+    {
+        Vector3 from = transform.position + Vector3.up * 1f;
+        Vector3 to = itemCol != null ? itemCol.bounds.center : item.transform.position;
+        Vector3 dir = to - from;
+        float len = dir.magnitude;
+        if (len < 0.05f) return false;
+        int n = Physics.RaycastNonAlloc(from, dir / len, wallHits, len, blockedBy, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < n; i++)
+        {
+            Transform t = wallHits[i].collider.transform;
+            if (t.root == transform.root || t.IsChildOf(item.transform) || item.transform.IsChildOf(t)) continue;
+            if (wallHits[i].collider.GetComponentInParent<ItemPickup>() != null) continue;   // ของชิ้นอื่นวางซ้อน ไม่นับเป็นกำแพง
+            if (wallHits[i].collider.bounds.size.y < minBlockerHeight) continue;           // เก้าอี้/โต๊ะเตี้ย ไม่นับ (ของบนโต๊ะต้องเก็บได้) — นับแค่กำแพง/ตู้สูง
+            return true;
+        }
+        return false;
     }
 
     // ฟังก์ชันเช็กว่าเมาส์ชี้โดนไอเทมไหม

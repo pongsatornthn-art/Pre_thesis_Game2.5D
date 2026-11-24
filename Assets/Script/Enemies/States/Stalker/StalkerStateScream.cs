@@ -7,6 +7,9 @@ public class StalkerStateScream : IStalkerState
 
     public void EnterState(StalkerAI ai)
     {
+        screamDuration = ai.screamSeconds;   // [2026-11-24] เดิม 3 วิ (+ คำรามอีก 3 วิในโหมดไล่) → ผู้เล่นหนีไปไกลแล้ว
+        ai.lastContactTime = Time.time;
+        if (ai.PlayerTransform != null) ai.LastKnownPlayerPos = ai.PlayerTransform.position;
         if (ai.Agent.isOnNavMesh) ai.Agent.isStopped = true;
         
         // Show UI Text
@@ -27,7 +30,7 @@ public class StalkerStateScream : IStalkerState
             Debug.LogWarning("StalkerStateScream: Scream AudioClip is missing on StalkerAI!");
         }
 
-        Debug.Log("<color=red>🦇 STALKER: *SCREAMMMM* (3 seconds before chase)</color>");
+        Debug.Log($"<color=red>🦇 STALKER: *SCREAMMMM* ({screamDuration} วิ ก่อนไล่)</color>");
         
         // TODO: Play scream animation here if available
         // if (ai.animator != null) ai.animator.SetTrigger("Scream");

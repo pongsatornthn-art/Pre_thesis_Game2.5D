@@ -63,6 +63,10 @@ public class AimResolver : MonoBehaviour
         if (horizontalPlane.Raycast(ray, out float enter))
         {
             lastAimPoint = ray.GetPoint(enter);
+            // [2026-11-25 นา: ยิงบอสไม่ค่อยโดน] เมาส์ชี้อยู่บนรูปมอน → เล็งกลางตัวมอนตรงๆ
+            // (เดิมจุดเล็ง = จุดบนพื้นระดับปากกระบอก · ชี้หัว/อกมอนตัวสูง = จุดเลยหลังมอนไป กระสุนเฉียด)
+            if (snapToEnemyUnderCursor && TryEnemyUnderCursor(lastAimPoint, out Vector3 enemyCenter))
+                lastAimPoint = new Vector3(enemyCenter.x, worldY, enemyCenter.z);
             lastFrameCount = Time.frameCount;
             lastWorldY = worldY;
             hasValidAimPoint = true;
@@ -77,6 +81,78 @@ public class AimResolver : MonoBehaviour
     /// หาเวกเตอร์ทิศทางจากจุดเริ่มต้นไปยังเป้าหมาย โดยตัดแกน Y ออก (แบนราบขนานพื้น) และ Normalize แล้ว
     /// เหมาะสำหรับใช้ยิงกระสุนและหันปืนในเกมมุมมอง 2.5D
     /// </summary>
+    [Header("[2026-11-25] เล็งติดมอนใต้เมาส์")]
+    [Tooltip("เมาส์ชี้บนรูปมอน = เล็งกลางตัวมอน (แก้ยิงมอนตัวสูงไม่โดน)")]
+    [SerializeField] private bool snapToEnemyUnderCursor = true;
+    [Tooltip("หามอนรอบจุดเล็งบนพื้นในรัศมีนี้ (เมตร) — มอนตัวสูง ชี้หัวแล้วจุดบนพื้นเลยตัวไปไกล")]
+    [SerializeField, Min(0.5f)] private float snapSearchRadius = 4f;
+    [Tooltip("ขยายกรอบรูปมอนบนจอออกกี่พิกเซล (ชี้เฉียดขอบก็นับ)")]
+    [SerializeField, Min(0f)] private float snapScreenPadding = 6f;
+
+    private readonly Collider[] snapBuffer = new Collider[32];
+
+    /// <summary>หามอน (IDamageable) ที่รูปบนจอทับตำแหน่งเมาส์ — เจอหลายตัวเอาตัวที่ใกล้กล้องสุด</summary>
+    private bool TryEnemyUnderCursor(Vector3 groundAimPoint, out Vector3 center)
+    {
+        center = default;
+        Vector2 mouse = ReadPointerPosition();
+        int n = Physics.OverlapSphereNonAlloc(groundAimPoint, snapSearchRadius, snapBuffer, ~0, QueryTriggerInteraction.Ignore);
+        float bestDepth = float.MaxValue;
+        bool found = false;
+
+        for (int i = 0; i < n; i++)
+        {
+            Collider col = snapBuffer[i];
+            IDamageable dmg = col.GetComponentInParent<IDamageable>();
+            if (dmg == null) continue;
+            Component owner = dmg as Component;
+            if (owner == null || owner.CompareTag("Player")) continue;
+
+            SpriteRenderer sr = BodySprite(owner);
+            if (sr == null) continue;
+
+            if (!ScreenRect(sr.bounds, out Rect rect)) continue;
+            if (!rect.Contains(mouse)) continue;
+
+            float depth = mainCam.WorldToScreenPoint(col.bounds.center).z;
+            if (depth < bestDepth)
+            {
+                bestDepth = depth;
+                center = col.bounds.center;
+                found = true;
+            }
+        }
+        return found;
+    }
+
+    /// <summary>รูปตัวมอน = สไปรท์ที่สูงที่สุด (ไม่เอาเงากลมใต้เท้า)</summary>
+    private static SpriteRenderer BodySprite(Component owner)
+    {
+        SpriteRenderer best = null;
+        float bestH = 0f;
+        foreach (SpriteRenderer sr in owner.GetComponentsInChildren<SpriteRenderer>())
+        {
+            if (!sr.enabled || !sr.isVisible || sr.sprite == null) continue;
+            float h = sr.bounds.size.y;
+            if (h > bestH) { bestH = h; best = sr; }
+        }
+        return best;
+    }
+
+    private bool ScreenRect(Bounds b, out Rect rect)
+    {
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = new Vector2(float.MinValue, float.MinValue);
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 corner = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+            Vector3 s = mainCam.WorldToScreenPoint(corner);
+            if (s.z <= 0f) { rect = default; return false; }
+            min = Vector2.Min(min, s); max = Vector2.Max(max, s);
+        }
+        rect = Rect.MinMaxRect(min.x - snapScreenPadding, min.y - snapScreenPadding, max.x + snapScreenPadding, max.y + snapScreenPadding);
+        return true;
+    }
+
     public Vector3 GetFlatAimDirection(Vector3 from)
     {
         Vector3 target = GetAimPoint(from.y);

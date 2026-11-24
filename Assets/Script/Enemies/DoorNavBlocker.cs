@@ -29,4 +29,16 @@ public class DoorNavBlocker : MonoBehaviour
         bool block = door != null && !door.isUnlocked;
         if (obstacle.enabled != block) obstacle.enabled = block;
     }
+
+    /// <summary>
+    /// [2026-11-24 นา: AI เดินติดประตู] ทางเดินของมอนผ่านประตูที่ไม่ล็อกได้ แต่ตัวมอนมี Rigidbody ชนบานประตูจริง → เดินชนบานค้าง
+    /// เรียกจาก OnCollisionEnter/Stay ของมอน: ชนบานประตูที่ปิดแต่ไม่ล็อก = ผลักเปิด (บานเปิดจริง กล่องชนปิดเอง แล้วเดินผ่าน)
+    /// (รอบแรกให้ทะลุบานไปเลย → นาเจอว่ามอนเดินทะลุประตูที่ปิดอยู่ ดูผิด) · ประตูล็อก = ชนตามปกติ (ทางเดินก็ถูกตัดอยู่แล้ว)
+    /// </summary>
+    public static void PassThroughIfUnlocked(Collision hit, Collider self)
+    {
+        if (hit == null || hit.collider == null) return;
+        DoorController d = hit.collider.GetComponentInParent<DoorController>();
+        if (d != null) d.OpenByMonster();
+    }
 }

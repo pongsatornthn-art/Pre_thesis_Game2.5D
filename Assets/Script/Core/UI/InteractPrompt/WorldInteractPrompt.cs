@@ -80,7 +80,8 @@ public class WorldInteractPrompt : MonoBehaviour, IInteractPromptService
 
     public bool IsOtherShown(object owner, PromptKey key)
     {
-        return currentOwner != null && !ReferenceEquals(currentOwner, owner) && currentKey == key;
+        // [2026-11-24] เทียบ "ปุ่มจริง" — ตอนนี้ของเก็บ (Pickup) กับเนื้อเรื่อง (Story) ใช้ E เหมือนกัน → ชิ้นที่ป้ายโชว์อยู่ได้ปุ่มไปชิ้นเดียว
+        return currentOwner != null && !ReferenceEquals(currentOwner, owner) && InteractInput.KeyFor(currentKey) == InteractInput.KeyFor(key);
     }
 
     private void LateUpdate()

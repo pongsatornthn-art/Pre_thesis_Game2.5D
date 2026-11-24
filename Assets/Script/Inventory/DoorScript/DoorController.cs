@@ -86,6 +86,16 @@ public class DoorController : MonoBehaviour
         ShowNotification($"The door is locked! need <color=yellow>{keyNameForPlayer}</color>");   // สำรอง: ซีนที่ไม่มีระบบบทพูด
     }
 
+    /// <summary>[นา 2026-11-24] มอนเดินมาชนประตูที่ปิดแต่ไม่ล็อก → ผลักเปิด (เดิมมอนเดินทะลุบานที่ปิดอยู่)
+    /// ประตูล็อก = ไม่เปิด · เปิดอยู่แล้ว = ไม่ทำอะไร</summary>
+    public bool OpenByMonster()
+    {
+        if (!isUnlocked || isOpen || IsDoorAnimating()) return false;
+        nextToggleTime = Time.time + toggleCooldown;
+        ToggleDoor();
+        return true;
+    }
+
     /// <summary>[แก้ 2026-11-22] ประตูกำลังเล่นท่าเปิด/ปิดอยู่ไหม (กำลังเปลี่ยนท่า หรือท่าที่เล่นอยู่ยังไม่จบรอบ)</summary>
     private bool IsDoorAnimating()
     {

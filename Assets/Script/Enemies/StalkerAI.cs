@@ -30,6 +30,31 @@ public class StalkerAI : MonoBehaviour, IDamageable
     public float minShoutSuspicion = 20f;
     public float maxShoutSuspicion = 100f;
 
+    [Header("ออกล่า (2026-11-24 นา: บอสเดินทั่วแมพ + โหดขึ้น)")]
+    [Tooltip("ไม่เจอผู้เล่นนานกี่วิ ถึงจะ 'ได้กลิ่น' เต็มที่ (เดินมาย่านที่ผู้เล่นอยู่บ่อยสุด) — เพิ่งไล่เสร็จ = เดินสุ่มทั่วบ้านก่อน")]
+    [Min(1f)] public float heatBuildSeconds = 150f;
+    [Tooltip("โอกาสเดินไปย่านผู้เล่น ตอนเพิ่งเริ่ม (0) → ตอนได้กลิ่นเต็ม (1) · [2026-11-24] ลดลง (นา: บอสโผล่มาใส่บ่อยเกิน)")]
+    public Vector2 huntChance = new Vector2(0.1f, 0.4f);
+    [Tooltip("ระยะห่างจากผู้เล่น (เมตร) ที่บอสจะเดินไปดม ตอนเลือกไปย่านผู้เล่น")]
+    public Vector2 huntRadius = new Vector2(5f, 13f);
+    [Tooltip("ไปถึงจุดแล้วยืนฟังกี่วิ (สุ่มระหว่างค่า)")]
+    public Vector2 roamPauseSeconds = new Vector2(0.8f, 2.2f);
+    [Tooltip("เห็นผู้เล่นแล้วกรีดร้องกี่วิก่อนวิ่ง (เดิม 3 + คำรามอีก 3 = ผู้เล่นหนีไปไกลแล้ว)")]
+    [Min(0f)] public float screamSeconds = 0.8f;
+    [Tooltip("หลุดสายตาแล้วยังวิ่งตามจุดที่เห็นล่าสุดอีกกี่วิ ก่อนเปลี่ยนเป็นค้นหา")]
+    [Min(0f)] public float loseSightGraceSeconds = 5f;
+    [Tooltip("ค้นหารอบๆ จุดที่คลาดกันกี่วิ ก่อนกลับไปเดินล่า")]
+    [Min(0f)] public float searchSeconds = 12f;
+    [Tooltip("ค้นหาในรัศมีกี่เมตรรอบจุดที่คลาดกัน")]
+    [Min(1f)] public float searchRadius = 6f;
+    [Tooltip("เกจขึ้นเร็วแค่ไหนตอนได้ยินเสียง (ต่อวินาที · เต็ม 100)")]
+    [Min(1f)] public float hearingFillRate = 160f;
+
+    /// <summary>เวลาล่าสุดที่บอสเจอตัวผู้เล่น (เริ่มไล่) — ใช้คำนวณ "ได้กลิ่น"</summary>
+    [System.NonSerialized] public float lastContactTime;
+    /// <summary>0 = เพิ่งเจอกัน (เดินสุ่มทั่วบ้าน) · 1 = ไม่เจอนานแล้ว (มุ่งมาย่านผู้เล่น)</summary>
+    public float HuntHeat => Mathf.Clamp01((Time.time - lastContactTime) / heatBuildSeconds);
+
     [Header("Jumpscare Minigame")]
     public StalkerJumpscareUI jumpscareUI; // ลาก Canvas UI มินิเกมมาใส่ช่องนี้
     public int jumpscareDamage = 40; // ดาเมจที่โดนถ้าหลอดหมด
@@ -71,12 +96,15 @@ public class StalkerAI : MonoBehaviour, IDamageable
 
     private bool isInMinigame = false;
 
+    // [2026-11-24] ชนบานประตูที่ไม่ล็อก = ทะลุ (เดิมเดินชนบานค้าง)
+    private void OnCollisionEnter(Collision hit) => DoorNavBlocker.PassThroughIfUnlocked(hit, GetComponent<Collider>());
+
     private void Awake()
     {
         Agent = GetComponent<NavMeshAgent>();
         Awareness = GetComponent<AwarenessSystem>();
         if (Awareness == null) Awareness = gameObject.AddComponent<AwarenessSystem>();
-        Awareness.fillRateBase = 80f;
+        Awareness.fillRateBase = hearingFillRate;   // [2026-11-24] เดิม 80 = ได้ยินแล้วเกจขึ้นช้า ผู้เล่นหนีไปไกลแล้ว
     }
 
     private void Start()

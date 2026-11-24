@@ -99,6 +99,16 @@ public class SettingsManager : MonoBehaviour
         Debug.Log($"[Settings] อัปเดต Master: {audioVolume}, BGM: {bgmVolume}, SFX: {sfxVolume}");
     }
 
+    /// <summary>[2026-11-25] ความสว่าง 0–1 (0.5 = ปกติ) — BrightnessVolume ในซีนฟัง event แล้วปรับจอ</summary>
+    public void SaveBrightness(float value01)
+    {
+        PlayerPrefs.SetFloat(BrightnessVolume.PrefKey, value01);
+        PlayerPrefs.Save();
+        GameEventBus.Publish(new BrightnessChangedEvent(value01));
+    }
+
+    public float GetBrightness() => PlayerPrefs.GetFloat(BrightnessVolume.PrefKey, BrightnessVolume.DefaultValue);
+
     public string GetCurrentLanguage() => currentLanguage;
     public float GetMouseSensitivity() => mouseSensitivity;
     public float GetAudioVolume() => audioVolume;

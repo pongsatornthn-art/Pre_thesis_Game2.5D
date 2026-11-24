@@ -8,10 +8,15 @@ public class StalkerStateChase : IStalkerState
     private float stuckTimer = 0f;
     private float pathUpdateTimer = 0f;
 
+    private float lostTimer = 0f;   // [2026-11-24] หลุดสายตามานานเท่าไหร่
+
     public void EnterState(StalkerAI ai)
     {
         roarTimer = 0f;
         hasRoared = false;
+        lostTimer = 0f;
+        roarDuration = 0f;   // [2026-11-24 นา] เดิมยืนคำรามอีก 3 วิ (ต่อจากกรีดร้องอีก 3 วิ) — ตอนนี้กรีดร้องสั้นๆ แล้ววิ่งเลย (เสียงคำรามยังเล่น)
+        ai.lastContactTime = Time.time;
         if (ai.PlayerTransform != null && ai.ClearLineTo(ai.PlayerTransform.position)) ai.LastKnownPlayerPos = ai.PlayerTransform.position;
 
         // 🌟 ไอเดียที่ 4: บอสโผล่มาต้องยืนคำรามขู่ก่อน 3 วินาที ให้ผู้เล่นตั้งตัวทัน
@@ -58,12 +63,19 @@ public class StalkerStateChase : IStalkerState
         }
 
         ai.UpdateDetection();
-        if (!ai.Awareness.IsActive) 
+        // [2026-11-24 นา] เดิม: คลาดสายตาเฟรมเดียว (เกจหลุด 100) = เลิกไล่ทันที → ดูโง่ ผู้เล่นเลี้ยวมุมทีเดียวหลุด
+        // ตอนนี้: หลุดสายตาแล้วยังวิ่งไปจุดที่เห็นล่าสุดต่อ (Lose Sight Grace) — ถึงจุดนั้นแล้วไม่เจอ/หมดเวลา ค่อยค้นหา
+        if (ai.Awareness.IsActive) { lostTimer = 0f; ai.lastContactTime = Time.time; }
+        else
         {
-            // ถ้าหลุดสายตา ไปค้นหาตรงจุดที่คลาดกัน
-            // [2026-11-21] ไปค้นที่จุดสุดท้ายที่เห็น (เดิมใช้ตำแหน่งจริงของผู้เล่น = รู้ทะลุกำแพง)
-            ai.ChangeState(new StalkerStateAlert(ai.LastKnownPlayerPos));
-            return;
+            lostTimer += Time.deltaTime;
+            bool reachedLastSeen = !ai.Agent.pathPending && ai.Agent.remainingDistance <= 1f;
+            if (lostTimer >= ai.loseSightGraceSeconds || (reachedLastSeen && lostTimer > 1f))
+            {
+                // [2026-11-21] ไปค้นที่จุดสุดท้ายที่เห็น (เดิมใช้ตำแหน่งจริงของผู้เล่น = รู้ทะลุกำแพง)
+                ai.ChangeState(new StalkerStateAlert(ai.LastKnownPlayerPos));
+                return;
+            }
         }
 
         // อัปเดตปลายทางทุกๆ 0.2 วินาที แทนการอัปเดตทุกเฟรม (ป้องกัน NavMeshAgent เอ๋อเวลาวิ่งเร็วจัดและเลี้ยวไม่พ้นมุม)
@@ -73,6 +85,13 @@ public class StalkerStateChase : IStalkerState
         {
             ai.Agent.SetDestination(ChaseTarget.OnNavMesh(ai.LastKnownPlayerPos)); // [Claude 2026-11-11] ปลายทางบนพื้นเดินได้เสมอ
             pathUpdateTimer = 0f;
+        }
+
+        // [2026-11-24 นา] ไปไม่ถึง (ของขวางทาง/ผู้เล่นอยู่อีกฝั่ง) — ถึงสุดทางแล้วเลิกดัน → ค้นหารอบๆ ตรงนั้นแทน
+        if (StateChase.Unreachable(ai.Agent, ai.LastKnownPlayerPos) && ai.Agent.remainingDistance <= 0.8f)
+        {
+            ai.ChangeState(new StalkerStateAlert(ai.transform.position, 60f));
+            return;
         }
 
         // Anti-Stuck: ถ้ามีเป้าหมายแต่ความเร็วเกือบ 0 (ติดกล่องที่ไม่ได้ Bake NavMesh)

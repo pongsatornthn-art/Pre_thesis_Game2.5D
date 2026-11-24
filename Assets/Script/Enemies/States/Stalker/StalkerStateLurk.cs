@@ -1,17 +1,29 @@
 using UnityEngine;
+using UnityEngine.AI;
 
+/// <summary>
+/// [2026-11-24 นา] "เดินล่า" — เดิมบอสวนรอบตัวผู้เล่นตลอด (รู้ตำแหน่งเราเสมอ ดูโง่+ตามติด)
+/// ตอนนี้: เดินตรวจไปทั่วบ้านทีละจุด ยืนฟังสักพัก แล้วไปต่อ
+///   ยิ่งไม่เจอผู้เล่นนาน (HuntHeat) ยิ่งเลือกเดินมาย่านที่ผู้เล่นอยู่บ่อยขึ้น = เหมือนมันได้กลิ่น
+///   เพิ่งไล่/จับเสร็จ = เดินสุ่มทั่วบ้านก่อน ให้ผู้เล่นได้หายใจ
+/// (ชื่อคลาสคงเดิม เพราะระบบอื่นเรียก StalkerStateLurk อยู่หลายที่)
+/// </summary>
 public class StalkerStateLurk : IStalkerState
 {
-    private float timer = 0f;
-    private float moveTimer = 0f;
+    private static Bounds mapBounds;
+    private static bool boundsReady;
+
+    private float pauseUntil;
+    private bool waiting;
+    private float stuckTimer;
 
     public void EnterState(StalkerAI ai)
     {
         ai.Agent.speed = ai.searchSpeed;
         if (ai.Agent.isOnNavMesh) ai.Agent.isStopped = false;
-        MoveToRandomPointNearPlayer(ai);
-        ai.ShowDebugText("", Color.white); // ซ่อนข้อความตอนกำลังซุ่ม
-        Debug.Log("🦇 Stalker กำลังเดินซุ่มคุมเชิงอยู่รอบๆ ผู้เล่น...");
+        ai.ShowDebugText("", Color.white);
+        waiting = false;
+        PickNextPoint(ai);
     }
 
     public void UpdateState(StalkerAI ai)
@@ -19,56 +31,72 @@ public class StalkerStateLurk : IStalkerState
         if (!ai.Agent.isOnNavMesh) return;
 
         ai.UpdateDetection();
-
         if (ai.Awareness.IsActive) { ai.ChangeState(new StalkerStateScream()); return; }
-        
-        // เดินลาดตระเวนรอบๆ ผู้เล่นในเงามืด
-        if (!ai.Agent.pathPending && ai.Agent.remainingDistance <= ai.Agent.stoppingDistance)
+
+        if (waiting)
         {
-            timer += Time.deltaTime;
-            if (timer >= 3f) // ยืนดมกลิ่น 3 วิ แล้วเดินต่อ
-            {
-                MoveToRandomPointNearPlayer(ai);
-                timer = 0f;
-            }
+            if (Time.time >= pauseUntil) { waiting = false; PickNextPoint(ai); }
+            return;
         }
 
-        // Anti Stuck
-        if (ai.Agent.hasPath && ai.Agent.velocity.sqrMagnitude < 0.1f)
+        // ถึงจุดแล้ว → ยืนฟังสักพัก
+        if (!ai.Agent.pathPending && ai.Agent.remainingDistance <= Mathf.Max(ai.Agent.stoppingDistance, 0.4f))
         {
-            moveTimer += Time.deltaTime;
-            if (moveTimer > 2f) { ai.Agent.ResetPath(); moveTimer = 0f; }
+            waiting = true;
+            pauseUntil = Time.time + Random.Range(ai.roamPauseSeconds.x, ai.roamPauseSeconds.y);
+            return;
         }
-        else moveTimer = 0f;
+
+        // ติด → เปลี่ยนจุดใหม่
+        if (ai.Agent.hasPath && ai.Agent.velocity.sqrMagnitude < 0.05f)
+        {
+            stuckTimer += Time.deltaTime;
+            if (stuckTimer > 1.5f) { stuckTimer = 0f; PickNextPoint(ai); }
+        }
+        else stuckTimer = 0f;
     }
 
-    private void MoveToRandomPointNearPlayer(StalkerAI ai)
+    private void PickNextPoint(StalkerAI ai)
     {
-        if (ai.PlayerTransform == null) return;
-        
-        // 🌟 สุ่มหาจุดสูงสุด 10 ครั้ง เพื่อหาจุดที่ "เดินไปถึงได้จริงๆ" (ไม่ออกนอกแมพ)
-        for (int i = 0; i < 10; i++)
+        bool hunt = ai.PlayerTransform != null && Random.value < Mathf.Lerp(ai.huntChance.x, ai.huntChance.y, ai.HuntHeat);
+        for (int i = 0; i < 12; i++)
         {
-            Vector2 randCircle = Random.insideUnitCircle.normalized * Random.Range(ai.lurkMinRadius, ai.lurkMaxRadius);
-            Vector3 targetPoint = ai.PlayerTransform.position + new Vector3(randCircle.x, 0, randCircle.y);
+            Vector3 target = hunt ? PointNearPlayer(ai) : RandomMapPoint();
+            if (!NavMesh.SamplePosition(target, out NavMeshHit hit, 3f, NavMesh.AllAreas)) continue;
+            if ((hit.position - ai.transform.position).sqrMagnitude < 9f) continue;   // ใกล้เกิน ไม่คุ้มเดิน
+            NavMeshPath path = new NavMeshPath();
+            if (!ai.Agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) continue;
+            ai.Agent.SetPath(path);
+            return;
+        }
+        // หาไม่ได้ → ยืนรอแล้วลองใหม่
+        waiting = true;
+        pauseUntil = Time.time + 1f;
+    }
 
-            if (UnityEngine.AI.NavMesh.SamplePosition(targetPoint, out UnityEngine.AI.NavMeshHit hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+    private static Vector3 PointNearPlayer(StalkerAI ai)
+    {
+        Vector2 c = Random.insideUnitCircle.normalized * Random.Range(ai.huntRadius.x, ai.huntRadius.y);
+        return ai.PlayerTransform.position + new Vector3(c.x, 0f, c.y);
+    }
+
+    private static Vector3 RandomMapPoint()
+    {
+        if (!boundsReady)
+        {
+            NavMeshTriangulation tri = NavMesh.CalculateTriangulation();
+            if (tri.vertices.Length > 0)
             {
-                // ตรวจสอบว่ามีเส้นทางเดินไปถึงจุดนั้นได้จริงๆ ใช่ไหม? (ไม่ติดกำแพง/ไม่อยู่นอกแมพ)
-                UnityEngine.AI.NavMeshPath path = new UnityEngine.AI.NavMeshPath();
-                ai.Agent.CalculatePath(hit.position, path);
-                
-                if (path.status == UnityEngine.AI.NavMeshPathStatus.PathComplete)
-                {
-                    ai.Agent.SetDestination(hit.position);
-                    return; // เจอจุดที่เดินได้แล้ว จบการทำงาน
-                }
+                mapBounds = new Bounds(tri.vertices[0], Vector3.zero);
+                foreach (Vector3 v in tri.vertices) mapBounds.Encapsulate(v);
+                boundsReady = true;
             }
         }
-        
-        // ถ้าสุ่ม 10 ครั้งแล้วไม่เจอที่เดินเลย (เช่น โดนต้อนเข้ามุม) ให้เดินไปหาผู้เล่นตรงๆ เลย
-        ai.Agent.SetDestination(ai.PlayerTransform.position);
+        return new Vector3(Random.Range(mapBounds.min.x, mapBounds.max.x), mapBounds.center.y, Random.Range(mapBounds.min.z, mapBounds.max.z));
     }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() { boundsReady = false; }
 
     public void ExitState(StalkerAI ai) { }
 }

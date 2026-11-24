@@ -23,7 +23,11 @@ public class DeathHandler : MonoBehaviour
     [SerializeReference, SubclassPicker] private IDeathPolicy ptsdPolicy = new RestartPtsdFromEntryDeath();
 
     [Tooltip("รอก่อนโหลด (วินาทีจริง) — เวลาให้อนิเมชันตาย / จอดำ")]
-    [SerializeField, Min(0f)] private float delaySeconds = 2f;
+    [SerializeField, Min(0f)] private float delaySeconds = 0.5f;   // [2026-11-25] 2 → 0.5 (นา: ตายแล้วรอนานเกิน)
+
+    [Header("[2026-11-25] จอตาย")]
+    [Tooltip("จอ 'คุณตายแล้ว' (ปุ่มเล่นต่อ / กลับเมนู) — เว้นว่าง = โหลดเองทันทีแบบเดิม")]
+    [SerializeField] private DeathScreenUI deathScreen;
 
     private bool handling;
 
@@ -45,6 +49,18 @@ public class DeathHandler : MonoBehaviour
 
         GameEventBus.Publish(new PlayerDeathHandlingEvent(inPtsd, delaySeconds));
         if (delaySeconds > 0f) yield return new WaitForSecondsRealtime(delaySeconds);
+
+        if (deathScreen != null)
+        {
+            DeathScreenUI.Choice picked = DeathScreenUI.Choice.Continue;
+            yield return deathScreen.Ask(c => picked = c);
+            if (picked == DeathScreenUI.Choice.MainMenu)
+            {
+                Time.timeScale = 1f;
+                UnityEngine.SceneManagement.SceneManager.LoadScene(deathScreen.MainMenuScene);
+                yield break;
+            }
+        }
 
         IDeathPolicy policy = inPtsd ? ptsdPolicy : realWorldPolicy;
         if (policy == null)

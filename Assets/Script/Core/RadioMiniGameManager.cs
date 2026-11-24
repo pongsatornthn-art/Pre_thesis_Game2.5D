@@ -56,7 +56,7 @@ public class RadioMiniGameManager : MonoBehaviour
 
     private void Update()
     {
-        if (isPlayerNear && !inMiniGame && !entering && Input.GetKeyDown(KeyCode.E)) // [Claude 2026-11-11 งานข้อ 8] เล่นวิทยุจบแล้วยังเข้าโต๊ะได้ (มาเซฟที่สมุด)
+        if (isPlayerNear && !inMiniGame && !entering && Input.GetKeyDown(KeyCode.E) && !InteractPromptMarker.OtherPromptShown(gameObject)) // [Claude 2026-11-11 งานข้อ 8] เล่นวิทยุจบแล้วยังเข้าโต๊ะได้ (มาเซฟที่สมุด) · [2026-11-24] E ปุ่มเดียว กันชนกับของชิ้นอื่น
         {
             StartCoroutine(EnterAfterThumbnail());
         }

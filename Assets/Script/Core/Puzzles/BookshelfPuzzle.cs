@@ -57,6 +57,10 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     [Tooltip("แก้ได้แล้ว: สลับไปมุมกล้องนี้ให้เห็นประตูลับเปิด (-1 = อยู่มุมเดิม)")]
     public int showPassageView = -1;
 
+    [Header("เงื่อนไขก่อนเปิด (นา 2026-11-24)")]
+    [Tooltip("จุดที่ต้องคลิกสังเกตก่อน (รอยลากหน้าชั้น) — ยังไม่คลิก = ดึงเล่มถูกก็ไม่เปิด · เว้นว่าง = ไม่มีเงื่อนไข (แบบเดิม)")]
+    public PuzzleClue requiredClue;
+
     [Header("ปุ่ม")]
     public KeyCode enterKey = KeyCode.E;
 
@@ -156,6 +160,7 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
         IsActive = false;
         solving = false;
         SetHover(null);
+        SetClueHover(null);   // [นา 2026-11-24]
         SetHintsVisible(false);
         FirstPersonModeController fp = FirstPersonModeController.Instance;
         if (fp != null) fp.ExitMode();
@@ -215,23 +220,31 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     {
         Camera cam = views[viewIndex] != null ? views[viewIndex].GetComponentInChildren<Camera>() : null;
         PuzzleBook hit = null;
+        PuzzleClue clueHit = null;   // [นา 2026-11-24]
         if (cam != null)
         {
             // ยิงทะลุทุกอย่าง แล้วเอาหนังสือที่ใกล้สุด — หนังสือเสียบอยู่ในชั้น กล่องชนของตู้หนังสือจะบังถ้าใช้ Raycast ธรรมดา
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, 50f, ~0, QueryTriggerInteraction.Collide);
-            float best = float.MaxValue;
+            float best = float.MaxValue, bestClue = float.MaxValue;
             foreach (RaycastHit h in hits)
             {
                 PuzzleBook b = h.collider.GetComponentInParent<PuzzleBook>();
                 if (b != null && h.distance < best) { best = h.distance; hit = b; }
+                PuzzleClue c = h.collider.GetComponentInParent<PuzzleClue>();
+                if (c != null && h.distance < bestClue) { bestClue = h.distance; clueHit = c; }
             }
+            if (hit != null && clueHit != null) { if (bestClue < best) hit = null; else clueHit = null; }   // เอาอันที่ใกล้กล้องกว่า
         }
         SetHover(hit);
+        SetClueHover(clueHit);
+
+        if (clueHit != null && Input.GetMouseButtonDown(0)) { clueHit.Inspect(audioSource); return; }
 
         if (hit != null && Input.GetMouseButtonDown(0) && !hit.IsBusy && !hit.IsPulled)
         {
-            bool correct = hit.Pull(audioSource);
+            bool locked = requiredClue != null && !requiredClue.Inspected;   // [นา 2026-11-24] ยังไม่สังเกตรอยลาก = เล่มถูกก็ไม่เปิด
+            bool correct = hit.Pull(audioSource, locked);
             if (correct) Solve(hit);
             else
             {
@@ -239,6 +252,15 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
                 onWrongBook?.Invoke();
             }
         }
+    }
+
+    private PuzzleClue hoveredClue;
+    private void SetClueHover(PuzzleClue c)
+    {
+        if (hoveredClue == c) return;
+        if (hoveredClue != null) hoveredClue.SetHovered(false);
+        hoveredClue = c;
+        if (hoveredClue != null) hoveredClue.SetHovered(true);
     }
 
     private void SetHover(PuzzleBook b)
@@ -295,13 +317,14 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     }
 
     // ───────── เซฟ ─────────
-    [System.Serializable] private struct SaveData { public bool solved; }
+    [System.Serializable] private struct SaveData { public bool solved; public bool clueFound; }
 
-    public string CaptureState() => JsonUtility.ToJson(new SaveData { solved = IsSolved });
+    public string CaptureState() => JsonUtility.ToJson(new SaveData { solved = IsSolved, clueFound = requiredClue != null && requiredClue.Inspected });
 
     public void RestoreState(string stateJson)
     {
         SaveData d = JsonUtility.FromJson<SaveData>(stateJson);
+        if (d.clueFound && requiredClue != null) requiredClue.SetInspectedInstant();   // [นา 2026-11-24]
         if (!d.solved) return;
         IsSolved = true;
         if (passage != null) passage.OpenInstant();
@@ -383,10 +406,20 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
 
     private bool wallsShown;
 
+    // [นา 2026-11-24] ย้ายตัวเปิดกำแพงไปเป็นระบบกลาง HiddenGeometryReveal (มุม FPS ทุกจุดใช้ร่วม)
+    // เดิมปริศนาเปิดเอง + FirstPersonModeController ก็เปิด → 2 ระบบจำสถานะทับกัน ออกแล้วกำแพงค้างโชว์ · ตอนนี้ใช้ตัวเดียว
     private void ShowWalls()
     {
         RestoreWalls();
         wallsShown = true;
+        HiddenGeometryReveal.Reveal(this, extraWallsToShow);
+        if (extraObjectsToShow != null)
+            foreach (GameObject g in extraObjectsToShow)
+                if (g != null && !g.activeSelf) { g.SetActive(true); shownObjects.Add(g); }
+    }
+
+    private void ShowWallsOld_Unused()
+    {
         var list = new List<Renderer>();
         foreach (RoomWallFade w in FindObjectsByType<RoomWallFade>(FindObjectsSortMode.None))
             if (w.wallsToHide != null) foreach (MeshRenderer r in w.wallsToHide) list.Add(r);
@@ -418,7 +451,9 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     }
 
     // เรียกทุกเฟรม: ถ้ามีสคริปต์ไหนปิด/ทำโปร่งกำแพงซ้ำ → จำไว้ว่า "ตอนออกต้องซ่อน" แล้วเปิดกลับทันที
-    private void KeepWallsVisible()
+    private void KeepWallsVisible() => HiddenGeometryReveal.KeepVisible();   // [นา 2026-11-24]
+
+    private void KeepWallsVisibleOld_Unused()
     {
         tmpKeys.Clear();
         tmpKeys.AddRange(wallStates.Keys);
@@ -437,6 +472,14 @@ public class BookshelfPuzzle : MonoBehaviour, ISaveable
     private readonly List<Renderer> tmpKeys = new List<Renderer>();
 
     private void RestoreWalls()
+    {
+        HiddenGeometryReveal.Restore(this);   // [นา 2026-11-24]
+        foreach (GameObject g in shownObjects) if (g != null) g.SetActive(false);
+        shownObjects.Clear();
+        wallsShown = false;
+    }
+
+    private void RestoreWallsOld_Unused()
     {
         foreach (var kv in matSnapshots)
         {

@@ -56,9 +56,20 @@ public class PauseManager : MonoBehaviour
 
             if (IsPaused)
                 ResumeGame();
-            else
+            else if (CanShowPauseMenu())
                 PauseGame();
         }
+    }
+
+    /// <summary>
+    /// [2026-11-25] UI ที่ครอบเมนูหยุดเกมถูกซ่อนอยู่ (เช่น มุมโต๊ะ/มุม FPS ซ่อน UI_Manager) → ห้ามหยุดเกม
+    /// ไม่งั้นเวลาหยุดแต่เมนูขึ้นไม่ได้ = เกมดูค้าง (บั๊กนา: เซฟที่โต๊ะแล้วกด ESC)
+    /// </summary>
+    private bool CanShowPauseMenu()
+    {
+        if (pauseMenu == null) return true;
+        Transform parent = pauseMenu.transform.parent;
+        return parent == null || parent.gameObject.activeInHierarchy;
     }
 
     public void PauseGame()

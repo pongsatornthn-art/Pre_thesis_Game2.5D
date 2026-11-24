@@ -144,6 +144,7 @@ public class FirstPersonModeController : MonoBehaviour
 
         if (currentFpCamera != null)
         {
+            HiddenGeometryReveal.Reveal(this);                       // [นา 2026-11-24] มุม FPS ต้องเห็นตู้/กำแพงที่กล้องหลักซ่อนไว้
             currentFpCamera.SetActive(true);                         // เปิดกล้องใหม่ก่อน แล้วค่อยปิดกล้องหลัก (กันจอดำ 1 เฟรม)
             if (mainCameraGroup != null) mainCameraGroup.SetActive(false);
             else Debug.LogWarning("[FirstPersonModeController] ยังไม่ได้ใส่ Main Camera Group — กล้องหลักจะยังเปิดค้าง", this);
@@ -172,6 +173,12 @@ public class FirstPersonModeController : MonoBehaviour
             currentFpCamera.SetActive(false);
             currentFpCamera = null;
         }
+        HiddenGeometryReveal.Restore(this);   // [นา 2026-11-24] กลับมุมหลัก = ซ่อนกำแพงเหมือนเดิม
+    }
+
+    private void LateUpdate()
+    {
+        if (currentFpCamera != null) HiddenGeometryReveal.KeepVisible();   // [นา 2026-11-24]
     }
 
     /// <summary>
