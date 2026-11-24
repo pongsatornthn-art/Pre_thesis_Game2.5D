@@ -23,7 +23,7 @@ public class MapBuilderWindow : EditorWindow
         w.Show();
     }
 
-    private static readonly string[] Tabs = { "วางของ", "จัดของ", "ห้อง", "ตรวจซีน" };
+    private static readonly string[] Tabs = { "วางของ", "จัดของ", "ห้อง", "พื้น", "แสง", "ตรวจซีน" };
     private int tab;
     private Vector2 scroll;
 
@@ -86,6 +86,20 @@ public class MapBuilderWindow : EditorWindow
     private readonly MapBuilderRoom.Settings room = new MapBuilderRoom.Settings();
     private RoomWallFade addWallsTarget;
 
+    // ═════════════════════════ พื้น ═════════════════════════
+    private readonly MapBuilderFloor.Settings floor = new MapBuilderFloor.Settings();
+    private List<Material> floorMats;
+    private bool floorDrawing;
+    private bool floorDragging;
+    private Vector3 floorA, floorB;
+    private float floorY;
+
+    // ═════════════════════════ แสง ═════════════════════════
+    private readonly MapBuilderLight.Settings winLight = new MapBuilderLight.Settings();
+    private bool lightPlacing;
+    private bool lightHasHit;
+    private Vector3 lightHitPos, lightHitNormal;
+
     // ═════════════════════════ ตรวจซีน ═════════════════════════
     private List<MapBuilderCheck.Issue> issues;
     private float belowY = -5f;
@@ -112,6 +126,8 @@ public class MapBuilderWindow : EditorWindow
         SceneView.duringSceneGui -= OnSceneGUI;
         Selection.selectionChanged -= Repaint;
         painting = false;
+        floorDrawing = lightPlacing = false;
+        Tools.hidden = false;
         SaveFolders();
     }
 
@@ -125,6 +141,8 @@ public class MapBuilderWindow : EditorWindow
     {
         tab = GUILayout.Toolbar(tab, Tabs, GUILayout.Height(24));
         if (tab != 0 && painting) StopPainting();
+        if (tab != 3 && floorDrawing) StopFloor();
+        if (tab != 4 && lightPlacing) StopLight();
         EditorGUILayout.Space(4);
         scroll = EditorGUILayout.BeginScrollView(scroll);
         switch (tab)
@@ -132,7 +150,9 @@ public class MapBuilderWindow : EditorWindow
             case 0: DrawPaintTab(); break;
             case 1: DrawArrangeTab(); break;
             case 2: DrawRoomTab(); break;
-            case 3: DrawCheckTab(); break;
+            case 3: DrawFloorTab(); break;
+            case 4: DrawLightTab(); break;
+            case 5: DrawCheckTab(); break;
         }
         EditorGUILayout.EndScrollView();
 
@@ -383,6 +403,8 @@ public class MapBuilderWindow : EditorWindow
     // ─────────── ฉาก ───────────
     private void OnSceneGUI(SceneView sv)
     {
+        if (floorDrawing) { FloorSceneGUI(sv); return; }
+        if (lightPlacing) { LightSceneGUI(sv); return; }
         if (!painting) return;
         Event e = Event.current;
         int id = GUIUtility.GetControlID(FocusType.Passive);
@@ -757,7 +779,273 @@ public class MapBuilderWindow : EditorWindow
     }
 
     // ═════════════════════════════════════════════════════════
-    // 4) ตรวจซีน
+    // 4) พื้น
+    // ═════════════════════════════════════════════════════════
+    private void DrawFloorTab()
+    {
+        if (floorMats == null) floorMats = MapBuilderFloor.FindFloorMaterials();
+        EditorGUILayout.HelpBox("สร้างพื้นห้อง: ลากวาดสี่เหลี่ยมในฉาก หรือเลือกกำแพงรอบห้องแล้วกดสร้าง\n" +
+                                "ลายกระเบื้องคิดตามพิกัดโลก → พื้นหลายชิ้นต่อกันลายไม่เหลื่อม", MessageType.Info);
+
+        Header("ลายพื้น");
+        EditorGUILayout.BeginHorizontal();
+        floor.material = (Material)EditorGUILayout.ObjectField(floor.material, typeof(Material), false);
+        if (GUILayout.Button("รีเฟรช", EditorStyles.miniButton, GUILayout.Width(50))) floorMats = MapBuilderFloor.FindFloorMaterials();
+        EditorGUILayout.EndHorizontal();
+        float cell = 64f;
+        int cols = Mathf.Max(1, Mathf.FloorToInt((position.width - 24f) / (cell + 4f)));
+        for (int i = 0; i < floorMats.Count; i += cols)
+        {
+            EditorGUILayout.BeginHorizontal();
+            for (int j = i; j < Mathf.Min(i + cols, floorMats.Count); j++)
+            {
+                Material m = floorMats[j];
+                Texture tex = AssetPreview.GetAssetPreview(m);
+                if (tex == null) tex = AssetPreview.GetMiniThumbnail(m);
+                Color old = GUI.backgroundColor;
+                if (m == floor.material) GUI.backgroundColor = new Color(0.35f, 0.75f, 1f);
+                GUIStyle st = new GUIStyle(GUI.skin.button) { imagePosition = ImagePosition.ImageAbove, fontSize = 9, padding = new RectOffset(2, 2, 2, 2) };
+                if (GUILayout.Button(new GUIContent(m.name.Replace("_MT", ""), tex, m.name), st, GUILayout.Width(cell), GUILayout.Height(cell + 14f)))
+                    floor.material = m;
+                GUI.backgroundColor = old;
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        Header("ตั้งค่า");
+        floor.floorName = EditorGUILayout.TextField("ชื่อ", floor.floorName);
+        floor.tileSize = Mathf.Max(0.05f, EditorGUILayout.FloatField(new GUIContent("ลาย 1 รอบ (ม.)", "พื้นเดิมในแมพ ≈ 2 ม."), floor.tileSize));
+        floor.collider = EditorGUILayout.Toggle(new GUIContent("ใส่ Collider (เดินได้)", "Box Collider บางๆ ใต้พื้น"), floor.collider);
+        floor.yOffset = EditorGUILayout.FloatField(new GUIContent("ยกจากพื้นเดิม", "กันพื้นซ้อนกันแล้วกระพริบ"), floor.yOffset);
+        floor.inset = EditorGUILayout.FloatField(new GUIContent("หดจากขอบ", "ใช้ตอนสร้างจากกำแพง: หดเข้ามาครึ่งความหนากำแพง"), floor.inset);
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("เก็บไว้ใต้", GUILayout.Width(EditorGUIUtility.labelWidth - 4));
+        floor.parent = (Transform)EditorGUILayout.ObjectField(floor.parent, typeof(Transform), true);
+        EditorGUILayout.EndHorizontal();
+        if (floor.parent == null) EditorGUILayout.LabelField("ว่าง = [MAP]/Floors", EditorStyles.miniLabel);
+
+        EditorGUILayout.Space(6);
+        Color oc = GUI.backgroundColor;
+        if (floorDrawing) GUI.backgroundColor = new Color(0.4f, 1f, 0.5f);
+        if (GUILayout.Button(floorDrawing ? "■ หยุดวาด (Esc)" : "▶ ลากวาดพื้นในฉาก", GUILayout.Height(30)))
+        {
+            if (floorDrawing) StopFloor(); else StartFloor();
+        }
+        GUI.backgroundColor = oc;
+        if (floorDrawing) EditorGUILayout.HelpBox("กดค้างที่มุมหนึ่ง → ลากไปมุมตรงข้าม → ปล่อย = ได้พื้น (ชิดกริดตามแท็บวางของ)\nวาดต่อได้เรื่อยๆ · Esc = หยุด", MessageType.None);
+
+        Transform[] sel = Selection.transforms;
+        using (new EditorGUI.DisabledScope(sel.Length == 0))
+        {
+            if (GUILayout.Button($"สร้างพื้นจากกรอบของที่เลือก ({sel.Length} ชิ้น)"))
+                MapBuilderFloor.CreateFromSelection(sel, floor);
+            using (new EditorGUI.DisabledScope(floor.material == null))
+                if (GUILayout.Button("เปลี่ยนลายพื้นของที่เลือกเป็นลายนี้"))
+                    MapBuilderFloor.SetMaterial(sel, floor.material);
+        }
+    }
+
+    private void StartFloor()
+    {
+        StopPainting(); StopLight();
+        floorDrawing = true; floorDragging = false;
+        Tools.hidden = true;
+        SceneView.lastActiveSceneView?.Focus();
+        SceneView.RepaintAll();
+    }
+
+    private void StopFloor()
+    {
+        floorDrawing = floorDragging = false;
+        Tools.hidden = false;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private Vector3 SnapXZ(Vector3 p)
+    {
+        if (!snapGrid) return p;
+        float g = MapBuilderOps.GridSize;
+        return new Vector3(MapBuilderOps.Snap(p.x, g), p.y, MapBuilderOps.Snap(p.z, g));
+    }
+
+    private void FloorSceneGUI(SceneView sv)
+    {
+        Event e = Event.current;
+        int id = GUIUtility.GetControlID(FocusType.Passive);
+        if (e.type == EventType.Layout) HandleUtility.AddDefaultControl(id);
+        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { StopFloor(); e.Use(); return; }
+
+        if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
+        {
+            if (RaycastScene(e.mousePosition, out Vector3 p, out Vector3 _))
+            {
+                floorY = p.y;
+                floorA = floorB = SnapXZ(p);
+                floorDragging = true;
+            }
+            e.Use();
+        }
+        else if (e.type == EventType.MouseDrag && e.button == 0 && floorDragging)
+        {
+            // ลากบนระนาบความสูงเดียวกับจุดแรก (ไม่กระโดดขึ้นเฟอร์นิเจอร์)
+            Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
+            if (new Plane(Vector3.up, new Vector3(0, floorY, 0)).Raycast(ray, out float d)) floorB = SnapXZ(ray.GetPoint(d));
+            e.Use();
+            sv.Repaint();
+        }
+        else if (e.type == EventType.MouseUp && e.button == 0 && floorDragging)
+        {
+            floorDragging = false;
+            MapBuilderFloor.Create(floorA, floorB, floorY, floor);
+            e.Use();
+            Repaint();
+        }
+
+        if (e.type == EventType.Repaint)
+        {
+            if (floorDragging)
+            {
+                float y = floorY + floor.yOffset + 0.01f;
+                Vector3 a = new Vector3(Mathf.Min(floorA.x, floorB.x), y, Mathf.Min(floorA.z, floorB.z));
+                Vector3 b = new Vector3(Mathf.Max(floorA.x, floorB.x), y, Mathf.Max(floorA.z, floorB.z));
+                Vector3[] q = { a, new Vector3(a.x, y, b.z), b, new Vector3(b.x, y, a.z) };
+                Handles.DrawSolidRectangleWithOutline(q, new Color(0.3f, 1f, 0.5f, 0.15f), new Color(0.3f, 1f, 0.5f, 1f));
+                Handles.Label(b + Vector3.up * 0.2f, $"{b.x - a.x:0.00} × {b.z - a.z:0.00} ม.", EditorStyles.whiteBoldLabel);
+            }
+            else if (RaycastScene(e.mousePosition, out Vector3 p, out Vector3 _))
+            {
+                Vector3 s = SnapXZ(p);
+                Handles.color = new Color(0.3f, 1f, 0.5f);
+                Handles.DrawWireDisc(s + Vector3.up * 0.02f, Vector3.up, HandleUtility.GetHandleSize(s) * 0.08f);
+                Handles.color = Color.white;
+            }
+        }
+        if (e.type == EventType.MouseMove) sv.Repaint();
+    }
+
+    // ═════════════════════════════════════════════════════════
+    // 5) แสง (แสงลอดหน้าต่าง)
+    // ═════════════════════════════════════════════════════════
+    private void DrawLightTab()
+    {
+        EditorGUILayout.HelpBox("แสงจากหน้าต่าง: กดปุ่มด้านล่าง → คลิกที่ผนัง \"ตรงกลางหน้าต่าง\" (ด้านในห้อง)\n" +
+                                "จะได้แสงเป็นรูปช่องหน้าต่างตกบนพื้น + ลำแสงฟุ้ง + ฝุ่นลอย · ปรับต่อได้ใน Inspector (Window Light Rig)", MessageType.Info);
+
+        Header("แบบแสง");
+        string[] names = new string[MapBuilderLight.Presets.Length];
+        for (int i = 0; i < names.Length; i++) names[i] = MapBuilderLight.Presets[i].name;
+        winLight.preset = GUILayout.SelectionGrid(winLight.preset, names, 2);
+
+        Header("หน้าต่าง");
+        winLight.windowSize = EditorGUILayout.Vector2Field("กว้าง × สูง (ม.)", winLight.windowSize);
+        EditorGUILayout.BeginHorizontal();
+        winLight.useCookie = EditorGUILayout.ToggleLeft("ลายกรอบหน้าต่าง", winLight.useCookie, GUILayout.Width(120));
+        using (new EditorGUI.DisabledScope(!winLight.useCookie))
+        {
+            GUILayout.Label("ช่อง", GUILayout.Width(28));
+            winLight.cookieCols = Mathf.Clamp(EditorGUILayout.IntField(winLight.cookieCols, GUILayout.Width(28)), 1, 6);
+            GUILayout.Label("×", GUILayout.Width(12));
+            winLight.cookieRows = Mathf.Clamp(EditorGUILayout.IntField(winLight.cookieRows, GUILayout.Width(28)), 1, 6);
+        }
+        EditorGUILayout.EndHorizontal();
+        winLight.sideAngle = EditorGUILayout.Slider(new GUIContent("แสงเฉียงซ้าย/ขวา", "จันทร์อยู่ด้านข้าง"), winLight.sideAngle, -60f, 60f);
+
+        Header("เพิ่มเติม");
+        winLight.shaft = EditorGUILayout.Toggle("ลำแสงฟุ้ง", winLight.shaft);
+        winLight.addDust = EditorGUILayout.Toggle(new GUIContent("ฝุ่นลอยในแสง", "ใช้ Real_DustMotes ที่มีอยู่"), winLight.addDust);
+        winLight.clouds = EditorGUILayout.Toggle(new GUIContent("เมฆผ่าน", "ความสว่างไหวช้าๆ"), winLight.clouds);
+        winLight.castShadows = EditorGUILayout.Toggle(new GUIContent("เงาจากผนัง/ของ", "เปิดเฉพาะหน้าต่างที่โมเดลมีรูจริง — ไม่งั้นผนังบังแสงหมด"), winLight.castShadows);
+        winLight.inPtsd = (WindowLightRig.PtsdLook)EditorGUILayout.EnumPopup(new GUIContent("โลก PTSD", "Same = เหมือนเดิม · Red = แสงแดง · Off = ดับ"), winLight.inPtsd);
+
+        EditorGUILayout.Space(6);
+        Color oc = GUI.backgroundColor;
+        if (lightPlacing) GUI.backgroundColor = new Color(0.55f, 0.75f, 1f);
+        if (GUILayout.Button(lightPlacing ? "■ หยุดวาง (Esc)" : "▶ คลิกวางแสงหน้าต่าง", GUILayout.Height(30)))
+        {
+            if (lightPlacing) StopLight(); else StartLight();
+        }
+        GUI.backgroundColor = oc;
+
+        WindowLightRig rig = Selection.activeGameObject != null ? Selection.activeGameObject.GetComponentInParent<WindowLightRig>() : null;
+        if (rig != null)
+        {
+            Header("ตัวที่เลือก: " + rig.name);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("วัดลำแสงถึงพื้นใหม่"))
+            {
+                Undo.RecordObject(rig, "Map Builder: Measure");
+                rig.shaftLength = MapBuilderLight.MeasureToFloor(rig.transform, rig);
+                rig.reach = rig.shaftLength + 2f;
+                rig.Rebuild();
+            }
+            if (GUILayout.Button("ใช้ลายกรอบตามค่าด้านบน"))
+            {
+                Undo.RecordObject(rig, "Map Builder: Cookie");
+                rig.cookie = MapBuilderLight.GetOrCreateCookie(winLight.cookieCols, winLight.cookieRows, rig.windowSize);
+                rig.Rebuild();
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+
+    private void StartLight()
+    {
+        StopPainting(); StopFloor();
+        lightPlacing = true;
+        Tools.hidden = true;
+        SceneView.lastActiveSceneView?.Focus();
+        SceneView.RepaintAll();
+    }
+
+    private void StopLight()
+    {
+        lightPlacing = false;
+        Tools.hidden = false;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void LightSceneGUI(SceneView sv)
+    {
+        Event e = Event.current;
+        int id = GUIUtility.GetControlID(FocusType.Passive);
+        if (e.type == EventType.Layout) HandleUtility.AddDefaultControl(id);
+        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { StopLight(); e.Use(); return; }
+
+        if (e.type == EventType.MouseMove || e.type == EventType.Repaint || e.type == EventType.MouseDown)
+        {
+            lightHasHit = RaycastScene(e.mousePosition, out lightHitPos, out lightHitNormal) && Mathf.Abs(lightHitNormal.y) < 0.5f;
+        }
+
+        if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
+        {
+            if (lightHasHit) MapBuilderLight.Create(lightHitPos, lightHitNormal, winLight);
+            else ShowNotification(new GUIContent("คลิกที่ผนัง (ด้านในห้อง)"));
+            e.Use();
+            Repaint();
+        }
+
+        if (e.type == EventType.Repaint && lightHasHit)
+        {
+            Vector3 n = new Vector3(lightHitNormal.x, 0, lightHitNormal.z).normalized;
+            Quaternion r = Quaternion.LookRotation(n, Vector3.up);
+            Vector3 right = r * Vector3.right * (winLight.windowSize.x * 0.5f);
+            Vector3 up = Vector3.up * (winLight.windowSize.y * 0.5f);
+            Vector3 c = lightHitPos + n * 0.03f;
+            Vector3[] q = { c - right - up, c - right + up, c + right + up, c + right - up };
+            Color col = MapBuilderLight.Presets[Mathf.Clamp(winLight.preset, 0, MapBuilderLight.Presets.Length - 1)].color;
+            Handles.DrawSolidRectangleWithOutline(q, new Color(col.r, col.g, col.b, 0.2f), col);
+            Vector3 dir = r * (Quaternion.Euler(MapBuilderLight.Presets[winLight.preset].downAngle, winLight.sideAngle, 0) * Vector3.forward);
+            Handles.color = col;
+            Handles.DrawDottedLine(c, c + dir * 3f, 4f);
+            Handles.color = Color.white;
+        }
+        if (e.type == EventType.MouseMove) sv.Repaint();
+    }
+
+    // ═════════════════════════════════════════════════════════
+    // 6) ตรวจซีน
     // ═════════════════════════════════════════════════════════
     private void DrawCheckTab()
     {
