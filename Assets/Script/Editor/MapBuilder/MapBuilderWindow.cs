@@ -23,7 +23,7 @@ public class MapBuilderWindow : EditorWindow
         w.Show();
     }
 
-    private static readonly string[] Tabs = { "วางของ", "จัดของ", "ห้อง", "พื้น", "แสง", "ตรวจซีน" };
+    private static readonly string[] Tabs = { "วางของ", "จัดของ", "ห้อง", "พื้น", "แสง", "เสียง", "ตรวจซีน" };
     private int tab;
     private Vector2 scroll;
 
@@ -100,6 +100,16 @@ public class MapBuilderWindow : EditorWindow
     private bool lightHasHit;
     private Vector3 lightHitPos, lightHitNormal;
 
+    // ═════════════════════════ เสียง ═════════════════════════
+    private readonly MapBuilderSound.Settings snd = new MapBuilderSound.Settings();
+    private string soundFolder = MapBuilderSound.DefaultSoundFolders;
+    private string soundSearch = "";
+    private List<AudioClip> soundClips;
+    private bool soundPlacing, soundDragging;
+    private Vector3 soundA, soundB;
+    private float soundY;
+    private bool soundShowList;
+
     // ═════════════════════════ ตรวจซีน ═════════════════════════
     private List<MapBuilderCheck.Issue> issues;
     private float belowY = -5f;
@@ -126,7 +136,8 @@ public class MapBuilderWindow : EditorWindow
         SceneView.duringSceneGui -= OnSceneGUI;
         Selection.selectionChanged -= Repaint;
         painting = false;
-        floorDrawing = lightPlacing = false;
+        floorDrawing = lightPlacing = soundPlacing = false;
+        MapBuilderSound.StopPreview();
         Tools.hidden = false;
         SaveFolders();
     }
@@ -143,6 +154,7 @@ public class MapBuilderWindow : EditorWindow
         if (tab != 0 && painting) StopPainting();
         if (tab != 3 && floorDrawing) StopFloor();
         if (tab != 4 && lightPlacing) StopLight();
+        if (tab != 5 && soundPlacing) StopSound();
         EditorGUILayout.Space(4);
         scroll = EditorGUILayout.BeginScrollView(scroll);
         switch (tab)
@@ -152,7 +164,8 @@ public class MapBuilderWindow : EditorWindow
             case 2: DrawRoomTab(); break;
             case 3: DrawFloorTab(); break;
             case 4: DrawLightTab(); break;
-            case 5: DrawCheckTab(); break;
+            case 5: DrawSoundTab(); break;
+            case 6: DrawCheckTab(); break;
         }
         EditorGUILayout.EndScrollView();
 
@@ -405,6 +418,7 @@ public class MapBuilderWindow : EditorWindow
     {
         if (floorDrawing) { FloorSceneGUI(sv); return; }
         if (lightPlacing) { LightSceneGUI(sv); return; }
+        if (soundPlacing) { SoundSceneGUI(sv); return; }
         if (!painting) return;
         Event e = Event.current;
         int id = GUIUtility.GetControlID(FocusType.Passive);
@@ -1086,7 +1100,225 @@ public class MapBuilderWindow : EditorWindow
     }
 
     // ═════════════════════════════════════════════════════════
-    // 6) ตรวจซีน
+    // 6) เสียง
+    // ═════════════════════════════════════════════════════════
+    private void DrawSoundTab()
+    {
+        if (soundClips == null) soundClips = MapBuilderSound.FindClips(soundFolder, soundSearch);
+
+        Header("ชนิดเสียง");
+        EditorGUI.BeginChangeCheck();
+        snd.kind = (MapBuilderSound.Kind)GUILayout.SelectionGrid((int)snd.kind, MapBuilderSound.KindNames, 3);
+        if (EditorGUI.EndChangeCheck())
+        {
+            if (snd.kind != MapBuilderSound.Kind.Random && snd.clips.Count > 1) snd.clips.RemoveRange(1, snd.clips.Count - 1);
+            if (snd.kind == MapBuilderSound.Kind.Zone) snd.volume = Mathf.Min(snd.volume, 0.5f);
+            if (soundPlacing) StopSound();
+        }
+        EditorGUILayout.LabelField(MapBuilderSound.KindHelp[(int)snd.kind], EditorStyles.wordWrappedMiniLabel);
+
+        // ── คลิป ──
+        Header(snd.kind == MapBuilderSound.Kind.Random ? "คลิปเสียง (คลิกหลายอันได้ — สุ่มเล่น)" : "คลิปเสียง");
+        EditorGUILayout.BeginHorizontal();
+        EditorGUI.BeginChangeCheck();
+        soundFolder = EditorGUILayout.TextField(soundFolder);
+        if (GUILayout.Button(new GUIContent("ใช้โฟลเดอร์ที่เลือก", "คลิกโฟลเดอร์ในหน้าต่าง Project ก่อน"), EditorStyles.miniButton, GUILayout.Width(110)))
+        {
+            foreach (Object o in Selection.GetFiltered<Object>(SelectionMode.Assets))
+            {
+                string path = AssetDatabase.GetAssetPath(o);
+                if (AssetDatabase.IsValidFolder(path)) { soundFolder = path; GUI.changed = true; break; }
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+        soundSearch = EditorGUILayout.TextField("ค้นหา", soundSearch);
+        if (EditorGUI.EndChangeCheck()) soundClips = MapBuilderSound.FindClips(soundFolder, soundSearch);
+
+        if (soundClips.Count == 0) EditorGUILayout.HelpBox("ไม่เจอไฟล์เสียงในโฟลเดอร์นี้", MessageType.Warning);
+        foreach (AudioClip c in soundClips)
+        {
+            bool sel = snd.clips.Contains(c);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button(new GUIContent("▶", "ฟังตัวอย่าง"), EditorStyles.miniButtonLeft, GUILayout.Width(24))) MapBuilderSound.Preview(c);
+            if (GUILayout.Button(new GUIContent("■", "หยุด"), EditorStyles.miniButtonRight, GUILayout.Width(24))) MapBuilderSound.StopPreview();
+            Color old = GUI.backgroundColor;
+            if (sel) GUI.backgroundColor = new Color(0.35f, 0.75f, 1f);
+            if (GUILayout.Button($"{(sel ? "✓ " : "")}{c.name}", EditorStyles.miniButton))
+            {
+                if (snd.kind == MapBuilderSound.Kind.Random) { if (sel) snd.clips.Remove(c); else snd.clips.Add(c); }
+                else { snd.clips.Clear(); snd.clips.Add(c); }
+            }
+            GUI.backgroundColor = old;
+            GUILayout.Label($"{c.length:0.0}s", EditorStyles.miniLabel, GUILayout.Width(40));
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // ── ตั้งค่า ──
+        Header("ตั้งค่า");
+        if (snd.kind != MapBuilderSound.Kind.Random)
+            snd.ptsdClip = (AudioClip)EditorGUILayout.ObjectField(new GUIContent("เสียงตอน PTSD", "เข้าโลก PTSD แล้วสลับเป็นเสียงนี้ (เว้นว่างได้)"), snd.ptsdClip, typeof(AudioClip), false);
+        snd.volume = EditorGUILayout.Slider("ความดัง", snd.volume, 0f, 1f);
+        if (snd.kind != MapBuilderSound.Kind.Zone)
+        {
+            snd.fullDistance = EditorGUILayout.FloatField(new GUIContent("ดังเต็มในระยะ (ม.)", "วัดจากตัวผู้เล่น"), snd.fullDistance);
+            snd.maxDistance = EditorGUILayout.FloatField(new GUIContent("ได้ยินไกลสุด (ม.)", "ไกลกว่านี้เงียบ"), snd.maxDistance);
+            snd.pan = EditorGUILayout.Slider(new GUIContent("ซ้าย/ขวา", "0 = กลางหัว · 1 = ได้ยินชัดว่ามาจากทางไหน"), snd.pan, 0f, 1f);
+            snd.when = (SoundEmitter.When)EditorGUILayout.Popup("เล่นเมื่อ", (int)snd.when, new[] { "ตลอด", "เฉพาะโลกจริง", "เฉพาะโลก PTSD" });
+        }
+        else snd.zoneHeight = EditorGUILayout.FloatField("ความสูงโซน (ม.)", snd.zoneHeight);
+        if (snd.kind == MapBuilderSound.Kind.Random)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("ทุกๆ (วินาที)");
+            snd.interval.x = EditorGUILayout.FloatField(snd.interval.x, GUILayout.Width(45));
+            GUILayout.Label("ถึง", GUILayout.Width(22));
+            snd.interval.y = EditorGUILayout.FloatField(snd.interval.y, GUILayout.Width(45));
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+            snd.scatter = EditorGUILayout.FloatField(new GUIContent("สุ่มตำแหน่งในรัศมี (ม.)", "เสียงย้ายที่ทุกครั้ง — ผู้เล่นจับทิศไม่ถูก"), snd.scatter);
+        }
+        EditorGUILayout.BeginHorizontal();
+        snd.useMixer = EditorGUILayout.ToggleLeft("ส่งเข้า Mixer", snd.useMixer, GUILayout.Width(100));
+        using (new EditorGUI.DisabledScope(!snd.useMixer))
+            snd.mixerGroup = EditorGUILayout.TextField(snd.mixerGroup);
+        EditorGUILayout.EndHorizontal();
+        if (snd.useMixer) EditorGUILayout.LabelField("ชื่อกลุ่มใน MainMixer (SFX / BGM) — ทำให้ปรับเสียงจากเมนูตั้งค่าได้", EditorStyles.miniLabel);
+
+        // ── วาง ──
+        EditorGUILayout.Space(6);
+        bool hasClip = snd.clips.Count > 0;
+        if (!hasClip) EditorGUILayout.HelpBox("เลือกคลิปเสียงก่อน", MessageType.Info);
+        using (new EditorGUI.DisabledScope(!hasClip))
+        {
+            Color oc = GUI.backgroundColor;
+            if (soundPlacing) GUI.backgroundColor = new Color(0.75f, 0.6f, 1f);
+            string label = snd.kind == MapBuilderSound.Kind.Zone ? "▶ ลากวาดโซนในฉาก" : "▶ คลิกวางจุดเสียง";
+            if (GUILayout.Button(soundPlacing ? "■ หยุด (Esc)" : label, GUILayout.Height(30)))
+            {
+                if (soundPlacing) StopSound(); else StartSound();
+            }
+            GUI.backgroundColor = oc;
+            if (snd.kind == MapBuilderSound.Kind.Zone)
+            {
+                Transform[] sel = Selection.transforms;
+                using (new EditorGUI.DisabledScope(sel.Length == 0))
+                    if (GUILayout.Button($"สร้างโซนจากกรอบของที่เลือก ({sel.Length} ชิ้น)")) MapBuilderSound.CreateZoneFromSelection(sel, snd);
+            }
+        }
+
+        // ── รายการเสียงในซีน ──
+        EditorGUILayout.Space(6);
+        soundShowList = EditorGUILayout.Foldout(soundShowList, "เสียงทั้งหมดในซีน", true);
+        if (soundShowList)
+        {
+            foreach (SoundEmitter e in FindObjectsByType<SoundEmitter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                SoundRow(e.gameObject, e.mode == SoundEmitter.Mode.Loop ? "ลูป" : "สุ่ม", e.clips != null && e.clips.Length > 0 && e.clips[0] != null ? e.clips[0].name : "(ไม่มีคลิป!)");
+            foreach (AmbientZone z in FindObjectsByType<AmbientZone>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                SoundRow(z.gameObject, "โซน", z.realClip != null ? z.realClip.name : "(ไม่มีคลิป!)");
+        }
+    }
+
+    private void SoundRow(GameObject go, string kind, string clip)
+    {
+        EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+        GUILayout.Label(kind, EditorStyles.miniBoldLabel, GUILayout.Width(32));
+        GUILayout.Label($"{go.name}  ·  {clip}", EditorStyles.miniLabel);
+        bool on = EditorGUILayout.Toggle(go.activeSelf, GUILayout.Width(16));
+        if (on != go.activeSelf) { Undo.RecordObject(go, "Map Builder: Toggle Sound"); go.SetActive(on); }
+        if (GUILayout.Button("ดู", EditorStyles.miniButton, GUILayout.Width(32)))
+        {
+            Selection.activeGameObject = go;
+            SceneView.lastActiveSceneView?.FrameSelected();
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void StartSound()
+    {
+        StopPainting(); StopFloor(); StopLight();
+        soundPlacing = true; soundDragging = false;
+        Tools.hidden = true;
+        SceneView.lastActiveSceneView?.Focus();
+        SceneView.RepaintAll();
+    }
+
+    private void StopSound()
+    {
+        soundPlacing = soundDragging = false;
+        Tools.hidden = false;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void SoundSceneGUI(SceneView sv)
+    {
+        Event e = Event.current;
+        int id = GUIUtility.GetControlID(FocusType.Passive);
+        if (e.type == EventType.Layout) HandleUtility.AddDefaultControl(id);
+        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { StopSound(); e.Use(); return; }
+        bool zone = snd.kind == MapBuilderSound.Kind.Zone;
+        Color col = zone ? new Color(0.65f, 0.45f, 1f) : snd.kind == MapBuilderSound.Kind.Loop ? new Color(0.3f, 0.9f, 1f) : new Color(1f, 0.75f, 0.3f);
+
+        if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
+        {
+            if (RaycastScene(e.mousePosition, out Vector3 p, out Vector3 _))
+            {
+                if (zone) { soundY = p.y; soundA = soundB = SnapXZ(p); soundDragging = true; }
+                else MapBuilderSound.CreateEmitter(p, snd);
+            }
+            e.Use();
+            Repaint();
+        }
+        else if (zone && e.type == EventType.MouseDrag && e.button == 0 && soundDragging)
+        {
+            Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
+            if (new Plane(Vector3.up, new Vector3(0, soundY, 0)).Raycast(ray, out float d)) soundB = SnapXZ(ray.GetPoint(d));
+            e.Use();
+            sv.Repaint();
+        }
+        else if (zone && e.type == EventType.MouseUp && e.button == 0 && soundDragging)
+        {
+            soundDragging = false;
+            MapBuilderSound.CreateZone(soundA, soundB, soundY, snd);
+            e.Use();
+            Repaint();
+        }
+
+        if (e.type == EventType.Repaint)
+        {
+            if (zone && soundDragging)
+            {
+                float y = soundY + 0.03f;
+                Vector3 a = new Vector3(Mathf.Min(soundA.x, soundB.x), y, Mathf.Min(soundA.z, soundB.z));
+                Vector3 b = new Vector3(Mathf.Max(soundA.x, soundB.x), y, Mathf.Max(soundA.z, soundB.z));
+                Vector3[] q = { a, new Vector3(a.x, y, b.z), b, new Vector3(b.x, y, a.z) };
+                Handles.DrawSolidRectangleWithOutline(q, new Color(col.r, col.g, col.b, 0.12f), col);
+                Handles.Label(b + Vector3.up * 0.2f, $"{b.x - a.x:0.0} × {b.z - a.z:0.0} ม.", EditorStyles.whiteBoldLabel);
+            }
+            else if (RaycastScene(e.mousePosition, out Vector3 p, out Vector3 _))
+            {
+                Handles.color = col;
+                if (zone) Handles.DrawWireDisc(SnapXZ(p) + Vector3.up * 0.02f, Vector3.up, HandleUtility.GetHandleSize(p) * 0.08f);
+                else
+                {
+                    Handles.DrawWireDisc(p + Vector3.up * 0.02f, Vector3.up, snd.fullDistance);
+                    Handles.color = new Color(col.r, col.g, col.b, 0.35f);
+                    Handles.DrawWireDisc(p + Vector3.up * 0.02f, Vector3.up, snd.maxDistance);
+                    if (snd.kind == MapBuilderSound.Kind.Random && snd.scatter > 0f)
+                    {
+                        Handles.color = new Color(1f, 0.75f, 0.3f, 0.8f);
+                        Handles.DrawDottedLine(p + Vector3.left * snd.scatter, p + Vector3.right * snd.scatter, 3f);
+                    }
+                    Handles.Label(p + Vector3.up * 1.2f, snd.clips.Count > 0 ? snd.clips[0].name : "", EditorStyles.whiteMiniLabel);
+                }
+                Handles.color = Color.white;
+            }
+        }
+        if (e.type == EventType.MouseMove) sv.Repaint();
+    }
+
+    // ═════════════════════════════════════════════════════════
+    // 7) ตรวจซีน
     // ═════════════════════════════════════════════════════════
     private void DrawCheckTab()
     {
