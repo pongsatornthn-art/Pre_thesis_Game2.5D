@@ -939,20 +939,53 @@ public class MapBuilderWindow : EditorWindow
 
         Header("หน้าต่าง");
         winLight.windowSize = EditorGUILayout.Vector2Field("กว้าง × สูง (ม.)", winLight.windowSize);
-        EditorGUILayout.BeginHorizontal();
-        winLight.useCookie = EditorGUILayout.ToggleLeft("ลายกรอบหน้าต่าง", winLight.useCookie, GUILayout.Width(120));
-        using (new EditorGUI.DisabledScope(!winLight.useCookie))
-        {
-            GUILayout.Label("ช่อง", GUILayout.Width(28));
-            winLight.cookieCols = Mathf.Clamp(EditorGUILayout.IntField(winLight.cookieCols, GUILayout.Width(28)), 1, 6);
-            GUILayout.Label("×", GUILayout.Width(12));
-            winLight.cookieRows = Mathf.Clamp(EditorGUILayout.IntField(winLight.cookieRows, GUILayout.Width(28)), 1, 6);
-        }
-        EditorGUILayout.EndHorizontal();
         winLight.sideAngle = EditorGUILayout.Slider(new GUIContent("แสงเฉียงซ้าย/ขวา", "จันทร์อยู่ด้านข้าง"), winLight.sideAngle, -60f, 60f);
 
+        Header("ลายแสง (บนพื้น + ในลำแสง)");
+        winLight.useCookie = EditorGUILayout.Toggle("ใช้ลาย", winLight.useCookie);
+        using (new EditorGUI.DisabledScope(!winLight.useCookie))
+        {
+            winLight.cookieKind = (MapBuilderLight.CookieKind)EditorGUILayout.Popup("แบบลาย", (int)winLight.cookieKind, MapBuilderLight.CookieKindNames);
+            switch (winLight.cookieKind)
+            {
+                case MapBuilderLight.CookieKind.Panes:
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.PrefixLabel("ช่องกระจก");
+                    winLight.cookieCols = Mathf.Clamp(EditorGUILayout.IntField(winLight.cookieCols, GUILayout.Width(36)), 1, 6);
+                    GUILayout.Label("×", GUILayout.Width(12));
+                    winLight.cookieRows = Mathf.Clamp(EditorGUILayout.IntField(winLight.cookieRows, GUILayout.Width(36)), 1, 6);
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.EndHorizontal();
+                    break;
+                case MapBuilderLight.CookieKind.Blinds:
+                    winLight.blindSlats = EditorGUILayout.IntSlider("จำนวนเส้น", winLight.blindSlats, 2, 30);
+                    winLight.blindGap = EditorGUILayout.Slider("ช่องแสงกว้าง", winLight.blindGap, 0.1f, 0.9f);
+                    break;
+                case MapBuilderLight.CookieKind.Boards:
+                    EditorGUILayout.LabelField("ร่องแสงตามตำแหน่งเส้นแสงด้านล่าง (สุ่มใหม่ทุกหน้าต่าง)", EditorStyles.miniLabel);
+                    winLight.flipCookie = EditorGUILayout.Toggle(new GUIContent("กลับซ้าย-ขวา", "ถ้าเส้นบนพื้นไม่ตรงกับเส้นในอากาศ ให้ติ๊กนี้"), winLight.flipCookie);
+                    break;
+            }
+        }
+
+        Header("ลำแสงในอากาศ");
+        winLight.shaft = EditorGUILayout.Toggle("แสดงลำแสง", winLight.shaft);
+        using (new EditorGUI.DisabledScope(!winLight.shaft))
+        {
+            string[] styles = { "เรียบ (ก้อนเดียว)", "เป็นเส้นๆ", "Volume (ริ้วตามกรอบ)" };
+            winLight.shaftStyle = (WindowLightRig.ShaftStyle)EditorGUILayout.Popup(new GUIContent("แบบลำแสง",
+                "เป็นเส้นๆ = แสงลอดร่อง/ไม้กระดาน · Volume = ริ้วเงาซี่หน้าต่างยาวในอากาศ (ต้องใช้ลาย)"), (int)winLight.shaftStyle, styles);
+            if (winLight.shaftStyle == WindowLightRig.ShaftStyle.Rays)
+            {
+                winLight.rayCount = EditorGUILayout.IntSlider("จำนวนเส้น", winLight.rayCount, 1, 40);
+                winLight.rayWidth = EditorGUILayout.Slider("ความกว้างเส้น (ม.)", winLight.rayWidth, 0.01f, 0.6f);
+                winLight.raysAsSlits = EditorGUILayout.Toggle(new GUIContent("เรียงเป็นร่องตั้ง", "ปิด = กระจายเป็นจุดๆ ทั่วหน้าต่าง"), winLight.raysAsSlits);
+            }
+            if (winLight.shaftStyle == WindowLightRig.ShaftStyle.Volume && !winLight.useCookie)
+                EditorGUILayout.HelpBox("Volume ต้องเปิด \"ใช้ลาย\" — ไม่งั้นจะใช้แบบเรียบแทน", MessageType.Warning);
+        }
+
         Header("เพิ่มเติม");
-        winLight.shaft = EditorGUILayout.Toggle("ลำแสงฟุ้ง", winLight.shaft);
         winLight.addDust = EditorGUILayout.Toggle(new GUIContent("ฝุ่นลอยในแสง", "ใช้ Real_DustMotes ที่มีอยู่"), winLight.addDust);
         winLight.clouds = EditorGUILayout.Toggle(new GUIContent("เมฆผ่าน", "ความสว่างไหวช้าๆ"), winLight.clouds);
         winLight.castShadows = EditorGUILayout.Toggle(new GUIContent("เงาจากผนัง/ของ", "เปิดเฉพาะหน้าต่างที่โมเดลมีรูจริง — ไม่งั้นผนังบังแสงหมด"), winLight.castShadows);
@@ -979,10 +1012,18 @@ public class MapBuilderWindow : EditorWindow
                 rig.reach = rig.shaftLength + 2f;
                 rig.Rebuild();
             }
-            if (GUILayout.Button("ใช้ลายกรอบตามค่าด้านบน"))
+            if (GUILayout.Button("ใช้ลายตามค่าด้านบน"))
             {
                 Undo.RecordObject(rig, "Map Builder: Cookie");
-                rig.cookie = MapBuilderLight.GetOrCreateCookie(winLight.cookieCols, winLight.cookieRows, rig.windowSize);
+                rig.cookie = MapBuilderLight.MakeCookie(rig, winLight);
+                rig.Rebuild();
+            }
+            if (GUILayout.Button("สุ่มเส้นใหม่") )
+            {
+                Undo.RecordObject(rig, "Map Builder: Reseed");
+                rig.raySeed = Random.Range(1, 9999);
+                if (winLight.cookieKind == MapBuilderLight.CookieKind.Boards && rig.cookie != null)
+                    rig.cookie = MapBuilderLight.CreateRaysCookie(rig, winLight.flipCookie);
                 rig.Rebuild();
             }
             EditorGUILayout.EndHorizontal();

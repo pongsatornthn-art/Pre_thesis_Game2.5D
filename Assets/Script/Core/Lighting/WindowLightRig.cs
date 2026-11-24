@@ -15,6 +15,7 @@ using UnityEngine;
 public class WindowLightRig : MonoBehaviour
 {
     public enum PtsdLook { Same, Red, Off }
+    public enum ShaftStyle { Solid, Rays, Volume }
 
     [Header("หน้าต่าง")]
     [Tooltip("ขนาดช่องหน้าต่าง กว้าง × สูง (เมตร)")]
@@ -38,6 +39,20 @@ public class WindowLightRig : MonoBehaviour
 
     [Header("ลำแสงฟุ้ง")]
     public bool shaft = true;
+    [Tooltip("Solid = ลำแสงก้อนเดียว · Rays = แสงเป็นเส้นๆ หลายเส้น (ลอดร่อง/ไม้กระดาน)\nVolume = แสงฟุ้งเป็นริ้วตามลายกรอบหน้าต่าง (แบบ volumetric) — ต้องมี Cookie")]
+    public ShaftStyle shaftStyle = ShaftStyle.Volume;
+    [Tooltip("โหมด Volume: จำนวนแผ่นตัดในลำแสง (มาก = เนียน ริ้วชัด)")]
+    [Range(4, 40)] public int volumeSlices = 14;
+    [Tooltip("จำนวนเส้นแสง (โหมด Rays)")]
+    [Range(1, 40)] public int rayCount = 7;
+    [Tooltip("ความกว้างเส้นแสง (เมตร) — สุ่ม ±50% ต่อเส้น")]
+    [Range(0.01f, 0.6f)] public float rayWidth = 0.1f;
+    [Tooltip("เรียงเส้นแนวตั้ง (เหมือนแสงลอดร่องไม้กระดาน) · ปิด = กระจายสุ่มทั่วหน้าต่าง")]
+    public bool raysAsSlits = true;
+    [Tooltip("แต่ละเส้นสว่างขึ้นลงไม่พร้อมกัน")]
+    [Range(0f, 1f)] public float rayFlicker = 0.35f;
+    [Tooltip("เปลี่ยนเลขเพื่อสุ่มตำแหน่งเส้นใหม่")]
+    public int raySeed = 1;
     [Tooltip("ความยาวลำแสง (เมตร) — ตอนสร้างจากเครื่องมือจะคำนวณให้ยาวถึงพื้นพอดี")]
     [Min(0.1f)] public float shaftLength = 3f;
     [Range(0f, 1f)] public float shaftOpacity = 0.18f;
@@ -171,32 +186,123 @@ public class WindowLightRig : MonoBehaviour
             shaftMesh = new Mesh { name = "WindowShaft" };
             shaftMesh.hideFlags = HideFlags.DontSave;
         }
-        float w = windowSize.x * 0.5f, h = windowSize.y * 0.5f;
+        var v = new System.Collections.Generic.List<Vector3>();
+        var uv = new System.Collections.Generic.List<Vector2>();
+        var uv2 = new System.Collections.Generic.List<Vector2>();   // x = เฟสกระพริบ · y = ความแรงของเส้น
+        var tri = new System.Collections.Generic.List<int>();
         float grow = 1f + shaftLength * shaftSpread;
-        Vector3 end = dir * shaftLength;
-        // มุมหน้าต่าง (z = 0) และปลายลำแสง
-        Vector3[] a = { new Vector3(-w, -h, 0), new Vector3(w, -h, 0), new Vector3(w, h, 0), new Vector3(-w, h, 0) };
-        Vector3[] b = new Vector3[4];
-        for (int i = 0; i < 4; i++) b[i] = new Vector3(a[i].x * grow, a[i].y * grow, 0f) + end;
 
-        // 4 ด้าน (ล่าง ขวา บน ซ้าย) — แต่ละด้าน u = ขวาง 0..1 · v = ตามยาว 0..1
-        var v = new Vector3[16];
-        var uv = new Vector2[16];
-        var tri = new int[24];
-        for (int s = 0; s < 4; s++)
+        var uv3 = new System.Collections.Generic.List<Vector2>();  // พิกัดบนลาย cookie (โหมด Volume)
+        if (shaftStyle == ShaftStyle.Volume)
         {
-            int i0 = s, i1 = (s + 1) % 4, k = s * 4;
-            v[k] = a[i0]; v[k + 1] = a[i1]; v[k + 2] = b[i1]; v[k + 3] = b[i0];
-            uv[k] = new Vector2(0, 0); uv[k + 1] = new Vector2(1, 0); uv[k + 2] = new Vector2(1, 1); uv[k + 3] = new Vector2(0, 1);
-            int t = s * 6;
-            tri[t] = k; tri[t + 1] = k + 1; tri[t + 2] = k + 2; tri[t + 3] = k; tri[t + 4] = k + 2; tri[t + 5] = k + 3;
+            AddVolume(v, uv, uv2, uv3, tri, dir, grow);
         }
+        else if (shaftStyle == ShaftStyle.Solid)
+        {
+            AddBeam(v, uv, uv2, tri, Vector2.zero, windowSize * 0.5f, dir, grow, 0f, 1f);
+        }
+        else
+        {
+            foreach (LightRay r in ComputeRays())
+                AddBeam(v, uv, uv2, tri, r.center, r.half, dir, grow, r.phase, r.strength);
+        }
+
         shaftMesh.Clear();
-        shaftMesh.vertices = v;
-        shaftMesh.uv = uv;
-        shaftMesh.triangles = tri;
+        shaftMesh.SetVertices(v);
+        shaftMesh.SetUVs(0, uv);
+        shaftMesh.SetUVs(1, uv2);
+        while (uv3.Count < v.Count) uv3.Add(new Vector2(0.5f, 0.5f));
+        shaftMesh.SetUVs(2, uv3);
+        shaftMesh.SetTriangles(tri, 0);
         shaftMesh.RecalculateBounds();
         shaftFilter.sharedMesh = shaftMesh;
+    }
+
+    /// <summary>
+    /// โหมด Volume: แผ่นตัดแนวตั้ง + แนวนอนซ้อนกันในลำแสง แต่ละแผ่นอ่านลาย cookie ตามตำแหน่ง
+    /// → ซี่กรอบหน้าต่างกลายเป็น "ริ้วเงา" ยาวไปในอากาศ เหมือนแสง volumetric
+    /// </summary>
+    private void AddVolume(System.Collections.Generic.List<Vector3> v, System.Collections.Generic.List<Vector2> uv,
+                           System.Collections.Generic.List<Vector2> uv2, System.Collections.Generic.List<Vector2> uv3,
+                           System.Collections.Generic.List<int> tri, Vector3 dir, float grow)
+    {
+        float hx = windowSize.x * 0.5f, hy = windowSize.y * 0.5f;
+        float m = Mathf.Max(windowSize.x, windowSize.y, 0.01f);
+        Vector3 end = dir * shaftLength;
+        int n = Mathf.Max(2, volumeSlices / 2);
+        for (int axis = 0; axis < 2; axis++)            // 0 = แผ่นตั้ง (ไล่ตาม x) · 1 = แผ่นนอน (ไล่ตาม y)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                float t = (i + 0.5f) / n;
+                Vector3 p0, p1;
+                if (axis == 0) { float x = Mathf.Lerp(-hx, hx, t); p0 = new Vector3(x, -hy, 0); p1 = new Vector3(x, hy, 0); }
+                else { float y = Mathf.Lerp(-hy, hy, t); p0 = new Vector3(-hx, y, 0); p1 = new Vector3(hx, y, 0); }
+                Vector3 q0 = new Vector3(p0.x * grow, p0.y * grow, 0f) + end;
+                Vector3 q1 = new Vector3(p1.x * grow, p1.y * grow, 0f) + end;
+                int k = v.Count;
+                v.Add(p0); v.Add(p1); v.Add(q1); v.Add(q0);
+                uv.Add(new Vector2(0, 0)); uv.Add(new Vector2(1, 0)); uv.Add(new Vector2(1, 1)); uv.Add(new Vector2(0, 1));
+                for (int j = 0; j < 4; j++) uv2.Add(new Vector2(0f, 1f));
+                Vector2 c0 = new Vector2(0.5f + p0.x / m, 0.5f + p0.y / m), c1 = new Vector2(0.5f + p1.x / m, 0.5f + p1.y / m);
+                uv3.Add(c0); uv3.Add(c1); uv3.Add(c1); uv3.Add(c0);
+                tri.Add(k); tri.Add(k + 1); tri.Add(k + 2); tri.Add(k); tri.Add(k + 2); tri.Add(k + 3);
+            }
+        }
+    }
+
+    /// <summary>ตำแหน่งเส้นแสง 1 เส้น (พิกัดบนหน้าต่าง: กลาง = 0,0 · เมตร)</summary>
+    public struct LightRay { public Vector2 center, half; public float phase, strength; }
+
+    /// <summary>คำนวณเส้นแสงทั้งหมดจาก raySeed — ใช้ทั้งสร้างลำแสงและสร้างลาย cookie ให้ตรงกัน</summary>
+    public LightRay[] ComputeRays()
+    {
+        var list = new LightRay[Mathf.Max(1, rayCount)];
+        var rng = new System.Random(raySeed * 7919 + 17);
+        float hx = windowSize.x * 0.5f, hy = windowSize.y * 0.5f;
+        for (int i = 0; i < list.Length; i++)
+        {
+            float w = rayWidth * (0.5f + (float)rng.NextDouble()) * 0.5f;
+            Vector2 c, half;
+            if (raysAsSlits)
+            {
+                // ร่องแนวตั้งเรียงซ้าย→ขวา (เหลื่อมนิดหน่อย) ยาวเกือบเต็มความสูงหน้าต่าง
+                float t = (i + 0.5f) / list.Length + ((float)rng.NextDouble() - 0.5f) * 0.6f / list.Length;
+                c = new Vector2(Mathf.Lerp(-hx + w, hx - w, t), ((float)rng.NextDouble() - 0.5f) * hy * 0.2f);
+                half = new Vector2(w, hy * (0.75f + 0.25f * (float)rng.NextDouble()));
+            }
+            else
+            {
+                c = new Vector2(((float)rng.NextDouble() * 2f - 1f) * Mathf.Max(0f, hx - w), ((float)rng.NextDouble() * 2f - 1f) * Mathf.Max(0f, hy - w));
+                half = new Vector2(w, w);
+            }
+            list[i] = new LightRay { center = c, half = half, strength = 0.45f + 0.55f * (float)rng.NextDouble(), phase = (float)rng.NextDouble() };
+        }
+        return list;
+    }
+
+    /// <summary>ลำแสง 1 ลำ (กล่องเปิดหัวท้าย 4 ด้าน) จากสี่เหลี่ยมบนหน้าต่าง → ตามทิศแสง</summary>
+    private void AddBeam(System.Collections.Generic.List<Vector3> v, System.Collections.Generic.List<Vector2> uv,
+                         System.Collections.Generic.List<Vector2> uv2, System.Collections.Generic.List<int> tri,
+                         Vector2 c, Vector2 half, Vector3 dir, float grow, float phase, float strength)
+    {
+        Vector3 end = dir * shaftLength;
+        Vector3[] a =
+        {
+            new Vector3(c.x - half.x, c.y - half.y, 0), new Vector3(c.x + half.x, c.y - half.y, 0),
+            new Vector3(c.x + half.x, c.y + half.y, 0), new Vector3(c.x - half.x, c.y + half.y, 0)
+        };
+        for (int s = 0; s < 4; s++)
+        {
+            Vector3 p0 = a[s], p1 = a[(s + 1) % 4];
+            Vector3 q0 = new Vector3(p0.x * grow, p0.y * grow, 0f) + end;
+            Vector3 q1 = new Vector3(p1.x * grow, p1.y * grow, 0f) + end;
+            int k = v.Count;
+            v.Add(p0); v.Add(p1); v.Add(q1); v.Add(q0);
+            uv.Add(new Vector2(0, 0)); uv.Add(new Vector2(1, 0)); uv.Add(new Vector2(1, 1)); uv.Add(new Vector2(0, 1));
+            for (int i = 0; i < 4; i++) uv2.Add(new Vector2(phase, strength));
+            tri.Add(k); tri.Add(k + 1); tri.Add(k + 2); tri.Add(k); tri.Add(k + 2); tri.Add(k + 3);
+        }
     }
 
     // ───────── ทุกเฟรม: เมฆ + PTSD ─────────
@@ -243,8 +349,14 @@ public class WindowLightRig : MonoBehaviour
         CurrentLook(out Color c, out float mul);
         shaftRenderer.GetPropertyBlock(mpb);
         mpb.SetColor("_Color", c);
-        mpb.SetFloat("_Opacity", shaftOpacity * mul * cloud);
-        mpb.SetFloat("_Soft", shaftSoftness);
+        float styleMul = shaftStyle == ShaftStyle.Rays ? 1.8f
+                       : shaftStyle == ShaftStyle.Volume ? 3f / Mathf.Max(2, volumeSlices) : 1f;   // แผ่นซ้อนเยอะ → หารให้สว่างพอๆ กัน
+        mpb.SetFloat("_Opacity", shaftOpacity * mul * cloud * styleMul);
+        mpb.SetFloat("_Soft", shaftStyle == ShaftStyle.Rays ? Mathf.Max(shaftSoftness, 0.45f) : shaftSoftness);
+        mpb.SetFloat("_RayFlicker", shaftStyle == ShaftStyle.Rays ? rayFlicker : 0f);
+        bool vol = shaftStyle == ShaftStyle.Volume && cookie != null;
+        mpb.SetFloat("_UseCookie", vol ? 1f : 0f);
+        if (cookie != null) mpb.SetTexture("_Cookie", cookie);
         shaftRenderer.SetPropertyBlock(mpb);
     }
 
