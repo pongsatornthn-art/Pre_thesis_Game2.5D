@@ -16,7 +16,7 @@ public class StorageInteract : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && InteractInput.PickupPressed && !GameplayInputGate.Blocked) // [แก้โดย Claude 2026-10-07] กลับเป็น E ตามเดิม (ปุ่มเก็บของ/เปิดปิด)
+        if (isPlayerNear && InteractInput.PickupPressed && !GameplayInputGate.Blocked && !InteractPromptMarker.OtherPromptShown(gameObject)) // [แก้โดย Claude 2026-10-07] กลับเป็น E ตามเดิม (ปุ่มเก็บของ/เปิดปิด) · [2026-11-24] กันชนกับของชิ้นอื่น
         {
             if (boxUI.uiPanel.activeSelf)
             {

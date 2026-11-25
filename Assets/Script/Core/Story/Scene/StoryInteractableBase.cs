@@ -58,7 +58,9 @@ public abstract class StoryInteractableBase : MonoBehaviour
         bool canInteract = CanInteractNow() && !GameplayInputGate.Blocked;   // [Claude 2026-11-11] นั่งโต๊ะ = ไม่ขึ้นป้าย/กดไม่ได้
         SetPrompt(canInteract);
 
-        if (canInteract && InteractInput.Pressed)
+        // [2026-11-24] E ปุ่มเดียวกับเก็บของ/ประตู → ป้ายโชว์ของชิ้นอื่นที่ใกล้กว่า = E ครั้งนี้เป็นของชิ้นนั้น
+        IInteractPromptService world = ServiceLocator.GetOptional<IInteractPromptService>();
+        if (canInteract && InteractInput.Pressed && (world == null || !world.IsOtherShown(this, PromptKey.Story)))
         {
             SetPrompt(false);
             OnInteract(StoryContext.Create(this, nearPlayer));

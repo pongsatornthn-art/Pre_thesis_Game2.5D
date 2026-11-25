@@ -31,6 +31,14 @@ public class MinionGrabStruggle : MonoBehaviour
     [Tooltip("รูปขีดตัววิ่ง — กระพริบแดงตอนกดพลาด (เว้นว่างได้)")]
     [SerializeField] private UnityEngine.UI.Image cursorImage;
 
+    [Header("ตำแหน่ง (2026-11-24 นา: ลอยเหนือหัวผู้เล่น)")]
+    [Tooltip("ก้อน UI ที่จะย้ายไปลอยเหนือหัว (แถบ + ข้อความ) — เว้นว่าง = อยู่ที่เดิมบนจอ")]
+    [SerializeField] private RectTransform followRoot;
+    [Tooltip("สูงจากเท้าผู้เล่นกี่เมตร")]
+    [SerializeField] private float headHeight = 2.3f;
+    [Tooltip("เลื่อนบนจอเพิ่ม (พิกเซล) — ค่าบวก = ขึ้น")]
+    [SerializeField] private Vector2 screenOffset = new Vector2(0f, 30f);
+
     [Header("ความยาก")]
     [Tooltip("ขีดวิ่งเร็วกี่ % ของแถบต่อวินาที (100 = วิ่งสุดแถบใน 1 วิ)")]
     [SerializeField] private float cursorSpeed = 85f;
@@ -100,6 +108,27 @@ public class MinionGrabStruggle : MonoBehaviour
     public void CancelIfHeldBy(PTSDMonsterAI ai)
     {
         if (active && minion == ai) End(false, notifyMinion: false);
+    }
+
+    // [2026-11-24] ตามหัวผู้เล่นบนจอทุกเฟรม (หลังกล้องขยับเสร็จ)
+    private void LateUpdate()
+    {
+        if (!active || followRoot == null || player == null) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        Vector3 sp = cam.WorldToScreenPoint(player.transform.position + Vector3.up * headHeight);
+        if (sp.z <= 0f) return;
+        Vector2 screen = new Vector2(sp.x, sp.y) + screenOffset;
+
+        RectTransform parent = followRoot.parent as RectTransform;
+        Canvas canvas = followRoot.GetComponentInParent<Canvas>();
+        Camera uiCam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        if (parent != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screen, uiCam, out Vector2 local))
+        {
+            // ยึดกึ่งกลาง → ตั้ง anchoredPosition เทียบกลาง parent ได้ตรงๆ
+            followRoot.anchorMin = followRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            followRoot.anchoredPosition = local - parent.rect.center;
+        }
     }
 
     private void Update()

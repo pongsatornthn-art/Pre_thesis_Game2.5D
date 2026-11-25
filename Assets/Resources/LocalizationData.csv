@@ -41,6 +41,7 @@ SAVE_DONE;บันทึกเกมแล้ว;Game saved
 SAVE_BLOCKED_PTSD;บันทึกเกมไม่ได้ในตอนนี้...;You cannot save right now...
 MINIGAME_ASSEMBLY_HINT;ลากเศษรูปจากช่องขวาไปวางบนกระดาน · R หมุน · คลิกขวาเอาคืน;Drag pieces from the right onto the board · R rotate · Right-click to take back
 COMIC_HINT_NEXT;Space / F ไปหน้าถัดไป · Tab ข้าม;Space / F next page · Tab skip
+VIDEO_HINT_SKIP;กด Tab ค้างเพื่อข้าม;Hold Tab to skip
 KEYITEM_PAINTING_FULL;รูปวาดที่ถูกประกอบคืน;The Restored Painting
 KEYITEM_PAINTING_FULL_DESC;รูปวาดที่ประกอบจากเศษกระดาษจนสมบูรณ์ มีตัวเลขเขียนไว้ว่า 1234;The painting, pieced back together. Numbers are written on it: 1234
 KEYITEM_PAINTING_KEY;กุญแจจากตู้เซฟ;Key from the Safe
@@ -118,3 +119,10 @@ NOTIFY_ITEM_OBTAINED;ได้รับ: {0};Obtained: {0}
 ITEM_MEDICINE;ยารักษาแผล;Medicine
 ITEM_MEDICINE_DESC;ฟื้นเลือด 35 หน่วย;Restores 35 health
 GRAB_STRUGGLE_HINT;สะบัดให้หลุด! คลิกซ้ายตอนเข็มอยู่ในช่อง;Break free! Left-click when the needle is in the zone
+DEATH_TITLE;คุณตายแล้ว;You Died
+DEATH_CONTINUE;เล่นต่อ;Continue
+DEATH_MAIN_MENU;กลับเมนูหลัก;Main Menu
+DEMO_END_TITLE;จบเดโม;End of Demo
+DEMO_END_THANKS;ขอบคุณที่เล่น;Thank you for playing
+DEMO_END_MENU;กลับเมนูหลัก;Back to Main Menu
+UI_BRIGHTNESS;ความสว่าง;Brightness

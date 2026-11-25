@@ -8,10 +8,16 @@ using UnityEngine;
 ///   E (PickupKey) = ของปกติ: เก็บไอเทมที่พื้น (รวมเศษรูป) · เปิด/ปิดกล่องเก็บของ · ประตู (DoorController ของปอใช้ E ตรงๆ อยู่แล้ว)
 /// E ยังใช้กับ "ใช้ไอเทมในสมุด" (ตอนเปิดสมุด) และ "ดิ้นหลุดจากสตอล์กเกอร์" — คนละจังหวะ ไม่ชนกัน
 /// ⏳ อนาคตย้ายไปตั้งค่าในเมนู Settings (เปลี่ยนปุ่มเองได้) — ตอนนั้นแก้แค่ไฟล์นี้
+///
+/// [2026-11-24 นา] รวมเป็นปุ่ม E ปุ่มเดียว (F เลิกใช้) — ยืนใกล้หลายอย่าง กด E ครั้งเดียว = ทำแค่ชิ้นที่ป้ายโชว์อยู่ (ชิ้นใกล้สุด)
+///   ตัวกันชนกัน: IInteractPromptService.IsOtherShown เทียบ "ปุ่มจริง" (ไม่ใช่ชนิดป้าย) → ทุกระบบที่กด E ต้องเช็คก่อนทำงาน
 /// </summary>
 public static class InteractInput
 {
-    public static KeyCode Key { get; set; } = KeyCode.F;
+    public static KeyCode Key { get; set; } = KeyCode.E;
+
+    /// <summary>ชนิดป้าย → ปุ่มจริงที่ต้องกด</summary>
+    public static KeyCode KeyFor(PromptKey key) => key == PromptKey.Story ? Key : PickupKey;
 
     /// <summary>ชื่อปุ่มสำหรับโชว์ในป้าย เช่น "F"</summary>
     public static string KeyName => Key.ToString();
@@ -28,7 +34,7 @@ public static class InteractInput
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
     {
-        Key = KeyCode.F;
+        Key = KeyCode.E;
         PickupKey = KeyCode.E;
     }
 }

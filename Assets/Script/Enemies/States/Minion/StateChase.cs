@@ -21,6 +21,7 @@ public class StateChase : IMonsterState
         if (ai.ClearLineToPlayer()) ai.LastKnownPlayerPos = ai.PlayerTransform.position;
         stuckTimer = 0f;
         sidestepUntil = 0f;
+        unreachableTimer = 0f;
         ai.ShowDebugText("MINION_CHASE", Color.red);
         Debug.Log("👁️‍🗨️ มอนสเตอร์เจอผู้เล่นแล้ว! วิ่งไล่สุดชีวิต!");
     }
@@ -66,7 +67,45 @@ public class StateChase : IMonsterState
             ai.Agent.SetDestination(ChaseTarget.OnNavMesh(ai.LastKnownPlayerPos));
         }
 
+        // [2026-11-24 นา] ไปไม่ถึง (กล่อง/ของขวางทางตัดทางเดิน · ผู้เล่นอยู่อีกฝั่ง) — เดิมวิ่งไปสุดทางแล้วดันกล่องค้าง ดูโง่
+        // ตอนนี้: ไปถึงสุดทางแล้วยืนจ้อง · ค้างนานเกิน = เลิกไล่ กลับไปเดินตรวจ
+        if (Unreachable(ai.Agent, ai.LastKnownPlayerPos))
+        {
+            if (ai.Agent.remainingDistance <= 0.8f)
+            {
+                ai.Agent.isStopped = true;
+                FacePlayer(ai);
+                unreachableTimer += Time.deltaTime;
+                if (unreachableTimer >= GiveUpSeconds)
+                {
+                    ai.Awareness.currentAwareness = 0f;
+                    ai.ReturnToDefaultPatrol();
+                }
+                return;
+            }
+        }
+        else unreachableTimer = 0f;
+        if (ai.Agent.isStopped && Time.time >= sidestepUntil) ai.Agent.isStopped = false;
+
         CheckAttack(ai, clear);
+    }
+
+    private const float GiveUpSeconds = 2.5f;
+    private float unreachableTimer;
+
+    /// <summary>ทางที่หาได้ไปไม่ถึงเป้า (จบห่างเป้าเกิน 1.5 ม.)</summary>
+    public static bool Unreachable(NavMeshAgent agent, Vector3 target)
+    {
+        if (agent.pathPending || agent.pathStatus != NavMeshPathStatus.PathPartial) return false;
+        Vector3 d = agent.pathEndPosition - target; d.y = 0f;
+        return d.sqrMagnitude > 1.5f * 1.5f;
+    }
+
+    private static void FacePlayer(PTSDMonsterAI ai)
+    {
+        if (ai.PlayerTransform == null) return;
+        Vector3 dir = ai.PlayerTransform.position - ai.transform.position; dir.y = 0f;
+        if (dir.sqrMagnitude > 0.01f) ai.transform.rotation = Quaternion.Slerp(ai.transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 6f);
     }
 
     private void CheckAttack(PTSDMonsterAI ai, bool clear)

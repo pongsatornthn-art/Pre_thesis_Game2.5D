@@ -15,6 +15,8 @@ public class SettingsUIController : MonoBehaviour
     public Slider bgmVolumeSlider;
     public Slider sfxVolumeSlider;
     public Slider mouseSensitivitySlider;
+    [Tooltip("[2026-11-25] ความสว่าง (ค่า 0–1 · กลาง = ปกติ)")]
+    public Slider brightnessSlider;
 
     private void Start()
     {
@@ -47,6 +49,15 @@ public class SettingsUIController : MonoBehaviour
             {
                 sfxVolumeSlider.value = PlayerPrefs.GetFloat("Game_SFXVol", 1.0f);
                 sfxVolumeSlider.onValueChanged.AddListener((val) => settingsManager.SaveSFXVolume(val));
+            }
+
+            // === 2.5 ความสว่าง [2026-11-25] ===
+            if (brightnessSlider != null)
+            {
+                brightnessSlider.minValue = 0f;
+                brightnessSlider.maxValue = 1f;
+                brightnessSlider.value = settingsManager.GetBrightness();
+                brightnessSlider.onValueChanged.AddListener((val) => settingsManager.SaveBrightness(val));
             }
 
             // === 3. จัดการเมาส์ (Sensitivity ใช้ Slider ค่า 1-10) ===

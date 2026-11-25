@@ -79,14 +79,16 @@ public class PuzzleBook : MonoBehaviour
         if (highlight != null) highlight.SetHighlighted(on && !IsPulled);
     }
 
-    /// <summary>ดึงออก — คืนค่าว่าเป็นเล่มที่ถูกไหม (เล่มผิดจะเลื่อนกลับเอง)</summary>
-    public bool Pull(AudioSource audio)
+    /// <summary>ดึงออก — คืนค่าว่าเป็นเล่มที่ถูกไหม (เล่มผิดจะเลื่อนกลับเอง)
+    /// [นา 2026-11-24] locked = ยังไม่ครบเงื่อนไข (ยังไม่ได้สังเกตรอยลาก) → เล่มถูกก็เลื่อนกลับเหมือนเล่มผิด</summary>
+    public bool Pull(AudioSource audio, bool locked = false)
     {
         if (anim != null || IsPulled) return false;
         if (highlight != null) highlight.SetHighlighted(false);
         if (audio != null && pullSound != null) audio.PlayOneShot(pullSound);
-        anim = StartCoroutine(PullRoutine(audio));
-        return isCorrect;
+        bool success = isCorrect && !locked;
+        anim = StartCoroutine(PullRoutine(audio, success));
+        return success;
     }
 
     /// <summary>โหลดเซฟ: เล่มที่ถูกถูกดึงไปแล้ว → วางท่าดึงออกทันที</summary>
@@ -99,10 +101,10 @@ public class PuzzleBook : MonoBehaviour
         Apply();
     }
 
-    private IEnumerator PullRoutine(AudioSource audio)
+    private IEnumerator PullRoutine(AudioSource audio, bool stay)
     {
         yield return Animate(1f);
-        if (isCorrect)
+        if (stay)
         {
             IsPulled = true;
         }

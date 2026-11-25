@@ -179,6 +179,9 @@ public class PTSDMonsterAI : MonoBehaviour, IDamageable
     // Event บอกตอนตัวเองตาย (ให้ Spawner ไปหักลบโควต้า)
     public event System.Action OnDeath;
 
+    // [2026-11-24] ชนบานประตูที่ไม่ล็อก = ทะลุ (เดิมเดินชนบานค้าง)
+    private void OnCollisionEnter(Collision hit) => DoorNavBlocker.PassThroughIfUnlocked(hit, GetComponent<Collider>());
+
     private void Awake()
     {
         Agent = GetComponent<NavMeshAgent>();

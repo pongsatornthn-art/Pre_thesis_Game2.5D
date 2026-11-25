@@ -121,8 +121,16 @@ public class StoryCloseUpView : SceneIdentified<StoryCloseUpView>
         }
     }
 
+    // [2026-11-24] ระหว่างอยู่มุมนี้ กันระบบซ่อนกำแพงมาซ่อนซ้ำ
+    private void LateUpdate()
+    {
+        if (Active == this) HiddenGeometryReveal.KeepVisible();
+    }
+
     private void ApplyActive(bool on)
     {
+        // [2026-11-24 นา] มุม FPS ต้องเห็นตู้/กำแพงที่กล้องหลักซ่อนไว้ (เดิมเข้าจุดเก็บแผนที่ครัวแล้วตู้หาย เหมือนลอย)
+        if (on) HiddenGeometryReveal.Reveal(this); else HiddenGeometryReveal.Restore(this);
         if (fpsCamera != null) fpsCamera.SetActive(on);
         if (mainCamera != null) mainCamera.SetActive(!on);
         if (lookController != null) lookController.enabled = on;

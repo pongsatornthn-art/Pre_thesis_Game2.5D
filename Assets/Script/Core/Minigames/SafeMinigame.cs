@@ -60,7 +60,7 @@ public class SafeMinigame : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !isMinigameActive)
+        if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !isMinigameActive && !InteractPromptMarker.OtherPromptShown(gameObject))   // [นา 2026-11-24] E ปุ่มเดียว: ป้ายโชว์ของชิ้นอื่น = ไม่ใช่ของเรา
         {
             TryOpen();
         }

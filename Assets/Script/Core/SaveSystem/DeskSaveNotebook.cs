@@ -61,6 +61,13 @@ public class DeskSaveNotebook : MonoBehaviour
         }
     }
 
+    // [2026-11-25 บั๊กนา] กด ESC ตอนอนิเมชั่นสมุดยังเล่นอยู่ (เช่น หลังเซฟ ปกกำลังปิด) → ไม่มีใครรับ ESC
+    // → เมนูหยุดเกมเปิดทั้งที่ UI ถูกซ่อนอยู่ (มุมโต๊ะ) = เกมหยุดแต่ไม่เห็นเมนู · ตัวนี้กิน ESC ไว้เองระหว่างทำงาน
+    private void Update()
+    {
+        if (IsBusy && !SaveSlotPickerUI.IsOpen && Input.GetKeyDown(KeyCode.Escape)) EscapeGuard.MarkHandled();
+    }
+
     private void OnDisable()
     {
         if (IsBusy)

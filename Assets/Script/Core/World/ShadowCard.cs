@@ -33,7 +33,14 @@ public class ShadowCard : MonoBehaviour
     [Tooltip("เงาจางใต้เท้า (BlobShadow) — ถ้าใส่ จะถูกย้ายไปอยู่ใต้เท้าที่เห็นในรูปทุกเฟรม · เว้นว่างได้")]
     [SerializeField] private Transform footBlob;
 
+    [Tooltip("[2026-11-24 นา] สร้างเงาจริงทรงคนจากไฟ — ปิดไว้ (อาจารย์ติงว่าตัวละคร 2D แต่เงาจริงทำให้ดูลอย) · ใช้แค่เงากลมใต้เท้าแบบเกมอินดี้")]
+    [SerializeField] private bool castRealShadow = false;
+
+    [Tooltip("[2026-11-24] ยกเงากลมสูงจากพื้นจริงกี่เมตร — พื้นที่มองเห็น (FLOOR_x) หนา ~0.08 ม. เหนือพื้นชน · เดิม 0.02 = เงาจมใต้พื้น มองไม่เห็น")]
+    [SerializeField, Min(0f)] private float blobLift = 0.1f;
+
     private SpriteRenderer card;
+    private Renderer blobRenderer;
     private Light[] lights;
     private Vector3 toLight = Vector3.back;
     private Vector3 baseScale;
@@ -42,7 +49,10 @@ public class ShadowCard : MonoBehaviour
     private void Awake()
     {
         card = GetComponent<SpriteRenderer>();
+        // ShadowsOnly = มองไม่เห็นตัวแผ่น เห็นแค่เงา · ห้ามตั้ง Off (Off = แผ่นโผล่เป็นตัวละครซ้อนให้เห็นบนจอ — พลาดมาแล้ว 2026-11-24)
+        // ไม่เอาเงาจริง = ปิดตัววาดของแผ่นไปเลย (ยังใช้คำนวณตำแหน่งเงากลมใต้เท้าได้ตามเดิม)
         card.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+        card.enabled = castRealShadow;
         baseScale = transform.localScale;
     }
 
@@ -55,7 +65,7 @@ public class ShadowCard : MonoBehaviour
         card.flipX = source.flipX;
         card.flipY = source.flipY;
 
-        if (Time.time >= nextScan)
+        if (castRealShadow && Time.time >= nextScan)   // ไม่สร้างเงาจริง = ไม่ต้องหาไฟ (ยังวางเงากลมใต้เท้าตามเดิม)
         {
             nextScan = Time.time + rescanEvery;
             if (TryFindStrongestLight(out Vector3 dir)) toLight = dir;
@@ -77,7 +87,13 @@ public class ShadowCard : MonoBehaviour
         Vector3 ray = cam != null ? foot - cam.transform.position : Vector3.down;
         foot = ray.y < -0.001f ? foot + ray * ((groundY - foot.y) / ray.y) : new Vector3(foot.x, groundY, foot.z);
         transform.position = foot - transform.rotation * Vector3.Scale(footLocal, transform.lossyScale);
-        if (footBlob != null) footBlob.position = new Vector3(foot.x, foot.y + 0.02f, foot.z);
+        if (footBlob != null)
+        {
+            footBlob.position = new Vector3(foot.x, foot.y + blobLift, foot.z);
+            // [2026-11-24] ตัวละครถูกซ่อน (มุม FPS / ปริศนา / คัทซีน) = ซ่อนเงาด้วย ไม่งั้นเงาลอยค้างบนพื้น
+            if (blobRenderer == null) blobRenderer = footBlob.GetComponent<Renderer>();
+            if (blobRenderer != null) blobRenderer.forceRenderingOff = !source.enabled || source.forceRenderingOff || !source.gameObject.activeInHierarchy;
+        }
     }
 
     // ไฟที่สร้างเงาได้ + ส่องถึงตัวละคร → เลือกดวงที่แรงสุดที่ตำแหน่งนี้ (ความแรง / ระยะ² · จางตามขอบรัศมี)
