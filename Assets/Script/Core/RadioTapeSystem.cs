@@ -17,7 +17,9 @@ public class RadioTapeSystem : MonoBehaviour
     [Tooltip("ไฟล์เทป (TapeItemData) ช่องที่ 1 = ปุ่มที่ 1 · ใส่แล้วปุ่มจะล็อกจนกว่าจะเก็บเทปม้วนนั้นในฉาก\nเว้นว่าง = ปุ่มนั้นเล่นได้เลย (แบบเดิม)")]
     public TapeItemData[] tapeItems;
     public Color lockedColor = new Color(0.35f, 0.35f, 0.35f, 1f);
-    [Tooltip("ข้อความบนปุ่มตอนยังไม่มีเทป (ปุ่มที่มี Text ลูก)")]
+    [Tooltip("เปลี่ยนข้อความบนปุ่มเป็นชื่อเทป / ข้อความล็อก\nปิดไว้ถ้าปุ่มเป็นรูปตัวเลขอยู่แล้ว (กันตัวหนังสือล้นปุ่ม)")]
+    public bool changeButtonText = false;
+    [Tooltip("ข้อความบนปุ่มตอนยังไม่มีเทป (ใช้เมื่อเปิด Change Button Text)")]
     public string lockedLabel = "- - -";
     [Tooltip("ข้อความแจ้งตอนกดปุ่มที่ยังไม่มีเทป (เว้นว่างได้)")]
     public TMP_Text lockedHintText;
@@ -191,7 +193,7 @@ public class RadioTapeSystem : MonoBehaviour
             bool unlocked = IsUnlocked(i);
             if (tapeButtons[i].image != null)
                 tapeButtons[i].image.color = !unlocked ? lockedColor : (i == CurrentTapeIndex) ? selectedColor : normalColor;
-            TMP_Text label = tapeButtons[i].GetComponentInChildren<TMP_Text>(true);
+            TMP_Text label = changeButtonText ? tapeButtons[i].GetComponentInChildren<TMP_Text>(true) : null;
             if (label != null && originalLabels[i] != null)
             {
                 // ชื่อเทป: ใช้ชื่อในไฟล์เทป (ถ้ามี) ไม่งั้นใช้ข้อความเดิมบนปุ่ม
