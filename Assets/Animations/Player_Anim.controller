@@ -3903,7 +3903,7 @@ AnimatorState:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: 'Run_Gun_Tree '
+  m_Name: Run_Gun_Tree
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
