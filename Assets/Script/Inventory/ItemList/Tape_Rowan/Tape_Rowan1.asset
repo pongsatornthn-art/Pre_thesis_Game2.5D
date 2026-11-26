@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tape_Rowan1
   m_EditorClassIdentifier: 
   itemId: 2209750a99fc44239ed22d02801ee690
-  itemName: Tape_Rowan1
+  itemName: "\u0E40\u0E17\u0E1B\u0E40\u0E2A\u0E35\u0E22\u0E07 Rowan 1"
   icon: {fileID: 21300000, guid: e499bf78fb816fa409c1d988f9d6b08e, type: 3}
   description: 
   descriptionImage: {fileID: 0}
