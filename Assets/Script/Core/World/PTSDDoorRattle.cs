@@ -37,13 +37,13 @@ public class PTSDDoorRattle : MonoBehaviour
     [Tooltip("เลือกเฉพาะประตูที่ห่างผู้เล่นไม่เกินเท่านี้ (เมตร)")]
     [Min(1f)] public float maxDistance = 12f;
     [Tooltip("ไม่เลือกประตูที่ชิดผู้เล่นเกินไป (เมตร)")]
-    [Min(0f)] public float minDistance = 1.5f;
+    [Min(0f)] public float minDistance = 0.5f;
 
     [Header("การสั่นของบาน")]
     [Tooltip("บานโยกกี่องศาต่อการทุบ 1 ที")]
-    [Min(0f)] public float bangAngle = 2.5f;
+    [Min(0f)] public float bangAngle = 6f;
     [Tooltip("บานขยับเข้าออก (เมตร) ต่อการทุบ 1 ที")]
-    [Min(0f)] public float bangPush = 0.015f;
+    [Min(0f)] public float bangPush = 0.05f;
     [Tooltip("ความถี่การสั่น (Hz)")]
     [Min(1f)] public float shakeFrequency = 16f;
     [Tooltip("สั่นแล้วหยุดเร็วแค่ไหน (มาก = หยุดไว)")]
@@ -61,6 +61,11 @@ public class PTSDDoorRattle : MonoBehaviour
     [Header("Debug")]
     [Tooltip("ติ๊ก = สั่นได้แม้ไม่อยู่ใน PTSD (ไว้เทสต์) — ตอนส่งงานปิด")]
     public bool debugIgnorePtsd = false;
+    [Tooltip("ติ๊ก = กดปุ่มนี้ตอน Play แล้วบานที่ใกล้ที่สุดสั่นทันที (ไว้เทสต์)")]
+    public bool debugKeyEnabled = false;
+    public KeyCode debugKey = KeyCode.T;
+    [Tooltip("ติ๊ก = เขียนใน Console ว่าสั่นบานไหน / ทำไมยังไม่สั่น")]
+    public bool debugLog = false;
 
     // ---------------------------------------------------------------
     private class DoorInfo
@@ -83,6 +88,7 @@ public class PTSDDoorRattle : MonoBehaviour
     private float ptsdSince = -1f;
     private Transform player;
     private AudioSource src;
+    private bool testRun;   // สั่นจากปุ่มเทส = เล่นจนจบแม้ไม่อยู่ใน PTSD
 
     private void Start()
     {
@@ -95,7 +101,11 @@ public class PTSDDoorRattle : MonoBehaviour
             if (d == null) continue;
             DoorAjarHint ajar = d.GetComponent<DoorAjarHint>();
             Transform panel = ajar != null && ajar.panel != null ? ajar.panel : FindPanel(d.transform);
-            if (panel == null || panel == d.transform) continue;
+            if (panel == null || panel == d.transform)
+            {
+                if (debugLog) Debug.LogWarning($"[PTSDDoorRattle] '{d.name}' ไม่มีบานลูกที่มีโมเดล — ข้าม", d);
+                continue;
+            }
             infos.Add(new DoorInfo
             {
                 door = d, ajar = ajar, panel = panel,
@@ -109,6 +119,7 @@ public class PTSDDoorRattle : MonoBehaviour
         if (output != null) src.outputAudioMixerGroup = output;
 
         if (infos.Count == 0) Debug.LogWarning("[PTSDDoorRattle] ไม่เจอประตูที่มีบานลูกให้สั่นเลย", this);
+        else if (debugLog) Debug.Log($"[PTSDDoorRattle] เจอประตู {infos.Count} บาน", this);
     }
 
     private static Transform FindPanel(Transform root)
@@ -126,10 +137,17 @@ public class PTSDDoorRattle : MonoBehaviour
     private void LateUpdate()
     {
         float now = Time.time;
+
+        if (debugKeyEnabled && current == null && Input.GetKeyDown(debugKey))
+        {
+            RattleNearestNow();
+            if (current != null) { UpdateRattle(now); return; }
+        }
         bool ptsd = debugIgnorePtsd || InPtsd();
 
         if (!ptsd)
         {
+            if (current != null && testRun) { UpdateRattle(now); return; }
             ptsdSince = -1f;
             StopCurrent();
             return;
@@ -150,8 +168,16 @@ public class PTSDDoorRattle : MonoBehaviour
         if (now >= nextRattleAt)
         {
             DoorInfo pick = PickDoor();
-            if (pick != null) StartRattle(pick, now);
-            else nextRattleAt = now + Random.Range(1.5f, 3f);   // ยังไม่มีบานเหมาะ ลองใหม่เร็วๆ
+            if (pick != null)
+            {
+                StartRattle(pick, now);
+                if (debugLog) Debug.Log($"[PTSDDoorRattle] สั่น '{pick.door.name}' ห่าง {Flat(DoorPos(pick) - PlayerPos()):0.0} ม.", pick.door);
+            }
+            else
+            {
+                if (debugLog) Debug.Log($"[PTSDDoorRattle] ถึงเวลาแต่ไม่มีประตูที่สั่นได้ — ลองใหม่\n{Diagnose()}", this);
+                nextRattleAt = now + Random.Range(1.5f, 3f);   // ยังไม่มีบานเหมาะ ลองใหม่เร็วๆ
+            }
         }
     }
 
@@ -173,6 +199,56 @@ public class PTSDDoorRattle : MonoBehaviour
         return true;
     }
 
+    /// <summary>เทส: สั่นบานที่ใกล้ผู้เล่นที่สุดทันที (ไม่สนเวลา/ระยะขั้นต่ำ) — คลิกขวาที่หัวคอมโพเนนต์ตอน Play</summary>
+    [ContextMenu("สั่นบานที่ใกล้ที่สุดเดี๋ยวนี้ (เทส)")]
+    public void RattleNearestNow()
+    {
+        if (!Application.isPlaying) return;
+        Vector3 p = PlayerPos();
+        if (float.IsInfinity(p.x)) { Debug.LogWarning("[PTSDDoorRattle] หา Player (Tag = Player) ไม่เจอ", this); return; }
+        DoorInfo best = null; float bestD = float.MaxValue;
+        foreach (DoorInfo d in infos)
+        {
+            if (!StillOk(d)) continue;
+            float dist = Flat(DoorPos(d) - p);
+            if (dist < bestD) { bestD = dist; best = d; }
+        }
+        if (best == null) { Debug.LogWarning($"[PTSDDoorRattle] ไม่มีประตูที่สั่นได้\n{Diagnose()}", this); return; }
+        StopCurrent();
+        StartRattle(best, Time.time);
+        testRun = true;
+        Debug.Log($"[PTSDDoorRattle] (เทส) สั่น '{best.door.name}' ห่าง {bestD:0.0} ม.", best.door);
+    }
+
+    /// <summary>Debug: บอกทีละบานว่าห่างเท่าไหร่ / ติดอะไร</summary>
+    private string Diagnose()
+    {
+        var sb = new System.Text.StringBuilder();
+        Vector3 p = PlayerPos();
+        sb.AppendLine(player != null ? $"Player = '{player.name}' ที่ {p}" : "หา Player (Tag = Player) ไม่เจอ");
+        sb.AppendLine($"ประตูที่มีบานให้สั่น {infos.Count} บาน · Barricade Active = {(DoorBarricadeStruggle.Active != null)}");
+        List<DoorInfo> sorted = new List<DoorInfo>(infos);
+        if (player != null) sorted.Sort((x, y) => Flat(DoorPos(x) - p).CompareTo(Flat(DoorPos(y) - p)));
+        for (int i = 0; i < sorted.Count && i < 6; i++)
+        {
+            DoorInfo d = sorted[i];
+            string why = "";
+            if (d.door == null) why += " [ประตูถูกลบ]";
+            else
+            {
+                if (!d.door.isActiveAndEnabled) why += " [ปิดใช้งาน/ซ่อนอยู่]";
+                if (d.door.isOpen) why += " [isOpen]";
+                if (d.ajar != null && d.ajar.IsAjar) why += " [กำลังแง้ม]";
+                if (!includeLockedDoors && !d.door.isUnlocked) why += " [ล็อก]";
+            }
+            float dist = player != null && d.door != null ? Flat(DoorPos(d) - p) : -1f;
+            if (dist >= 0f && dist > maxDistance) why += " [ไกลเกิน]";
+            if (dist >= 0f && dist < minDistance) why += " [ชิดเกิน]";
+            sb.AppendLine($"  {(d.door != null ? d.door.name : "?")} ห่าง {dist:0.0} ม. บาน='{(d.panel != null ? d.panel.name : "-")}'{(why == "" ? " ✓" : why)}");
+        }
+        return sb.ToString();
+    }
+
     private DoorInfo PickDoor()
     {
         Vector3 p = PlayerPos();
@@ -183,7 +259,7 @@ public class PTSDDoorRattle : MonoBehaviour
         {
             if (!StillOk(d)) continue;
             if (!includeLockedDoors && !d.door.isUnlocked) continue;
-            float dist = Flat(d.door.transform.position - p);
+            float dist = Flat(DoorPos(d) - p);
             if (dist > maxDistance || dist < minDistance) continue;
             ok.Add(d);
         }
@@ -269,6 +345,7 @@ public class PTSDDoorRattle : MonoBehaviour
             current.applied = false;
         }
         current = null;
+        testRun = false;
         bangTimes.Clear();
         nextBang = 0;
     }
@@ -281,7 +358,7 @@ public class PTSDDoorRattle : MonoBehaviour
 
         Vector3 p = PlayerPos();
         if (float.IsInfinity(p.x)) return;
-        Vector3 off = d.door.transform.position - p;
+        Vector3 off = DoorPos(d) - p;
         float dist = Flat(off);
         float k = 1f - Mathf.InverseLerp(fullVolumeDistance, Mathf.Max(fullVolumeDistance + 0.1f, silentDistance), dist);
         if (k <= 0.001f) return;
@@ -294,13 +371,31 @@ public class PTSDDoorRattle : MonoBehaviour
 
     private Vector3 PlayerPos()
     {
-        if (player == null)
+        if (player == null || !player.gameObject.activeInHierarchy)
         {
-            GameObject go = GameObject.FindWithTag("Player");
-            if (go == null) return Vector3.positiveInfinity;
-            player = go.transform;
+            // ใช้ตัวที่มี PlayerMovement (ตัวที่เดินจริง) ก่อน — Tag Player อาจมีหลายตัว
+            PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
+            if (pm != null) player = pm.transform;
+            else
+            {
+                GameObject go = GameObject.FindWithTag("Player");
+                if (go == null) return Vector3.positiveInfinity;
+                player = go.transform;
+            }
         }
         return player.position;
+    }
+
+    /// <summary>กลางบานประตูจริง (จากโมเดล) — จุด pivot ของ prefab อาจไม่อยู่ที่ประตู</summary>
+    private static Vector3 DoorPos(DoorInfo d)
+    {
+        if (d.panel != null)
+        {
+            Renderer r = d.panel.GetComponentInChildren<Renderer>();
+            if (r != null) return r.bounds.center;
+            return d.panel.position;
+        }
+        return d.door.transform.position;
     }
 
     private static float Flat(Vector3 v) { v.y = 0f; return v.magnitude; }
