@@ -78,15 +78,33 @@ public class PlayerAnimationController : MonoBehaviour
         }
 
         // ----- ลำดับความสำคัญในการเล่นแอนิเมชัน -----
+
+        // ยิงอยู่ → ท่ายิงสำคัญสุด (ทั้งตอนยืน เดิน และวิ่ง)
+        if (isHoldingGun && isShooting)
+        {
+            ChangeAnimation("Shoot_Tree");
+            return;
+        }
+
+        // [แก้โดย Claude 2026-11-25] กำลังวิ่ง → PlayerMovement เป็นคนคุมท่า (Run_Tree / Run_Melee_Tree / Run_Gun_Tree)
+        // เดิมสคริปต์นี้สั่ง Play("Gun_Movement") / Play("Movement") ทับท่าวิ่งทุกครั้งที่ currentAnim ไม่ตรง
+        // (เช่น เริ่มวิ่งพร้อมเริ่มเดิน หรือยิงเสร็จตอนวิ่งอยู่) แล้ว PlayerMovement ไม่สั่งซ้ำเพราะจำว่าสั่งไปแล้ว
+        bool running = playerMovement != null && playerMovement.IsRunning;
+        if (running)
+        {
+            // เพิ่งยิงเสร็จตอนวิ่งอยู่ → ให้ PlayerMovement สั่งท่าวิ่งกลับมาใหม่
+            if (currentAnim == "Shoot_Tree") playerMovement.ForceRefreshMovementAnim();
+
+            // ล้างไว้ → พอหยุดวิ่ง เฟรมถัดไปจะสั่งท่ายืน/เดินที่ถูกต้องใหม่
+            currentAnim = null;
+            return;
+        }
+
         if (isHoldingGun)
         {
-            if (isShooting)
-            {
-                ChangeAnimation("Shoot_Tree");
-            }
             // 🌟 [Alien Shooter Update] ตัดท่า "Aim_Idle" (ท่าเล็ง FPS เก่า หันหลังให้กล้อง) ออก
             // คลิกขวาไม่เปลี่ยนท่าอีกแล้ว ใช้ท่าปกติที่หันตามเมาส์ 8 ทิศแทน
-            else if (isMoving)
+            if (isMoving)
             {
                 ChangeAnimation("Gun_Movement");
             }
@@ -126,7 +144,7 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (animator != null)
         {
- 
+
             animator.Play(newAnim);
             currentAnim = newAnim;
         }
