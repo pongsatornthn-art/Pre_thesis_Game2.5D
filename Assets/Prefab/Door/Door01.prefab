@@ -157,8 +157,8 @@ MonoBehaviour:
   cameraFov: 65
   killPlayerOnFail: 1
   hidePlayer: 1
-  debugAlwaysTrigger: 1
-  debugLog: 1
+  debugAlwaysTrigger: 0
+  debugLog: 0
 --- !u!1001 &6531405055343739543
 PrefabInstance:
   m_ObjectHideFlags: 0
