@@ -72,7 +72,7 @@ public class PTSDDoorAmbush : MonoBehaviour
     public bool hidePlayer = true;
 
     [Header("Debug")]
-    [Tooltip("ติ๊ก = ไม่ต้องรอบอสไล่ + ไม่สุ่ม (เดินเข้าห้องเมื่อไหร่โดนเลย) ไว้เทสต์ — ตอนส่งงานปิด")]
+    [Tooltip("ติ๊ก = ไม่ต้องรอบอสไล่ + ไม่สุ่ม + ไม่มีคูลดาวน์ (เดินเข้าห้องใน PTSD เมื่อไหร่โดนเลย) ไว้เทสต์ — ตอนส่งงานปิด\nติ๊กอันนี้แล้ว Console จะบอกเหตุผลทุกครั้งที่ไม่โดน")]
     public bool debugAlwaysTrigger = false;
     [Tooltip("ติ๊ก = เขียนใน Console ว่าประตูนี้ฝั่งไหนคือห้อง / ทำไมไม่โดน")]
     public bool debugLog = false;
@@ -102,14 +102,16 @@ public class PTSDDoorAmbush : MonoBehaviour
     private Vector3 doorCenter;
     private Vector3 doorNormal;
     private int enterSide;
+    private Vector3 enterPos;
     private float nextDoorTime;
     private float ptsdSince = -1f;
     private Transform standPoint;
     private GameObject cam;
     private FirstChaseStalker[] firstChases;
 
-    /// <summary>ฝั่งห้อง: +1 / -1 (ตามแนว doorNormal) · 0 = ห้องทั้งสองฝั่ง (เข้าทางไหนก็นับ) · 99 = ไม่มีฝั่งไหนเป็นห้อง (ไม่โดน)</summary>
-    private int roomSide = 0;
+    /// <summary>[v4] ทิศจากประตูไปฝั่งห้อง (โลก) · roomKind: 1 = รู้ฝั่งห้อง · 0 = ห้องทั้งสองฝั่ง · 99 = หาไม่เจอ</summary>
+    private Vector3 roomDir;
+    private int roomKind = 99;
 
     // บอสที่หยุดไว้ระหว่างดันประตู
     private StalkerAI pausedBoss;
@@ -130,7 +132,7 @@ public class PTSDDoorAmbush : MonoBehaviour
 
         firstChases = FindObjectsByType<FirstChaseStalker>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         CacheGeometry(); // ตอนเริ่มฉากประตูปิดอยู่ → จำกลางบานและแนวประตูไว้
-        roomSide = FindRoomSide();
+        FindRoomDir();
 
         // มินิเกมใช้ตัวเดิมของระบบดันประตู — เพิ่มลงประตูนี้ (Awake หา Animator/DoorController เอง)
         struggle = door.gameObject.AddComponent<DoorBarricadeStruggle>();
@@ -174,13 +176,15 @@ public class PTSDDoorAmbush : MonoBehaviour
     {
         if (!enabled || !other.CompareTag("Player")) return;
         enterSide = Side(other.transform.position);
+        enterPos = other.transform.position;
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (!enabled || !other.CompareTag("Player")) return;
         int exitSide = Side(other.transform.position);
-        if (enterSide != 0 && exitSide != 0 && exitSide != enterSide) TryAmbush(exitSide, other.transform);
+        if (enterSide != 0 && exitSide != 0 && exitSide != enterSide) TryAmbush(exitSide, other.transform, enterPos);
+        else if (Verbose) Log($"เดินเข้า-ออกฝั่งเดิม ไม่ได้ผ่านประตู (เข้า {enterSide} ออก {exitSide})");
         enterSide = 0;
     }
 
@@ -191,15 +195,23 @@ public class PTSDDoorAmbush : MonoBehaviour
     }
 
     /// <param name="side">ฝั่งที่ผู้เล่นเดินไปถึง (ฝั่งที่จะยืนดันประตู)</param>
-    private void TryAmbush(int side, Transform player)
+    private void TryAmbush(int side, Transform player, Vector3 fromPos)
     {
-        if (struggle == null || ptsdSince < 0f || Time.time - ptsdSince < ptsdGraceSeconds) return;
+        if (struggle == null) return;
+        if (ptsdSince < 0f) { Log("ไม่ได้อยู่ในโลก PTSD — ไม่โดน"); return; }
+        if (Time.time - ptsdSince < ptsdGraceSeconds) { Log($"เพิ่งเข้า PTSD ยังไม่ครบ {ptsdGraceSeconds} วิ — ไม่โดน"); return; }
 
         // [2026-11-27] เฉพาะตอนเดินเข้าห้อง
         if (enterRule == EnterRule.AutoRoomSide)
         {
-            if (roomSide == 99) { Log("ประตูนี้ไม่มีฝั่งไหนเป็นห้อง — ไม่โดน"); return; }
-            if (roomSide != 0 && side != roomSide) { Log("เดินออกจากห้อง — ไม่โดน"); return; }
+            int entering = IsEnteringRoom(fromPos, player.position, out string how);   // 1 เข้าห้อง · 0 ออกจากห้อง · -1 บอกไม่ได้
+            if (entering == 0) { Log($"เดินออกจากห้อง — ไม่โดน ({how})"); return; }
+            if (entering < 0)
+            {
+                Log($"ประตูนี้บอกไม่ได้ว่าฝั่งไหนเป็นห้อง — ไม่โดน (เปลี่ยน Enter Rule เป็น AnyDirection ได้)\n{RoomDebug(fromPos, player.position)}");
+                return;
+            }
+            Log($"เดินเข้าห้อง ({how})");
         }
 
         // [2026-11-27] เฉพาะตอนบอสไล่อยู่
@@ -207,20 +219,25 @@ public class PTSDDoorAmbush : MonoBehaviour
         if (onlyWhileBossChasing && !debugAlwaysTrigger)
         {
             boss = BossChasingNear(doorCenter);
-            if (boss == null) { Log("เดินเข้าห้อง แต่บอสไม่ได้ไล่อยู่ (หรืออยู่ไกลเกิน) — ไม่โดน"); return; }
+            if (boss == null) { Log($"เดินเข้าห้อง แต่บอสไม่ได้ไล่อยู่ — ไม่โดน ({BossStatus()})"); return; }
         }
         else boss = BossChasingNear(doorCenter);
 
-        if (Time.time < nextGlobalTime || Time.time < nextDoorTime) { Log("ยังติดคูลดาวน์"); return; }
-        if (!door.isUnlocked) return;
+        if (!debugAlwaysTrigger)
+        {
+            if (Time.time < nextGlobalTime) { Log($"ยังติดคูลดาวน์รวม อีก {nextGlobalTime - Time.time:0} วิ"); return; }
+            if (Time.time < nextDoorTime) { Log($"ประตูบานนี้ยังติดคูลดาวน์ อีก {nextDoorTime - Time.time:0} วิ"); return; }
+            if (DoorBarricadeStruggle.SafeTimeRemaining > 0f) { Log($"ยังอยู่ในเวลาปลอดภัยหลังชนะรอบก่อน อีก {DoorBarricadeStruggle.SafeTimeRemaining:0} วิ"); return; }
+        }
+        if (!door.isUnlocked) { Log("ประตูล็อกอยู่ — ไม่โดน"); return; }
         if (skipDuringFirstChase && firstChases != null)
             foreach (FirstChaseStalker fc in firstChases)
-                if (fc != null && fc.IsChasing) return; // วิ่งหนีครั้งแรก → เก็บไว้ให้ประตูครัวอย่างเดียว
-        if (DoorBarricadeStruggle.AnyActive || DoorBarricadeStruggle.SafeTimeRemaining > 0f) return;
-        if (StalkerJumpscareUI.AnyActive) return;   // บอสจับตัวอยู่แล้ว
-        if (GameplayInputGate.Blocked) return;
+                if (fc != null && fc.IsChasing) { Log("ช่วงวิ่งหนีครั้งแรก (Tutorial) — ไม่โดน"); return; } // เก็บไว้ให้ประตูครัวอย่างเดียว
+        if (DoorBarricadeStruggle.AnyActive) { Log("มีมินิเกมดันประตูเล่นอยู่แล้ว"); return; }
+        if (StalkerJumpscareUI.AnyActive) { Log("บอสจับตัวอยู่ (มินิเกมมือผี)"); return; }
+        if (GameplayInputGate.Blocked) { Log("มีหน้าจอ/มินิเกมอื่นเปิดอยู่ (GameplayInputGate)"); return; }
         FirstPersonModeController fp = FirstPersonModeController.Instance;
-        if (fp != null && fp.IsActive) return;
+        if (fp != null && fp.IsActive) { Log("อยู่ในโหมดกล้องบุคคลที่หนึ่งอยู่แล้ว"); return; }
 
         nextDoorTime = Time.time + perDoorCooldown;
         if (!debugAlwaysTrigger && Random.value > chanceWhileChased) { Log("สุ่มไม่โดน"); return; }
@@ -248,6 +265,7 @@ public class PTSDDoorAmbush : MonoBehaviour
         if (!struggle.IsRunning)
         {
             // เริ่มไม่ได้ (ระบบอื่นกันไว้) → คืนทุกอย่าง
+            Log("สั่งเริ่มมินิเกมแล้วแต่เริ่มไม่ได้ (ดู Error สีแดงของ DoorBarricadeStruggle ใน Console)");
             PlayerVisibility.Show(this);
             ResumeBoss(false);
             return;
@@ -292,6 +310,22 @@ public class PTSDDoorAmbush : MonoBehaviour
         if (Time.time - lastChaseTime > chaseGraceSeconds) return null;
         Vector3 d = chasingBoss.transform.position - pos; d.y = 0f;
         return d.magnitude <= maxBossDistance ? chasingBoss : null;
+    }
+
+    private string BossStatus()
+    {
+        ScanBosses();
+        if (bosses == null || bosses.Length == 0) return "ไม่เจอบอส (Stalker) ที่เปิดอยู่ในซีน";
+        var sb = new System.Text.StringBuilder();
+        foreach (StalkerAI b in bosses)
+        {
+            if (b == null) continue;
+            Vector3 d = b.transform.position - doorCenter; d.y = 0f;
+            string st = b.CurrentState != null ? b.CurrentState.GetType().Name : "ไม่มี";
+            sb.Append($"{b.name}: state={st} ห่างประตู {d.magnitude:0.0} ม.{(b.enabled ? "" : " (ปิดอยู่)")} · ");
+        }
+        sb.Append($"ไล่ล่าสุดเมื่อ {Mathf.Max(0f, Time.time - lastChaseTime):0.0} วิก่อน");
+        return sb.ToString();
     }
 
     /// <summary>หยุดบอสระหว่างดันประตู (ไม่งั้นบอสวิ่งทะลุประตูมาจับซ้อนมินิเกม) + ย้ายไปยืนหลังประตู</summary>
@@ -362,28 +396,138 @@ public class PTSDDoorAmbush : MonoBehaviour
     }
 
     // ───────── หาฝั่งห้อง ─────────
-    private int FindRoomSide()
+    /// <summary>
+    /// [v4] เดินเข้าห้องไหม — ลองทีละวิธี จนกว่าจะบอกได้:
+    ///   1) จุดก่อน/หลังประตู ตามทิศที่ผู้เล่นเดินจริง (2 ม.) อยู่ในกล่องห้อง (RoomWallFade) ไหน
+    ///   2) ตำแหน่งผู้เล่นตอนเข้า/ออก Trigger ประตู
+    ///   3) ฝั่งห้องที่หาไว้ตอนเริ่มฉาก (ลองหลายแกน)
+    ///   4) วัดที่ว่างด้วย Raycast: ฝั่งที่แคบกว่า (มีผนังใกล้กว่า) = ห้อง · ฝั่งที่โล่งยาว = โถง
+    /// </summary>
+    private int IsEnteringRoom(Vector3 from, Vector3 to, out string how)
     {
         if (roomBoxes == null) BuildRoomBoxes();
 
-        float probe = standDistance + 0.3f;
-        int a = RoomAt(doorCenter + doorNormal * probe);    // ฝั่ง +1
-        int b = RoomAt(doorCenter - doorNormal * probe);    // ฝั่ง -1
-        bool roomA = (a & 1) != 0 && (a & 2) == 0;
-        bool roomB = (b & 1) != 0 && (b & 2) == 0;
+        Vector3 dir = to - from; dir.y = 0f;
+        if (dir.sqrMagnitude < 0.01f) dir = Vector3.ProjectOnPlane(doorNormal, Vector3.up) * Mathf.Sign(Vector3.Dot(to - doorCenter, doorNormal) + 0.0001f);
+        dir.Normalize();
 
-        int result;
-        if (roomA && !roomB) result = 1;
-        else if (roomB && !roomA) result = -1;
-        else if (roomA && roomB) result = 0;                // ห้องต่อห้อง → เข้าทางไหนก็นับ
-        else if ((a & 2) == 0 && (b & 2) != 0) result = 1;  // ไม่มีกล่องห้อง แต่อีกฝั่งเป็นโถง → ฝั่งที่ไม่ใช่โถง
-        else if ((b & 2) == 0 && (a & 2) != 0) result = -1;
-        else result = 99;
+        Vector3 pFrom = doorCenter - dir * 2f, pTo = doorCenter + dir * 2f;
+        pFrom.y = pTo.y = to.y;
 
-        if (debugLog)
-            Debug.Log($"[PTSDDoorAmbush] {door.name}: ฝั่ง+ = {Describe(a)} · ฝั่ง- = {Describe(b)} → " +
-                      (result == 99 ? "ไม่มีห้อง (ไม่โดน)" : result == 0 ? "ห้องทั้งสองฝั่ง" : $"ห้องอยู่ฝั่ง {(result > 0 ? "+" : "-")}"), door);
-        return result;
+        int r = EnteringRoom(pFrom, pTo);
+        if (r >= 0) { how = "จุดก่อน/หลังประตู"; return r; }
+        r = EnteringRoom(from, to);
+        if (r >= 0) { how = "ตำแหน่งผู้เล่น"; return r; }
+        if (roomKind == 0) { how = "ห้องทั้งสองฝั่ง"; return 1; }
+        if (roomKind == 1) { how = "ฝั่งห้องที่หาไว้ตอนเริ่ม"; return Vector3.Dot(to - doorCenter, roomDir) > 0f ? 1 : 0; }
+        r = EnteringByOpenSpace(pFrom, pTo, dir);
+        how = "วัดที่ว่าง (Raycast)";
+        return r;
+    }
+
+    /// <summary>หาฝั่งห้องตอนเริ่มฉาก — ลองแกนจากรูปทรงประตูก่อน แล้วค่อยลองแกนของตัวประตู</summary>
+    private void FindRoomDir()
+    {
+        if (roomBoxes == null) BuildRoomBoxes();
+        roomKind = 99;
+        roomDir = Vector3.zero;
+
+        Vector3[] axes = { doorNormal, door.transform.forward, door.transform.right };
+        string tried = "";
+        for (int i = 0; i < axes.Length; i++)
+        {
+            Vector3 ax = Vector3.ProjectOnPlane(axes[i], Vector3.up);
+            if (ax.sqrMagnitude < 0.01f) continue;
+            ax.Normalize();
+            foreach (float probe in new[] { standDistance + 0.3f, 2.5f })
+            {
+                int a = RoomAt(doorCenter + ax * probe);
+                int b = RoomAt(doorCenter - ax * probe);
+                tried += $"[{Describe(a)}|{Describe(b)}] ";
+                bool roomA = (a & 1) != 0 && (a & 2) == 0;
+                bool roomB = (b & 1) != 0 && (b & 2) == 0;
+                bool hallA = (a & 2) != 0, hallB = (b & 2) != 0;
+
+                if (roomA && !roomB) { roomKind = 1; roomDir = ax; }
+                else if (roomB && !roomA) { roomKind = 1; roomDir = -ax; }
+                else if (roomA && roomB && i == 0) { roomKind = 0; }   // ห้องต่อห้อง (เชื่อเฉพาะแกนหน้าประตู)
+                else if (!hallA && hallB && a == 0) { roomKind = 1; roomDir = ax; }    // ไม่มีกล่องห้อง แต่อีกฝั่งเป็นโถง
+                else if (!hallB && hallA && b == 0) { roomKind = 1; roomDir = -ax; }
+                if (roomKind != 99) break;
+            }
+            if (roomKind != 99) break;
+        }
+
+        if (Verbose)
+            Debug.Log($"[PTSDDoorAmbush] {door.name}: " +
+                      (roomKind == 99 ? "หาฝั่งห้องตอนเริ่มไม่เจอ (จะลองดูตอนผู้เล่นเดินผ่านแทน)" : roomKind == 0 ? "ห้องทั้งสองฝั่ง" : "เจอฝั่งห้องแล้ว") +
+                      $" · กล่องห้องในซีน {RoomCount(false)} · กล่องโถง {RoomCount(true)} · ที่ลอง {tried}", door);
+    }
+
+    /// <summary>วัดที่ว่างซ้าย-ขวาของจุดก่อน/หลังประตู: ห้อง = ผนังใกล้ (แคบ) · โถง = โล่งยาว</summary>
+    private int EnteringByOpenSpace(Vector3 pFrom, Vector3 pTo, Vector3 dir)
+    {
+        Vector3 side = Vector3.Cross(Vector3.up, dir).normalized;
+        float runFrom = FreeRun(pFrom, side) + FreeRun(pFrom, -side);
+        float runTo = FreeRun(pTo, side) + FreeRun(pTo, -side);
+        if (runTo + 3f < runFrom) return 1;    // ฝั่งที่ไปแคบกว่า = เข้าห้อง
+        if (runFrom + 3f < runTo) return 0;    // ฝั่งที่ไปโล่งกว่า = ออกไปโถง
+        return -1;
+    }
+
+    private static float FreeRun(Vector3 p, Vector3 dir)
+    {
+        const float max = 40f;
+        Vector3 o = p + Vector3.up * 1.0f;
+        RaycastHit[] hits = Physics.RaycastAll(o, dir, max, ~0, QueryTriggerInteraction.Ignore);
+        System.Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance));
+        foreach (RaycastHit h in hits)
+        {
+            if (h.collider.attachedRigidbody != null && !h.collider.attachedRigidbody.isKinematic) continue;   // ผู้เล่น/ของที่ขยับได้ ไม่นับ
+            if (h.collider.GetComponentInParent<UnityEngine.AI.NavMeshAgent>() != null) continue;          // มอน ไม่นับ
+            return Mathf.Min(max, h.distance);
+        }
+        return max;
+    }
+
+    private static int RoomCount(bool hall)
+    {
+        int n = 0;
+        if (roomBoxes != null) foreach (RoomBox r in roomBoxes) if (r.box != null && r.hall == hall) n++;
+        return n;
+    }
+
+    private string RoomDebug(Vector3 from, Vector3 to)
+    {
+        return $"  ตอนเข้า {from} = {Describe(RoomAt(from))} · ตอนออก {to} = {Describe(RoomAt(to))}\n" +
+               $"  กลางประตู {doorCenter} แนวหน้าประตู {doorNormal} · กล่องห้องในซีน {RoomCount(false)} · กล่องโถง {RoomCount(true)}";
+    }
+
+    /// <summary>
+    /// จุด from → to: ไปอยู่ในห้องที่ตอนแรกยังไม่ได้อยู่ = เดินเข้าห้อง
+    /// 1 = เข้าห้อง · 0 = ออกจากห้อง · -1 = บอกไม่ได้ (กล่องห้องไม่ครอบตำแหน่ง)
+    /// </summary>
+    private static int EnteringRoom(Vector3 from, Vector3 to)
+    {
+        if (roomBoxes == null) BuildRoomBoxes();
+        bool newRoom = false, inAnyRoomFrom = false, inAnyRoomTo = false;
+        foreach (RoomBox r in roomBoxes)
+        {
+            if (r.box == null || r.hall) continue;
+            bool a = Inside(r.box, from), b = Inside(r.box, to);
+            inAnyRoomFrom |= a; inAnyRoomTo |= b;
+            if (b && !a) newRoom = true;
+        }
+        if (newRoom) return 1;
+        if (inAnyRoomFrom && !inAnyRoomTo) return 0;
+        return -1;
+    }
+
+    private static bool Inside(BoxCollider box, Vector3 p)
+    {
+        Vector3 l = box.transform.InverseTransformPoint(p) - box.center;
+        Vector3 h = box.size * 0.5f;
+        return Mathf.Abs(l.x) <= Mathf.Abs(h.x) && Mathf.Abs(l.z) <= Mathf.Abs(h.z);
     }
 
     private static string Describe(int m) => m == 0 ? "ไม่มีกล่อง" : (m & 3) == 3 ? "ห้อง+โถง" : (m & 1) != 0 ? "ห้อง" : "โถง";
@@ -414,10 +558,7 @@ public class PTSDDoorAmbush : MonoBehaviour
         foreach (RoomBox r in roomBoxes)
         {
             if (r.box == null) continue;
-            Vector3 l = r.box.transform.InverseTransformPoint(p) - r.box.center;
-            Vector3 h = r.box.size * 0.5f;
-            if (Mathf.Abs(l.x) <= Mathf.Abs(h.x) && Mathf.Abs(l.z) <= Mathf.Abs(h.z))
-                m |= r.hall ? 2 : 1;
+            if (Inside(r.box, p)) m |= r.hall ? 2 : 1;
         }
         return m;
     }
@@ -445,9 +586,11 @@ public class PTSDDoorAmbush : MonoBehaviour
         doorNormal = Vector3.Cross(Vector3.up, leaf.normalized).normalized;
     }
 
+    private bool Verbose => debugLog || debugAlwaysTrigger;
+
     private void Log(string msg)
     {
-        if (debugLog) Debug.Log($"[PTSDDoorAmbush] {(door != null ? door.name : name)}: {msg}", this);
+        if (Verbose) Debug.Log($"[PTSDDoorAmbush] {(door != null ? door.name : name)}: {msg}", this);
     }
 
 #if UNITY_EDITOR
@@ -457,10 +600,10 @@ public class PTSDDoorAmbush : MonoBehaviour
         Gizmos.color = Color.cyan;
         Gizmos.DrawLine(doorCenter - doorNormal * standDistance, doorCenter + doorNormal * standDistance);
         Gizmos.DrawWireSphere(doorCenter, 0.15f);
-        // ฝั่งห้อง = ลูกบอลเขียว
-        if (roomSide == 1 || roomSide == 0) { Gizmos.color = Color.green; Gizmos.DrawSphere(doorCenter + doorNormal * standDistance, 0.25f); }
-        if (roomSide == -1 || roomSide == 0) { Gizmos.color = Color.green; Gizmos.DrawSphere(doorCenter - doorNormal * standDistance, 0.25f); }
-        if (roomSide == 99) { Gizmos.color = Color.red; Gizmos.DrawSphere(doorCenter, 0.3f); }
+        // ฝั่งห้อง = ลูกบอลเขียว · หาไม่เจอ = ลูกบอลแดง
+        if (roomKind == 1) { Gizmos.color = Color.green; Gizmos.DrawSphere(doorCenter + roomDir * standDistance, 0.25f); }
+        else if (roomKind == 0) { Gizmos.color = Color.green; Gizmos.DrawSphere(doorCenter + doorNormal * standDistance, 0.25f); Gizmos.DrawSphere(doorCenter - doorNormal * standDistance, 0.25f); }
+        else { Gizmos.color = Color.red; Gizmos.DrawSphere(doorCenter, 0.3f); }
     }
 #endif
 }

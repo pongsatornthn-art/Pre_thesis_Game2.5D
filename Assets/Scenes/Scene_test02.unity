@@ -2828,6 +2828,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 180
       objectReference: {fileID: 0}
+    - target: {fileID: 8046633342425034343, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
+      propertyPath: debugLog
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8890661106901132037, guid: 9bee1f5e898cd0b4daaa822581ebc70b, type: 3}
       propertyPath: m_Controller
       value: 
@@ -59937,6 +59941,10 @@ MonoBehaviour:
   playerStandPoint: {fileID: 1869226046}
   pushControl: 1
   toggleControlKey: 289
+  pushSpeedMode: 0
+  fairFullSpeed: 10
+  fairDeadzone: 2
+  fairSmoothing: 0.08
   doorStartPos: 50
   lockZoneMin: 80
   winHoldSeconds: 1.5

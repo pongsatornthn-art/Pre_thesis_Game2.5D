@@ -158,7 +158,7 @@ MonoBehaviour:
   killPlayerOnFail: 1
   hidePlayer: 1
   debugAlwaysTrigger: 1
-  debugLog: 0
+  debugLog: 1
 --- !u!1001 &6531405055343739543
 PrefabInstance:
   m_ObjectHideFlags: 0
