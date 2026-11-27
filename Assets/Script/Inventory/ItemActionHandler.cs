@@ -15,6 +15,12 @@ public class ItemActionHandler : MonoBehaviour
     [Tooltip("ให้ทำงานเฉพาะตอนเปิดสมุดอยู่ (แนะนำเปิดไว้ กันปุ่ม E ชนกับระบบเก็บของ/เปิดประตู)")]
     [SerializeField] private bool onlyWhenJournalOpen = true;
 
+    [Header("[2026-11-27] ใช้ยาจากมือ (ไม่ต้องเปิดสมุด)")]
+    [Tooltip("ถือยาอยู่ (เลือกจากฮอตบาร์) แล้วคลิกซ้าย = ใช้เลย")]
+    [SerializeField] private bool clickToUseHeldItem = true;
+    [Tooltip("ปุ่มลัดใช้ยาที่ถืออยู่ (None = ปิด)")]
+    [SerializeField] private KeyCode quickUseKey = KeyCode.H;
+
     [Header("References")]
     [Tooltip("ก้อนผู้เล่นที่จะได้รับผลของไอเทม (เว้นว่าง = หาจาก PlayerMovement ในซีน)")]
     [SerializeField] private GameObject player;
@@ -37,11 +43,28 @@ public class ItemActionHandler : MonoBehaviour
 
     private void Update()
     {
+        // [2026-11-27] ไม่ได้เปิดสมุด: ถือยาอยู่ → คลิกซ้าย / ปุ่มลัด = ใช้
+        if (!JournalController.IsAnyOpen && !GameplayInputGate.Blocked && !PauseOpen())
+        {
+            bool click = clickToUseHeldItem && Input.GetMouseButtonDown(0) && !PointerOverUI();
+            bool key = quickUseKey != KeyCode.None && Input.GetKeyDown(quickUseKey);
+            if ((click || key) && Inventory.Instance != null && Inventory.Instance.currentEquippedItem is ConsumableItemData)
+            {
+                UseEquipped();
+                return;
+            }
+        }
+
         if (onlyWhenJournalOpen && !JournalController.IsAnyOpen) return;
 
         if (Input.GetKeyDown(useKey)) UseEquipped();
         else if (Input.GetKeyDown(dropKey)) DropEquipped();
     }
+
+    private static bool PauseOpen() => Time.timeScale == 0f || (PauseManager.Instance != null && PauseManager.Instance.IsPaused);
+
+    private static bool PointerOverUI() =>
+        UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
     /// <summary>ใช้ไอเทมที่ถืออยู่ (ถ้ามันใช้ได้)</summary>
     public void UseEquipped()

@@ -23,7 +23,15 @@ public class ConsumableItemData : ItemData, IUsable
             return false;
         }
 
+        // [2026-11-27] เลือดเต็มแล้ว = ไม่ใช้ (เดิมกินแล้วยาหายฟรี)
+        if (healAmount > 0 && player.CurrentHealth >= player.maxHealth)
+        {
+            Debug.Log($"<color=grey>[{itemName}] เลือดเต็มแล้ว ไม่ต้องใช้</color>");
+            return false;
+        }
+
         if (healAmount > 0) player.Heal(healAmount);
+        Debug.Log($"<color=green>[{itemName}] ใช้แล้ว เลือด {player.CurrentHealth}/{player.maxHealth}</color>");
         GameEventBus.Publish(new ConsumableUsedEvent(this));   // [Claude 2026-11-12] PtsdCheckpoint ฟัง — ยาที่กินใน PTSD ไม่คืนตอนตาย
 
         // digestionReduceAmount ยังไม่มีระบบรองรับ (เผื่อไว้ทำทีหลัง)

@@ -32577,6 +32577,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: db64450c574c12645b3a9173428fd7a1, type: 2}
+    - target: {fileID: 730074770148930126, guid: aa9e473c31cc5d34facceaee15f56d90, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: aa9e473c31cc5d34facceaee15f56d90, type: 3}
       propertyPath: m_Name
       value: a1
@@ -102733,6 +102737,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: ff60a87cb25b16e488170bc64d6cd2f3, type: 3}
       propertyPath: m_Name
       value: a2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1956187233416834112, guid: ff60a87cb25b16e488170bc64d6cd2f3, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4500809985762961281, guid: ff60a87cb25b16e488170bc64d6cd2f3, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -178226,6 +178234,8 @@ MonoBehaviour:
   useKey: 101
   dropKey: 103
   onlyWhenJournalOpen: 1
+  clickToUseHeldItem: 1
+  quickUseKey: 104
   player: {fileID: 0}
   dropPrefab: {fileID: 0}
   dropPoint: {fileID: 0}
