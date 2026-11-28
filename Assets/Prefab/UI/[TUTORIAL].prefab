@@ -12133,14 +12133,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tutorial: {fileID: 11400000, guid: e63c9c06b5aaae04bb23ea3d432ae228, type: 2}
   when:
-    rid: 398983720049573957
+    rid: 398983720049573968
   checkInterval: 0.25
   references:
     version: 2
     RefIds:
-    - rid: 398983720049573957
-      type: {class: AlwaysCondition, ns: , asm: Assembly-CSharp}
-      data: 
+    - rid: 398983720049573968
+      type: {class: HasFlagCondition, ns: , asm: Assembly-CSharp}
+      data:
+        flag: {fileID: 11400000, guid: 10171b319edc141459ccbd57e5d26cb1, type: 2}
+        expectedState: 1
 --- !u!1 &8375475607854173687
 GameObject:
   m_ObjectHideFlags: 0

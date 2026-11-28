@@ -57,6 +57,9 @@ namespace Combat.Gun
                 GetAudio()?.PlaySFX(gun.fireSfx, muzzlePos);
             }
 
+            // [Claude 2026-11-28] ปลอกกระสุนตกพื้นตามหลัง (ดีเลย์เล็กน้อย)
+            if (gun.shellDropSfx != null) StartCoroutine(PlayLater(gun.shellDropSfx, muzzlePos, gun.shellDropDelay));
+
             // 2. แสงวาบ + สไปรท์เปลวไฟที่ปลายกระบอกปืน (ทำงานคู่กัน)
             //    แสง = ทำให้ห้อง 3D สว่างวาบ · สไปรท์ = รูปเปลวไฟพิกเซลที่ตามองเห็น
             if (muzzleFlash != null) muzzleFlash.PlayFlash();
@@ -68,6 +71,12 @@ namespace Combat.Gun
             {
                 shake.Shake(0.05f, 0.3f);
             }
+        }
+
+        private System.Collections.IEnumerator PlayLater(AudioClip clip, Vector3 pos, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            GetAudio()?.PlaySFX(clip, pos);
         }
 
         /// <summary>

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: 7a5d412846f84fc288c90371cb8a78a4
   itemName: "\u0E19\u0E34\u0E15\u0E22\u0E2A\u0E32\u0E23 Architectural & Living"
-  icon: {fileID: 21300000, guid: 7d070614e81ea48469c1de1b8c004154, type: 3}
+  icon: {fileID: 21300000, guid: c791c128863c7b84e85f9c920a9215d6, type: 3}
   description: 
   descriptionImage: {fileID: 0}
   isStackable: 0

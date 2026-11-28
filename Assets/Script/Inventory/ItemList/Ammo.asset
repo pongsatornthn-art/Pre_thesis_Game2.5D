@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: 50b15d2c73f545ab97380525b009e615
   itemName: Ammo
-  icon: {fileID: 21300000, guid: dcc629a0574bdb94e97e026ffea1b9c6, type: 3}
+  icon: {fileID: 21300000, guid: 84c4ac709faf5c04385e97098e50a85a, type: 3}
   description: 
   descriptionImage: {fileID: 0}
   isStackable: 1

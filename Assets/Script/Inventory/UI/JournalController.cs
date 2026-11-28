@@ -32,6 +32,9 @@ public class JournalController : MonoBehaviour
     [Tooltip("หน้าที่เปิดเป็นค่าเริ่มต้นถ้าเรียกเปิดโดยไม่ระบุหน้า (เว้นว่าง = หน้าแรกใน Pages)")]
     [SerializeField] private string defaultPageId = "";
 
+    [Tooltip("[Claude 2026-11-28] เสียงตอนเปิดสมุด (กระเป๋า) — เว้นว่าง = เสียงคลิกเมนูเดิม · สลับแท็บยังใช้เสียงคลิกเหมือนเดิม")]
+    [SerializeField] private AudioClip openSound;
+
     [Tooltip("หยุดเวลาในเกมตอนเปิดสมุดไหม (แนะนำเปิดไว้ ไม่งั้นเปิดอ่านโน้ตอยู่ผีเดินมากัดได้)")]
     [SerializeField] private bool pauseGameWhenOpen = true;
 
@@ -140,7 +143,13 @@ public class JournalController : MonoBehaviour
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        ServiceLocator.Get<IAudioService>()?.PlayMenuSound(MenuSoundType.Click);
+        IAudioService audio = ServiceLocator.Get<IAudioService>();
+        if (!wasAlreadyOpen && openSound != null && audio != null)
+        {
+            Camera cam = Camera.main;
+            audio.PlaySFX(openSound, cam != null ? cam.transform.position : Vector3.zero, 1f, false);
+        }
+        else audio?.PlayMenuSound(MenuSoundType.Click);
 
         if (!wasAlreadyOpen)
         {

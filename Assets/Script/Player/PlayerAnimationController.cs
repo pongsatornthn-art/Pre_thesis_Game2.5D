@@ -9,6 +9,12 @@ public class PlayerAnimationController : MonoBehaviour
     private string currentAnim;
     private const float transitionDuration = 0.15f;
 
+    /// <summary>[Claude 2026-11-28] ฉากเดินอัตโนมัติ (OpeningWalkIn) สั่งทิศเดินแทนปุ่ม WASD — มีค่า = เล่นท่าเดินไปทางนั้นแม้ผู้เล่นโดนล็อก · null = ปกติ</summary>
+    public static Vector2? ScriptedMove;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => ScriptedMove = null;
+
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -45,6 +51,7 @@ public class PlayerAnimationController : MonoBehaviour
         // [แก้โดย Claude 2026-11-28] ตัวละครโดนล็อก (คัทซีน/บทพูด/มินิเกม) = เดินไม่ได้จริง → ห้ามเล่นท่าเดิน
         // เดิม: กด W ค้างตอนชนทริกเกอร์คัทซีนแรก → ตัวยืนนิ่งแต่ขาเดินสับอยู่กับที่ (นาเจอ)
         bool locked = playerMovement != null && (playerMovement.isStunned || playerMovement.IsActionLocked);
+        if (ScriptedMove.HasValue) { moveX = ScriptedMove.Value.x; moveY = ScriptedMove.Value.y; locked = false; }   // ฉากเดินอัตโนมัติ
         bool isMoving = !locked && (moveX != 0 || moveY != 0); // เช็กว่ามีการกดปุ่มเดินไหม
 
         // 3. เช็กว่ากำลังยิงอยู่ไหม
