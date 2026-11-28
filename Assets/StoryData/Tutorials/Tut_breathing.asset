@@ -18,19 +18,17 @@ MonoBehaviour:
   showInJournal: 1
   interruptsMinigame: 1
   pages:
-  - clip: {fileID: 0}
+  - clip: {fileID: 32900000, guid: c35e2073f75b4544a9cbd87c5e0b58fe, type: 3}
     image: {fileID: 0}
     headingKey: 
     bodyKeys:
     - TUT_BREATH_1
     - TUT_BREATH_2
-    overlayIds:
-    - demo_breath_charge
-  - clip: {fileID: 0}
+    overlayIds: []
+  - clip: {fileID: 32900000, guid: b8c6328b1b164bf09521f1b4fde53548, type: 3}
     image: {fileID: 0}
     headingKey: TUT_BREATH_TIMING_HEADING
     bodyKeys:
     - TUT_BREATH_3
     - TUT_BREATH_4
-    overlayIds:
-    - demo_breath_timing
+    overlayIds: []

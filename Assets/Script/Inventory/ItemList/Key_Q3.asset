@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: 49e8c9c5f08141148f5157ba6cb5afc9
   itemName: Key_Q3
-  icon: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
+  icon: {fileID: 21300000, guid: 5e32f5bf90b56ad42b0cd4245758ac70, type: 3}
   description: 
   descriptionImage: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
   isStackable: 0

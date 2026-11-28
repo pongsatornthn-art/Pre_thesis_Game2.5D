@@ -18,12 +18,11 @@ MonoBehaviour:
   showInJournal: 1
   interruptsMinigame: 1
   pages:
-  - clip: {fileID: 0}
+  - clip: {fileID: 32900000, guid: 40b35936b1cb4ea59c1b42c4288648c8, type: 3}
     image: {fileID: 0}
     headingKey: 
     bodyKeys:
     - TUT_BOSS_1
     - TUT_BOSS_2
     - TUT_BOSS_3
-    overlayIds:
-    - demo_boss_grab
+    overlayIds: []

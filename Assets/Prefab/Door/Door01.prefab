@@ -99,6 +99,9 @@ MonoBehaviour:
   isOpen: 0
   toggleCooldown: 0.4
   interactPrompt: {fileID: 0}
+  openSound: {fileID: 8300000, guid: f618c96e94c9f914d91a32d974f9608d, type: 3}
+  closeSound: {fileID: 0}
+  doorVolume: 0.8
   notificationText: {fileID: 0}
   solidCollider: {fileID: 0}
 --- !u!54 &5611827236342469777

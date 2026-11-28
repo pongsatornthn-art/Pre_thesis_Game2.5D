@@ -157,8 +157,24 @@ public class FirstChaseStalker : MonoBehaviour
     }
 
     // คัทซีนเริ่ม → ล็อกประตูทันที · ส่วนผี/กำแพงกั้นรอโผล่ตอนกล้องหันไปจับบอส (showBlockersAtTime)
+    // [2026-11-28] ล็อกผู้เล่นระหว่างคัทซีน — เดิมไม่ล็อก กด W/Shift ค้างแล้ววิ่งชนกำแพงขาสับอยู่กับที่ (นาเจอ)
+    private bool cutsceneLock;
+
+    private void SetCutsceneLock(bool on)
+    {
+        if (playerMovement == null || cutsceneLock == on) return;
+        cutsceneLock = on;
+        if (on)
+        {
+            playerMovement.PushActionLock();
+            if (playerBody != null) playerBody.linearVelocity = Vector3.zero;
+        }
+        else playerMovement.PopActionLock();
+    }
+
     private void HandleCutscenePlayed(UnityEngine.Playables.PlayableDirector d)
     {
+        SetCutsceneLock(true);
         if (chaseFinished) return;
         SetRouteLocks(true, showBlockers: false);
         StartCoroutine(ShowBlockersMidCutscene(d));
@@ -222,6 +238,7 @@ public class FirstChaseStalker : MonoBehaviour
     private void OnDisable()
     {
         PTSDManager.OnPTSDStateChanged -= HandlePtsdChanged;
+        SetCutsceneLock(false);   // ตัวไล่ถูกปิดกลางคัทซีน → อย่าทิ้งผู้เล่นล็อกค้าง
         if (startAfterCutscene != null)
         {
             startAfterCutscene.stopped -= HandleCutsceneStopped;
@@ -232,6 +249,7 @@ public class FirstChaseStalker : MonoBehaviour
     // คัทซีนจบ → เริ่มไล่ เฉพาะตอนอยู่ในโลก PTSD แบบเอาตัวรอด (กันคัทซีนถูกสั่งหยุด/รีเซ็ตตอนอยู่โลกปกติ)
     private void HandleCutsceneStopped(UnityEngine.Playables.PlayableDirector _)
     {
+        SetCutsceneLock(false);
         if (IsChasing) return;
         if (PTSDManager.Instance == null || PTSDManager.Instance.currentMode != PTSDMode.Survival_TypeA) return;
 

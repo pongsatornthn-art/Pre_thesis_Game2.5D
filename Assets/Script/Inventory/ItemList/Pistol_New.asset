@@ -45,8 +45,10 @@ MonoBehaviour:
   critMultiplier: 2
   critHitSfx: {fileID: 0}
   fireSfx: {fileID: 8300000, guid: 8fa8334fd9027804bac43a614696b8f6, type: 3}
-  emptySfx: {fileID: 0}
-  reloadSfx: {fileID: 0}
+  emptySfx: {fileID: 8300000, guid: 6279992a993938a4a91fc36f17dd21df, type: 3}
+  reloadSfx: {fileID: 8300000, guid: bc7e1202633b81c4d8a9543a0480a7ad, type: 3}
+  shellDropSfx: {fileID: 8300000, guid: 841b0cbaefeab324a9da6ea3a404a900, type: 3}
+  shellDropDelay: 0.35
   shotLoudness: 8
   impactWallPrefab: {fileID: 0}
   impactFleshPrefab: {fileID: 0}

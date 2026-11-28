@@ -23,6 +23,13 @@ public class DoorController : MonoBehaviour
     [Header("UI & Effects")]
     public GameObject interactPrompt;
 
+    [Header("เสียง [Claude 2026-11-28]")]
+    [Tooltip("เสียงตอนเปิดประตู (เว้นว่าง = เงียบ)")]
+    public AudioClip openSound;
+    [Tooltip("เสียงตอนปิดประตู (เว้นว่าง = ใช้เสียงเปิด)")]
+    public AudioClip closeSound;
+    [Range(0f, 1f)] public float doorVolume = 0.8f;
+
     // 🌟 ช่องใส่ Text ขวาบน
     public TextMeshProUGUI notificationText;
 
@@ -188,6 +195,9 @@ public class DoorController : MonoBehaviour
     {
         isOpen = !isOpen;
         if (animator != null) animator.SetBool("IsOpen", isOpen);
+
+        AudioClip clip = isOpen ? openSound : (closeSound != null ? closeSound : openSound);
+        if (clip != null) ServiceLocator.GetOptional<IAudioService>()?.PlaySFX(clip, transform.position, doorVolume);
 
         // 🌟 ปิด/เปิด กล่องฟิสิกส์ทึบ ตามสถานะประตู
         // ถ้า isOpen เป็น true (เปิด) -> enabled จะเป็น false (เดินทะลุได้)

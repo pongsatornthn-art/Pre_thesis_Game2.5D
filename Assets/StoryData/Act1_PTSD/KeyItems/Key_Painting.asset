@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: a7a0167304c44ff58f714c657360b40a
   itemName: Painting Key
-  icon: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
+  icon: {fileID: 21300000, guid: 5e32f5bf90b56ad42b0cd4245758ac70, type: 3}
   description: 
   descriptionImage: {fileID: 21300000, guid: 20f9bc1ffd560d2488ea519b0428e89c, type: 3}
   isStackable: 0

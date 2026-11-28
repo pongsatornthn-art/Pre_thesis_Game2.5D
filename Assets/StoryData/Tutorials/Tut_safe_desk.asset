@@ -16,6 +16,7 @@ MonoBehaviour:
   titleKey: TUT_DESK_TITLE
   listIcon: {fileID: 0}
   showInJournal: 1
+  interruptsMinigame: 0
   pages:
   - clip: {fileID: 32900000, guid: 11387dc6745ce4e459085225362ac308, type: 3}
     image: {fileID: 0}
@@ -23,19 +24,16 @@ MonoBehaviour:
     bodyKeys:
     - TUT_DESK_1
     - TUT_DESK_2
-    overlayIds:
-    - mouse_look
+    overlayIds: []
   - clip: {fileID: 32900000, guid: d2ed8b8c93fe7c34e8f027ed0c4066d6, type: 3}
     image: {fileID: 0}
     headingKey: TUT_DESK_RADIO_HEADING
     bodyKeys:
     - TUT_DESK_3
-    overlayIds:
-    - mouse_click
+    overlayIds: []
   - clip: {fileID: 32900000, guid: d1625d37663357e4a8a9f30d13253c15, type: 3}
     image: {fileID: 0}
     headingKey: TUT_DESK_SAVE_HEADING
     bodyKeys:
     - TUT_DESK_4
-    overlayIds:
-    - mouse_click
+    overlayIds: []

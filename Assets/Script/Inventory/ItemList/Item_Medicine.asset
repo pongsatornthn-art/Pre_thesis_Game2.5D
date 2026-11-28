@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: d7afe838a8924d959284d3d20541991b
   itemName: Medicine
-  icon: {fileID: 21300000, guid: 081f9d5a443547a499eb98ac9d3fafcb, type: 3}
+  icon: {fileID: 21300000, guid: f83195800a751304b8caf9e1e15b6e69, type: 3}
   description: Restores 35 health
   descriptionImage: {fileID: 0}
   isStackable: 1

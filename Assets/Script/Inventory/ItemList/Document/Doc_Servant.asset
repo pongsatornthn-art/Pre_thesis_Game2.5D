@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: c0acc1ebf34244f8b95e3b36287687ac
   itemName: "\u0E08\u0E14\u0E2B\u0E21\u0E32\u0E22\u0E25\u0E31\u0E1A\u0E02\u0E2D\u0E07\u0E04\u0E19\u0E43\u0E0A\u0E49"
-  icon: {fileID: 21300000, guid: 725ca1e1e82637a44ae87537907608a2, type: 3}
+  icon: {fileID: 21300000, guid: d00240bc0c2360243b922bf64bc36024, type: 3}
   description: 
   descriptionImage: {fileID: 0}
   isStackable: 0

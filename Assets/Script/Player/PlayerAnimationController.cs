@@ -9,6 +9,12 @@ public class PlayerAnimationController : MonoBehaviour
     private string currentAnim;
     private const float transitionDuration = 0.15f;
 
+    /// <summary>[Claude 2026-11-28] ฉากเดินอัตโนมัติ (OpeningWalkIn) สั่งทิศเดินแทนปุ่ม WASD — มีค่า = เล่นท่าเดินไปทางนั้นแม้ผู้เล่นโดนล็อก · null = ปกติ</summary>
+    public static Vector2? ScriptedMove;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => ScriptedMove = null;
+
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -44,7 +50,11 @@ public class PlayerAnimationController : MonoBehaviour
         float moveY = Input.GetAxisRaw("Vertical");
         // [แก้โดย Claude 2026-11-28] ตัวละครโดนล็อก (คัทซีน/บทพูด/มินิเกม) = เดินไม่ได้จริง → ห้ามเล่นท่าเดิน
         // เดิม: กด W ค้างตอนชนทริกเกอร์คัทซีนแรก → ตัวยืนนิ่งแต่ขาเดินสับอยู่กับที่ (นาเจอ)
-        bool locked = playerMovement != null && (playerMovement.isStunned || playerMovement.IsActionLocked);
+        // [2026-11-28 รอบ 2] + ถูกปิดสคริปต์เดิน (คัทซีน/FirstChaseStalker สั่ง playerMovement.enabled = false)
+        //   เดิมไม่นับ → IsRunning ค้าง true (Update ไม่ทำงาน) → ท่าวิ่งสับอยู่กับที่
+        bool locked = playerMovement != null &&
+                      (!playerMovement.isActiveAndEnabled || playerMovement.isStunned || playerMovement.IsActionLocked);
+        if (ScriptedMove.HasValue) { moveX = ScriptedMove.Value.x; moveY = ScriptedMove.Value.y; locked = false; }   // ฉากเดินอัตโนมัติ
         bool isMoving = !locked && (moveX != 0 || moveY != 0); // เช็กว่ามีการกดปุ่มเดินไหม
 
         // 3. เช็กว่ากำลังยิงอยู่ไหม
@@ -92,7 +102,7 @@ public class PlayerAnimationController : MonoBehaviour
         // [แก้โดย Claude 2026-11-25] กำลังวิ่ง → PlayerMovement เป็นคนคุมท่า (Run_Tree / Run_Melee_Tree / Run_Gun_Tree)
         // เดิมสคริปต์นี้สั่ง Play("Gun_Movement") / Play("Movement") ทับท่าวิ่งทุกครั้งที่ currentAnim ไม่ตรง
         // (เช่น เริ่มวิ่งพร้อมเริ่มเดิน หรือยิงเสร็จตอนวิ่งอยู่) แล้ว PlayerMovement ไม่สั่งซ้ำเพราะจำว่าสั่งไปแล้ว
-        bool running = playerMovement != null && playerMovement.IsRunning;
+        bool running = !locked && playerMovement != null && playerMovement.IsRunning;
         if (running)
         {
             // เพิ่งยิงเสร็จตอนวิ่งอยู่ → ให้ PlayerMovement สั่งท่าวิ่งกลับมาใหม่

@@ -49,6 +49,10 @@ public class RangedWeaponData : ItemData
     public AudioClip emptySfx;
     [Tooltip("ไฟล์เสียง SFX ขณะเริ่มรีโหลดกระสุน")]
     public AudioClip reloadSfx;
+    [Tooltip("[Claude 2026-11-28] เสียงปลอกกระสุนตกพื้น หลังยิงแต่ละนัด (เว้นว่าง = ไม่มี)")]
+    public AudioClip shellDropSfx;
+    [Tooltip("ปลอกกระสุนตกหลังยิงกี่วินาที")]
+    [Min(0f)] public float shellDropDelay = 0.35f;
     [Tooltip("ตัวคูณความดังของเสียงปืนที่มีผลต่อระยะได้ยินของสตอล์กเกอร์")]
     public float shotLoudness = 1f;
 

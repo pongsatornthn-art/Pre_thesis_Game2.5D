@@ -16,6 +16,7 @@ MonoBehaviour:
   titleKey: TUT_CLOSEUP_TITLE
   listIcon: {fileID: 0}
   showInJournal: 1
+  interruptsMinigame: 0
   pages:
   - clip: {fileID: 32900000, guid: c8f50f95eac853749bdec7dd8fc41d53, type: 3}
     image: {fileID: 0}
@@ -23,5 +24,4 @@ MonoBehaviour:
     bodyKeys:
     - TUT_CLOSEUP_1
     - TUT_CLOSEUP_2
-    overlayIds:
-    - mouse_look
+    overlayIds: []

@@ -16,19 +16,18 @@ MonoBehaviour:
   titleKey: TUT_JOURNAL_TITLE
   listIcon: {fileID: 0}
   showInJournal: 1
+  interruptsMinigame: 0
   pages:
-  - clip: {fileID: 0}
+  - clip: {fileID: 32900000, guid: e6a069b9e4b703c4c98107b987ada334, type: 3}
     image: {fileID: 0}
     headingKey: 
     bodyKeys:
     - TUT_JOURNAL_1
     - TUT_JOURNAL_2
-    overlayIds:
-    - demo_journal
-  - clip: {fileID: 0}
+    overlayIds: []
+  - clip: {fileID: 32900000, guid: 916511236be8acd41a6db826893676fa, type: 3}
     image: {fileID: 0}
     headingKey: TUT_JOURNAL_MAP_HEADING
     bodyKeys:
     - TUT_JOURNAL_3
-    overlayIds:
-    - demo_map
+    overlayIds: []

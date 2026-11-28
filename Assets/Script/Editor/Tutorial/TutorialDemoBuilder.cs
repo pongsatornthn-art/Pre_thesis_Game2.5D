@@ -87,7 +87,7 @@ public static class TutorialDemoBuilder
         var d = new Demo("demo_gun_aim", overlays, 3.6f);
         Sprite[] hold = ClipSprites("Assets/Animations/Idle_Gun/Idle_Gun_Right.anim");
         Sprite[] shoot = ClipSprites("Assets/Animations/Shoot_Gun/Shoot_Gun_Right.anim");
-        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Left_Enemy");
+        Sprite[] enemy = MinionFrames();
 
         d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
         RectTransform player = d.Img("Player", hold[0], new Vector2(-250, -40), new Vector2(330, 330), Color.white, preserve: true);
@@ -125,7 +125,7 @@ public static class TutorialDemoBuilder
     {
         var d = new Demo("demo_gun_crit", overlays, 4.0f);
         Sprite[] shoot = ClipSprites("Assets/Animations/Shoot_Gun/Shoot_Gun_Right.anim");
-        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Left_Enemy");
+        Sprite[] enemy = MinionFrames();
 
         d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
         RectTransform player = d.Img("Player", shoot[0], new Vector2(-250, -40), new Vector2(330, 330), Color.white, preserve: true);
@@ -167,7 +167,7 @@ public static class TutorialDemoBuilder
         Sprite[] swing = ClipSprites("Assets/Animations/AttackPipe/AttackPipe_Right.anim");
         Sprite[] slash = ClipSprites("Assets/Animations/slash attack/Slash_Anim.anim");
         Sprite[] heavy = ClipSprites("Assets/Animations/slash attack/Slash_Heavey_Anim.anim");
-        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Left_Enemy");
+        Sprite[] enemy = MinionFrames();
 
         d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
         RectTransform player = d.Img("Player", hold[0], new Vector2(-120, -40), new Vector2(330, 330), Color.white, preserve: true);
@@ -377,7 +377,7 @@ public static class TutorialDemoBuilder
     private static void BuildMinionGrab(Transform overlays)
     {
         var d = new Demo("demo_grab", overlays, 3.4f);
-        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Left_Enemy");
+        Sprite[] enemy = MinionFrames();
         Sprite[] idle = ClipSprites("Assets/Animations/Idle_player/Idle_Right.anim");
         d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
         RectTransform player = d.Img("Player", idle[0], new Vector2(-70, -40), new Vector2(330, 330), Color.white, preserve: true);
@@ -540,7 +540,7 @@ public static class TutorialDemoBuilder
     {
         var d = new Demo("demo_sneak", overlays, 5.0f);
         Sprite[] walk = ClipSprites("Assets/Animations/Walk/Walk_Right.anim");
-        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Right_Enemy");
+        Sprite[] enemy = MinionFrames();
         d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
         RectTransform foe = d.Img("Enemy", enemy[0], new Vector2(250, -30), new Vector2(330, 330), Color.white, preserve: true);
         RectTransform q = d.Text("Question", font, "?", new Vector2(250, 150), 90, new Color(1f, 0.85f, 0.3f, 1f));
@@ -626,6 +626,9 @@ public static class TutorialDemoBuilder
             .Select(AssetDatabase.GUIDToAssetPath).Distinct().OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
             .Select(p => Load<Sprite>(p)).Where(s => s != null).ToArray();
     }
+
+    /// <summary>[2026-11-28] รูปมินเนียนจริงในเกม (เดิมใช้ Enemy_Sprite ที่หน้าตาเหมือนบอส → ผู้เล่นเข้าใจผิดว่าบอสตีได้)</summary>
+    private static Sprite[] MinionFrames() => new[] { Load<Sprite>("Assets/Art/มินเนียน/Minion.png") };
 
     private static Sprite Icon(string name) => Load<Sprite>(IconDir + name + ".png");
 
