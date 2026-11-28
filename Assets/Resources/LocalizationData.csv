@@ -146,8 +146,8 @@ TUT_CLOSEUP_TITLE;โหมดสืบสวน;Investigation Mode
 TUT_CLOSEUP_1;บางจุดจะเปลี่ยนเป็นมุมมองบุคคลที่หนึ่ง ขยับเมาส์เพื่อมองไปรอบ ๆ;Some spots switch to a first-person view. Move the mouse to look around
 TUT_CLOSEUP_2;เลื่อนเคอร์เซอร์ไปที่สิ่งของ ถ้าไฮไลต์ขึ้น คลิกซ้ายเพื่อตรวจดูหรือเก็บเบาะแส;Hover over an object. If it highlights, Left-Click to examine it or collect a clue
 TUT_JOURNAL_TITLE;สมุดนักสืบ;Detective's Journal
-TUT_JOURNAL_1;กด [Tab] เพื่อเปิดสมุดได้ทุกเมื่อ;Press [Tab] at any time to open your journal
-TUT_JOURNAL_2;แท็บด้านซ้าย: Bag ของใช้ · Key Items ของสำคัญ · Notes เอกสาร · Quests สิ่งที่ต้องทำ;Tabs on the left: Bag for items · Key Items · Notes for documents · Quests for your objectives
+TUT_JOURNAL_1;กด [I] เพื่อเปิดสมุดนักสืบได้ทุกเมื่อ (เปิดที่หน้ากระเป๋า);Press [I] at any time to open your detective journal (opens on the Bag)
+TUT_JOURNAL_2;ปุ่มลัดแต่ละแท็บ: [I] กระเป๋า · [K] ของสำคัญ · [N] บันทึก · [J] เควส — หรือคลิกแท็บด้านซ้าย;Shortcut for each tab: [I] Bag · [K] Key Items · [N] Notes · [J] Quests — or click the tabs on the left
 TUT_JOURNAL_MAP_HEADING;แผนที่;Map
 TUT_JOURNAL_3;กด [M] เพื่อดูแผนผังคฤหาสน์;Press [M] to view the floor plan of the manor
 TUT_PTSD_TITLE;โลกแห่งความหลอน;The Haunted World
@@ -196,3 +196,39 @@ TUT_GUN_5;ประตูที่มีแม่กุญแจคล้อง�
 TUT_PTSD_SNEAK_HEADING;หลบให้พ้นสายตา;Stay Unseen
 TUT_PTSD_4;กด [C] เพื่อย่อตัว เดินช้าลงแต่เงียบ มอนได้ยินยากขึ้น;Press [C] to sneak. You move slower but quieter, so monsters hear you less
 TUT_PTSD_5;ถ้ามอนเริ่มสงสัย มันจะเดินมาดู รีบถอยออกจากสายตา;If a monster grows suspicious it will come to look. Back away out of sight
+TAPE_SPEAKER_ROWAN;โรวัน;Rowan
+TAPE1_01;ช่วงนี้มีรายงานเกี่ยวกับธุรกิจผิดกฎหมายเกิดขึ้นหลายแห่งในเมือง...;There have been several reports of illegal businesses operating across the city lately...
+TAPE1_02;ผมลองตรวจสอบข้อมูลย้อนหลังดูแล้ว พบว่ามีชื่อของชายคนหนึ่งปรากฏอยู่ในหลายคดี;I went through some of the old records, and I found the same name appearing in multiple cases.
+TAPE1_03;แม้จะยังไม่มีหลักฐานยืนยันว่าเขาเกี่ยวข้องโดยตรงก็ตาม;Nothing that directly proves his involvement, though.
+TAPE1_04;ชายคนนี้เป็นที่รู้จักในชื่อ... "เจ้าพ่อ";This man is known as... "The Boss."
+TAPE1_05;เขามีอิทธิพลอยู่ไม่น้อย;He has quite a bit of influence around here.
+TAPE1_06;และดูเหมือนว่าคนที่ทำงานให้เขาจะมีส่วนเกี่ยวข้องกับธุรกิจหลายประเภท;From what I can tell, the people working under him seem to be involved in all sorts of businesses.
+TAPE1_07;สิ่งที่น่าสนใจคือ... แม้จะมีคนพูดถึงเรื่องของเขาอยู่บ่อยครั้ง แต่กลับไม่มีใครให้ข้อมูลที่ชัดเจนได้เลย;What's strange is... people talk about him all the time, yet no one seems willing to give me anything concrete.
+TAPE1_08;ผมคิดว่าคงต้องเริ่มจากการตรวจสอบคดีเก่า ๆ ที่มีชื่อของเขาปรากฏอยู่...;I think I'll start by looking into some of the older cases connected to his name.
+TAPE1_09;บางทีอาจมีเบาะแสที่คนอื่นมองข้ามไป;There might be something in those records that everyone else overlooked.
+TAPE2_01;วันนี้ผมได้ลองติดต่อกับคนที่เคยให้ข้อมูลเกี่ยวกับเจ้าพ่ออีกครั้ง...;I tried contacting the man who gave me information about the Boss again today...
+TAPE2_02;ก่อนหน้านี้เขาบอกว่ามีหลักฐานบางอย่างที่อาจเชื่อมโยงกับธุรกิจของชายคนนั้น;He told me before that he had some evidence that could be linked to the man's businesses.
+TAPE2_03;แต่พอถึงเวลานัดกลับเปลี่ยนใจ และปฏิเสธว่าไม่เคยพูดเรื่องนี้กับผมมาก่อน;But when we were supposed to meet, he changed his mind and claimed he had never spoken to me about it.
+TAPE2_04;ผมลองถามเหตุผลดูแล้ว แต่เขาก็ไม่ยอมตอบอะไรเพิ่มเติม...;I tried asking him why, but he wouldn't give me a straight answer...
+TAPE2_05;ดูจากท่าทางแล้วเหมือนกำลังกลัวใครบางคนอยู่;From the way he acted, it seemed like he was afraid of someone.
+TAPE2_06;ผมไม่คิดว่าเขาจะเปลี่ยนใจโดยไม่มีเหตุผล;I don't think he would have changed his mind without a reason.
+TAPE2_07;อย่างน้อยก็ต้องมีอะไรบางอย่างที่ทำให้เขาไม่กล้าพูด;Something must have happened to make him afraid to talk.
+TAPE2_08;ตอนนี้คงต้องหาข้อมูลจากแหล่งอื่นไปก่อน;For now, I'll have to look for information elsewhere.
+TAPE2_09;ผมจะลองตรวจสอบรายชื่อคนที่เคยเกี่ยวข้องกับคดีนี้อีกครั้ง;I'll go through the list of people connected to this case again.
+TAPE2_10;ถ้าเบาะแสที่มีอยู่เชื่อมโยงกันได้... ผมอาจเข้าใกล้ตัวเจ้าพ่อมากกว่าที่คิด;If I can connect the pieces... I might be closer to finding the Boss than I thought.
+TAPE3_01;รายงานสรุปผลการสืบสวนคดีอาญา;OFFICIAL INCIDENT REPORT
+TAPE3_02;สถานีตำรวจนครบาล ……………;Jurisdiction: ……………
+TAPE3_03;หมายเลขคดี: CR-2026-0914;Case File: CR-2026-0914
+TAPE3_04;วันที่เกิดเหตุ: 14 กันยายน;Date of Incident: September 14
+TAPE3_05;สถานที่เกิดเหตุ: ……………;Location: ……………
+TAPE3_06;ข้อมูลผู้เสียชีวิต;Victim Information
+TAPE3_07;ชื่อ-นามสกุล: ……………;Full Name: ……………
+TAPE3_08;เพศ: หญิง | อายุ: 34 ปี;Gender: Female | Age: 34
+TAPE3_09;สาเหตุการเสียชีวิต: บาดแผลฉกรรจ์บริเวณหน้าอกด้านซ้าย ถูกยิงในระยะกระชั้นชิด;Cause of Death: Fatal gunshot wound to the left chest area, inflicted at close range.
+TAPE3_10;เสียเลือดอย่างรุนแรงจนเสียชีวิตในที่เกิดเหตุ;Fatal hemorrhage resulting in immediate cardiac arrest.
+TAPE3_11;เวลาประมาณ 02:15 น. เจ้าหน้าที่ได้รับแจ้งเหตุมีเสียงปืนดังขึ้นหลายนัดจากคฤหาสน์ตระกูลเวนน์;At approximately 02:15 AM, officers responded to multiple reports of gunfire originating from Venn Manor.
+TAPE3_12;เมื่อไปถึงที่เกิดเหตุพบร่างผู้เสียชีวิตนอนอยู่บริเวณห้องโถงชั้นล่าง;Upon entry, officers discovered the victim's body in the main foyer.
+TAPE3_13;จากหลักฐานเบื้องต้น เจ้าหน้าที่สันนิษฐานว่าคดีนี้เกิดจากการบุกรุกเพื่อชิงทรัพย์ของกลุ่มคนร้ายไม่ทราบจำนวน;Based on initial evidence, law enforcement suspects a forced home invasion and attempted robbery by unidentified suspects.
+TAPE3_14;พบร่องรอยการงัดแงะที่ประตูทางเข้าด้านหลัง และทรัพย์สินในห้องทำงานถูกค้นกระจัดกระจาย;Marks of forced entry were documented at the rear entrance, and belongings in the study room were found ransacked.
+TAPE3_15;อย่างไรก็ตาม ยังไม่พบหลักฐานเชื่อมโยงถึงตัวผู้ก่อเหตุเพิ่มเติม;However, no conclusive physical evidence or fingerprints of outside suspects were recovered.
+TAPE3_16;สถานะคดี: สั่งปิดการสืบสวนชั่วคราว (ขาดหลักฐานและเบาะแสเพิ่มเติม);Case Status: Suspended / Closed pending new evidence.

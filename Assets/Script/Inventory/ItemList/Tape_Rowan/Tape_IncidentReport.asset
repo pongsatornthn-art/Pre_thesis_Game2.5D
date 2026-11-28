@@ -25,3 +25,68 @@ MonoBehaviour:
   itemNameKey: 
   descriptionKey: 
   clip: {fileID: 8300000, guid: 6d3b651047459af408ecf1f14e71d3f0, type: 3}
+  subtitles:
+  - start: 0.4
+    end: 3.45
+    speakerKey: 
+    textKey: TAPE3_01
+  - start: 3.5
+    end: 6.05
+    speakerKey: 
+    textKey: TAPE3_02
+  - start: 6.1
+    end: 8.75
+    speakerKey: 
+    textKey: TAPE3_03
+  - start: 8.8
+    end: 13.8
+    speakerKey: 
+    textKey: TAPE3_04
+  - start: 13.85
+    end: 14.81
+    speakerKey: 
+    textKey: TAPE3_05
+  - start: 14.86
+    end: 17.2
+    speakerKey: 
+    textKey: TAPE3_06
+  - start: 17.25
+    end: 19.55
+    speakerKey: 
+    textKey: TAPE3_07
+  - start: 19.6
+    end: 22.8
+    speakerKey: 
+    textKey: TAPE3_08
+  - start: 23
+    end: 29.1
+    speakerKey: 
+    textKey: TAPE3_09
+  - start: 29.15
+    end: 35.55
+    speakerKey: 
+    textKey: TAPE3_10
+  - start: 35.6
+    end: 44.4
+    speakerKey: 
+    textKey: TAPE3_11
+  - start: 44.45
+    end: 48.75
+    speakerKey: 
+    textKey: TAPE3_12
+  - start: 48.8
+    end: 58.8
+    speakerKey: 
+    textKey: TAPE3_13
+  - start: 58.85
+    end: 67.55
+    speakerKey: 
+    textKey: TAPE3_14
+  - start: 67.6
+    end: 75.35
+    speakerKey: 
+    textKey: TAPE3_15
+  - start: 75.4
+    end: 80.35
+    speakerKey: 
+    textKey: TAPE3_16

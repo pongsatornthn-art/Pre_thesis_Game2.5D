@@ -269,12 +269,12 @@ public static class TutorialDemoBuilder
 
     // ───────── ชุด: สมุด / แผนที่ ─────────
 
-    /// <summary>กด Tab → สมุดเด้ง → แท็บสลับไล่ทีละอัน</summary>
+    /// <summary>กด I → สมุดเด้ง → แท็บสลับไล่ทีละอัน</summary>
     private static void BuildJournal(Transform overlays, TMP_FontAsset font)
     {
         var d = new Demo("demo_journal", overlays, 4.4f);
         string ui = "Assets/Art/UI-20260919T083630Z-1-001/UI/";
-        RectTransform keyTab = Key(d, font, "Tab", new Vector2(-370, 170), true);
+        RectTransform keyTab = Key(d, font, "I", new Vector2(-400, 170), false);   // [2026-11-28] เปิดสมุด = I (เดิมเขียนผิดเป็น Tab)
         RectTransform book = d.Img("Book", Load<Sprite>(ui + "Inventory_Book_Center.png"), new Vector2(40, -30), new Vector2(700, 375), Color.white, preserve: true);
         string[] tabs = { "Tab_Inventory/Tab_Inv_Selected", "Tab_KeyItem/Tab_Kitem_Selected", "Tab_Document/Tab_Doc_Selected" };
         var tabRects = new RectTransform[tabs.Length];

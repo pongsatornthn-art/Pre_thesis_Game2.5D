@@ -25,3 +25,44 @@ MonoBehaviour:
   itemNameKey: 
   descriptionKey: 
   clip: {fileID: 8300000, guid: fb7bc35dd88db93418dea5f9112aa8b5, type: 3}
+  subtitles:
+  - start: 3.1
+    end: 7.55
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_01
+  - start: 8.05
+    end: 12.83
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_02
+  - start: 13.01
+    end: 18.73
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_03
+  - start: 19
+    end: 23.71
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_04
+  - start: 24
+    end: 27.85
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_05
+  - start: 28.42
+    end: 31.64
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_06
+  - start: 31.73
+    end: 35.13
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_07
+  - start: 35.6
+    end: 38.75
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_08
+  - start: 38.83
+    end: 41.95
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_09
+  - start: 42.3
+    end: 47.45
+    speakerKey: TAPE_SPEAKER_ROWAN
+    textKey: TAPE2_10
