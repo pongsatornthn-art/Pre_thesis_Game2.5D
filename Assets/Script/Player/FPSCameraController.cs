@@ -77,6 +77,9 @@ public class FPSCameraController : MonoBehaviour
             }
         }
 
+        // [Claude 2026-11-28] โหมดเมาส์ลอยก็ต้องหยุดตอนการ์ดสอนเปิด (เดิมเช็คแค่โหมดเล็งกลางจอ)
+        if (TutorialCardPresenter.AnyOpen) { ClearTarget(); return; }
+
         HandleCameraRotation();
         HandleInteraction();
     }
@@ -84,6 +87,7 @@ public class FPSCameraController : MonoBehaviour
     private bool IsBlocked()
     {
         if (InputBlocked || SaveSlotPickerUI.IsOpen || JournalController.IsAnyOpen) return true;
+        if (TutorialCardPresenter.AnyOpen) return true;   // [Claude 2026-11-28] การ์ดสอนเปิด = ปล่อยเมาส์ ห้ามหันกล้อง/คลิกทะลุไปโดนสมุดเซฟ
         if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return true;
         if (blockingPanels != null)
             foreach (GameObject p in blockingPanels)

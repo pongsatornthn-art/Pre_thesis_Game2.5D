@@ -71,6 +71,7 @@ PROMPT_PICKUP_F;กด [F] เก็บของ;Press [F] to pick up
 PROMPT_PICKUP;เก็บ;Pick up
 PROMPT_OPEN;เปิด/ปิด;Open/Close
 PROMPT_USE;ตรวจดู;Use
+PROMPT_SMASH;ทุบ;Smash
 PROMPT_INSPECT;ตรวจสอบ;Inspect
 PROMPT_SAVE;บันทึก;Save
 DOOR_LOCKED;ประตูล็อกอยู่ ต้องหากุญแจก่อน;It's locked. I need to find the key first.
@@ -190,12 +191,14 @@ TUT_BREATH_TIMING_HEADING;หายใจให้เป็นจังหวะ
 TUT_BREATH_3;ค้าง [Space] เข็มจะวิ่ง ปล่อยตอนเข็มอยู่ในช่องเขียว;Hold [Space] to move the needle and release it inside the green zone
 TUT_BREATH_4;ทำให้สำเร็จ 3 ครั้ง ยิ่งพลาดช่องจะยิ่งแคบลง;Succeed 3 times. Each miss makes the zone narrower
 TUT_MELEE_BREAK_HEADING;ทุบสิ่งกีดขวาง;Smash Obstacles
-TUT_MELEE_4;ท่อเหล็กใช้ทุบกองของที่ขวางทางให้พังได้;The pipe can smash through debris blocking your way
+TUT_MELEE_4;ถือท่อเดินเข้าไปใกล้กองของที่ขวางทาง แล้วกด [E] เพื่อทุบ;Walk up to debris blocking your way while holding the pipe, then press [E] to smash it
+TUT_MELEE_5;ทุบ 2 ครั้งก็พัง และไม่เสียสตามินา;Two hits break it, and it uses no stamina
 TUT_GUN_LOCK_HEADING;ยิงแม่กุญแจ;Shoot the Lock
 TUT_GUN_5;ประตูที่มีแม่กุญแจคล้องอยู่ เล็งแล้วยิงให้หลุดได้;Aim at a padlock on a door and shoot it off
 TUT_PTSD_SNEAK_HEADING;หลบให้พ้นสายตา;Stay Unseen
 TUT_PTSD_4;กด [C] เพื่อย่อตัว เดินช้าลงแต่เงียบ มอนได้ยินยากขึ้น;Press [C] to sneak. You move slower but quieter, so monsters hear you less
 TUT_PTSD_5;ถ้ามอนเริ่มสงสัย มันจะเดินมาดู รีบถอยออกจากสายตา;If a monster grows suspicious it will come to look. Back away out of sight
+TUT_SNEAK_TITLE;ย่องเงียบ ๆ;Sneak
 TAPE_SPEAKER_ROWAN;โรวัน;Rowan
 TAPE1_01;ช่วงนี้มีรายงานเกี่ยวกับธุรกิจผิดกฎหมายเกิดขึ้นหลายแห่งในเมือง...;There have been several reports of illegal businesses operating across the city lately...
 TAPE1_02;ผมลองตรวจสอบข้อมูลย้อนหลังดูแล้ว พบว่ามีชื่อของชายคนหนึ่งปรากฏอยู่ในหลายคดี;I went through some of the old records, and I found the same name appearing in multiple cases.

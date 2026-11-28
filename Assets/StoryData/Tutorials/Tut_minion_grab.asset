@@ -18,12 +18,11 @@ MonoBehaviour:
   showInJournal: 1
   interruptsMinigame: 1
   pages:
-  - clip: {fileID: 0}
+  - clip: {fileID: 32900000, guid: 89f36bc69ea63414ea1f1cff6751fd0e, type: 3}
     image: {fileID: 0}
     headingKey: 
     bodyKeys:
     - TUT_GRAB_1
     - TUT_GRAB_2
     - TUT_GRAB_3
-    overlayIds:
-    - demo_grab
+    overlayIds: []

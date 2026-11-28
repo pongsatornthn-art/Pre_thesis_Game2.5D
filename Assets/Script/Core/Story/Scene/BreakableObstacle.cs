@@ -27,6 +27,22 @@ public class BreakableObstacle : MonoBehaviour, IDamageable
     [Tooltip("ตีกี่ครั้งถึงแตก (ตีแบบกดค้างนับ 2 ครั้ง)")]
     [Min(1)] public int hitsToBreak = 3;
 
+    [Header("ทุบด้วยปุ่ม E (ถือท่ออยู่ · ไม่เสียสตามินา) [นา 2026-11-28]")]
+    [Tooltip("ผู้เล่นอยู่ใกล้กี่เมตร (วัดถึงขอบ Collider) ถึงขึ้นป้าย [E] ทุบ · ใช้กับ Hit By = Melee / Any")]
+    public float smashRadius = 1.8f;
+
+    [Tooltip("กด E ซ้ำได้ทุกกี่วินาที")]
+    public float smashCooldown = 0.45f;
+
+    [Tooltip("ท่าฟันเริ่มแล้วรอกี่วินาทีถึงนับเป็น 1 ครั้งที่โดน")]
+    public float smashHitDelay = 0.2f;
+
+    [Tooltip("คีย์ข้อความบนป้าย (LocalizationData.csv)")]
+    public string smashPromptKey = "PROMPT_SMASH";
+
+    [Tooltip("ป้ายลอยสูงจากตัวของกี่เมตร")]
+    public float smashPromptHeight = 1.5f;
+
     [Header("จำสถานะ (เซฟ)")]
     [Tooltip("ธงที่ขึ้นเมื่อพังแล้ว — เว้นว่างได้ จะใช้ Save Key ข้างล่างแทน")]
     public StoryFlagId brokenFlag;
@@ -68,6 +84,8 @@ public class BreakableObstacle : MonoBehaviour, IDamageable
     private bool hintPlayed;
     private PlayerCombat playerCombat;
     private Coroutine shakeRoutine;
+    private float lastSmashTime = -10f;
+    private Collider ownCollider;
 
     private void Reset()
     {
@@ -96,6 +114,77 @@ public class BreakableObstacle : MonoBehaviour, IDamageable
             IsBroken = true;
             ApplyBroken(playEffects: false);
         }
+    }
+
+    // ===== กด E ทุบ [นา 2026-11-28] =====
+    // เดิมตีแล้วเสียสตามินา (PlayerCombat) → ตอนนี้ถือท่อเดินเข้าใกล้ = ป้าย "[E] ทุบ" · กด E = ฟัน 1 ครั้ง ไม่เสียสตามินา
+    // ไม่แตะ PlayerCombat: แค่สั่ง trigger "Attack" บน Animator เดียวกับที่ท่อใช้ (ดาเมจจริงมาจาก RegisterHit ของเราเอง ไม่ผ่าน hitbox)
+    private void Update()
+    {
+        if (IsBroken || hitBy == HitBy.Gun) { HideSmashPrompt(); return; }
+
+        IInteractPromptService prompt = ServiceLocator.GetOptional<IInteractPromptService>();
+        if (playerCombat == null) playerCombat = FindFirstObjectByType<PlayerCombat>();
+        if (playerCombat == null || !IsPlayerInRange() || InputBlocked()) { HideSmashPrompt(); return; }
+
+        bool holdingMelee = Inventory.Instance != null && Inventory.Instance.currentEquippedItem != null
+                            && Inventory.Instance.currentEquippedItem.itemType == ItemType.MeleeWeapon;
+
+        if (!holdingMelee)
+        {
+            // ไม่ได้ถือท่อ: ไม่ขึ้นป้าย · กด E = เล่นบทพูดใบ้ (ถ้าตั้งไว้ · ครั้งเดียว)
+            HideSmashPrompt();
+            if (InteractInput.PickupPressed && !hintPlayed && wrongWeaponHint != null && StoryDirector.Instance != null)
+            {
+                hintPlayed = true;
+                StoryDirector.Instance.Play(wrongWeaponHint);
+            }
+            return;
+        }
+
+        if (prompt != null) prompt.Show(this, transform, Vector3.up * smashPromptHeight, PromptKey.Pickup, smashPromptKey);
+
+        if (InteractInput.PickupPressed && Time.time - lastSmashTime >= smashCooldown
+            && (prompt == null || !prompt.IsOtherShown(this, PromptKey.Pickup)))
+        {
+            lastSmashTime = Time.time;
+            if (playerCombat.animator != null) playerCombat.animator.SetTrigger("Attack");
+            StartCoroutine(SmashHitRoutine());
+        }
+    }
+
+    private IEnumerator SmashHitRoutine()
+    {
+        if (smashHitDelay > 0f) yield return new WaitForSeconds(smashHitDelay);
+        RegisterHit(false);
+    }
+
+    private bool InputBlocked()
+    {
+        if (GameplayInputGate.Blocked) return true;
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return true;
+        if (StoryDirector.Instance != null && StoryDirector.Instance.IsPlaying) return true;
+        IDialogueService dialogue = ServiceLocator.GetOptional<IDialogueService>();
+        return dialogue != null && dialogue.IsPlaying;
+    }
+
+    private bool IsPlayerInRange()
+    {
+        if (ownCollider == null) ownCollider = GetComponent<Collider>();
+        Vector3 p = playerCombat.transform.position;
+        Vector3 q = ownCollider != null ? ownCollider.ClosestPoint(p) : transform.position;
+        p.y = 0f; q.y = 0f;
+        return (p - q).sqrMagnitude <= smashRadius * smashRadius;
+    }
+
+    private void HideSmashPrompt()
+    {
+        ServiceLocator.GetOptional<IInteractPromptService>()?.Hide(this);
+    }
+
+    private void OnDisable()
+    {
+        HideSmashPrompt();
     }
 
     // ===== IDamageable =====

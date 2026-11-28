@@ -16,13 +16,13 @@ MonoBehaviour:
   titleKey: TUT_BASICS_TITLE
   listIcon: {fileID: 0}
   showInJournal: 1
+  interruptsMinigame: 0
   pages:
-  - clip: {fileID: 0}
+  - clip: {fileID: 32900000, guid: ebc7172bf5fb39a4d81053d97d23c8dc, type: 3}
     image: {fileID: 0}
     headingKey: 
     bodyKeys:
     - TUT_BASICS_1
     - TUT_BASICS_2
     - TUT_BASICS_3
-    overlayIds:
-    - demo_basics
+    overlayIds: []

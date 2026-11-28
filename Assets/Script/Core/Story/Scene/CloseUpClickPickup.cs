@@ -106,6 +106,7 @@ public class CloseUpClickPickup : MonoBehaviour, IPresenceGate
         }
         if (!armed) return;
         if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return;
+        if (TutorialCardPresenter.AnyOpen) return;   // [2026-11-28] การ์ดสอนเปิดอยู่ = คลิกไม่ทะลุไปเก็บของ
 
         bool hovering = IsMouseOver();
         if (hoverHighlight != null && hoverHighlight.activeSelf != hovering) hoverHighlight.SetActive(hovering);

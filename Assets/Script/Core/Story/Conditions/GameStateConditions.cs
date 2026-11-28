@@ -54,6 +54,15 @@ public class BreathingRoomCondition : IStoryCondition
     }
 }
 
+/// <summary>[2026-11-28] อยู่ในโลก PTSD B (เควสโต๊ะวาดรูป) — ใช้เด้งการ์ดสอนย่อง
+/// (ไม่สอนตอน PTSD ครั้งแรก เพราะเป็นฉากบอสไล่ ย่องแล้วตายฟรี)</summary>
+[Serializable, PickerName("โลก PTSD/อยู่ใน PTSD B (โต๊ะวาดรูป)")]
+public class PtsdTypeBCondition : IStoryCondition
+{
+    public bool IsMet(StoryContext ctx) =>
+        PTSDManager.Instance != null && PTSDManager.Instance.currentMode == PTSDMode.Narrative_TypeB;
+}
+
 /// <summary>นั่งโต๊ะห้องปลอดภัยอยู่ (มุมโต๊ะ วิทยุ/เซฟ)</summary>
 [Serializable, PickerName("ห้องปลอดภัย/นั่งโต๊ะอยู่")]
 public class SafeDeskActiveCondition : IStoryCondition
