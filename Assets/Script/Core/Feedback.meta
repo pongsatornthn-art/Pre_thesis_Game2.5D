@@ -1,7 +1,12 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Script/Editor/MapBuilder/README_MapBuilder.md.meta
+guid: 2c14d9e6ab5bd4c488b6cc438da857a6
+TextScriptImporter:
+========
 guid: a90e075c8de11a147bdb4d640fc49723
 folderAsset: yes
 DefaultImporter:
+>>>>>>>> ทดสอบ2.0:Assets/Script/Core/Feedback.meta
   externalObjects: {}
   userData: 
   assetBundleName: 

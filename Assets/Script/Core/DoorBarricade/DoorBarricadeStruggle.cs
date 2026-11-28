@@ -23,6 +23,8 @@ public class DoorBarricadeStruggle : MonoBehaviour
     public enum Result { Win, Fail, Aborted }
     /// <summary>วิธีควบคุม — DragMouse = แบบเก่า · HoldButtonDrag = แบบใหม่ (กดค้างที่ปุ่มวงกลมก่อน)</summary>
     public enum PushControl { DragMouse, HoldButtonDrag }
+    /// <summary>[2026-11-27] DpiFair = นับแค่ว่า "กำลังลากขึ้นอยู่" (เมาส์ DPI ไหนก็แรงเท่ากัน) · LegacySpeed = แบบเดิม ลากเร็ว = ดันแรง</summary>
+    public enum PushSpeedMode { DpiFair, LegacySpeed }
 
     /// <summary>ค่าที่สลับด้วยปุ่ม F8 ระหว่างเล่น — จำไว้ทั้งรอบที่กด Play (ประตูบานอื่นใช้แบบเดียวกัน) · null = ใช้ค่าใน Inspector</summary>
     private static PushControl? sessionControlOverride;
@@ -72,12 +74,22 @@ public class DoorBarricadeStruggle : MonoBehaviour
     [Tooltip("กดระหว่างมินิเกมเพื่อสลับแบบเก่า/ใหม่ทันที (None = ปิดปุ่มนี้ ตอนส่งงานจริงควรปิด)")]
     public KeyCode toggleControlKey = KeyCode.F8;
 
+    [Header("ความแฟร์ของเมาส์ DPI (2026-11-27)")]
+    [Tooltip("DpiFair = นับแค่ว่า 'กำลังลากขึ้นอยู่ไหม' ไม่นับว่าลากเร็ว/ไกลแค่ไหน → เมาส์ DPI ต่ำ/สูงได้แรงเท่ากัน\nLegacySpeed = แบบเดิม ลากเร็ว = ดันแรง (เมาส์ DPI สูงได้เปรียบ)")]
+    public PushSpeedMode pushSpeedMode = PushSpeedMode.DpiFair;
+    [Tooltip("DpiFair: ลากขึ้นเร็วเท่านี้ (หน่วย Mouse Y ต่อวินาที) = ดันเต็มแรงแล้ว — ตั้งต่ำไว้ เมาส์ DPI ต่ำขยับช้าๆ ก็ถึง\n10 ≈ เมาส์ 400 DPI ขยับขึ้นแค่ 0.6 ซม./วินาที")]
+    [Min(0.1f)] public float fairFullSpeed = 10f;
+    [Tooltip("DpiFair: ลากช้ากว่านี้ = ไม่นับ (กันมือสั่น / เมาส์ DPI สูงๆ ไหลเอง)")]
+    [Min(0f)] public float fairDeadzone = 2f;
+    [Tooltip("DpiFair: เฉลี่ยการลากย้อนหลังกี่วินาที (กันเฟรมกระตุก + มือสั่นขึ้นลงหักล้างกันเอง)")]
+    [Range(0.02f, 0.3f)] public float fairSmoothing = 0.08f;
+
     [Header("ค่าตาม GDD")]
     [Range(0f, 100f)] public float doorStartPos = 50f;
     [Range(0f, 100f)] public float lockZoneMin = 80f;
     [Tooltip("ต้องอยู่ในโซนล็อกต่อเนื่องกี่วินาทีถึงชนะ (Win_Countdown_Timer)")]
     [Min(0.1f)] public float winHoldSeconds = 1.5f;
-    [Tooltip("Mouse_Push_Sensitivity — ตัวคูณแปลงความเร็วลากเมาส์ขึ้น เป็นความเร็วดันประตู")]
+    [Tooltip("Mouse_Push_Sensitivity — ตัวคูณแปลงความเร็วลากเมาส์ขึ้น เป็นความเร็วดันประตู (ใช้เฉพาะ Push Speed Mode = LegacySpeed)")]
     [Min(0f)] public float mousePushSensitivity = 1.8f;
     [Tooltip("Max_Push_Velocity (หน่วย/วินาที)")]
     [Min(0f)] public float maxPushVelocity = 45f;
@@ -147,6 +159,7 @@ public class DoorBarricadeStruggle : MonoBehaviour
     public bool IsHoldingButton { get; private set; }
 
     private Quaternion closedRotation;
+    private float smoothedDrag;          // [2026-11-27] DpiFair: ความเร็วลากขึ้นเฉลี่ย (+ขึ้น −ลง)
     private Vector3 leafCenterClosed;   // จุดกลางบานประตูตอนปิด (ใช้หาทิศแง้ม)
     private bool hasLeafCenter;
     private float signedOpenAngle;
@@ -249,6 +262,7 @@ public class DoorBarricadeStruggle : MonoBehaviour
     {
         DoorPos = doorStartPos;
         PushVelocity = 0f;
+        smoothedDrag = 0f;
         WinTimerRemaining = winHoldSeconds;
         graceTimer = IsTutorial ? tutorialGraceSeconds : startGraceSeconds;
         slamTimer = NextSlamInterval();
@@ -279,10 +293,9 @@ public class DoorBarricadeStruggle : MonoBehaviour
         if (dt <= 0f) return;
 
         // 1) แรงผู้เล่น: นับเฉพาะลากขึ้น (ลากลง = ตั้งหลัก ไม่หักค่า)
-        float mouseUp = ReadPushInput();
-        if (mouseUp > 0f)
+        float target = PushTarget(dt);
+        if (target > 0f)
         {
-            float target = Mathf.Min(maxPushVelocity, (mouseUp / dt) * mousePushSensitivity);
             if (target > PushVelocity) PushVelocity = Mathf.MoveTowards(PushVelocity, target, pushAcceleration * dt);
             else PushVelocity *= Mathf.Exp(-pushInertiaDamping * dt);
         }
@@ -476,10 +489,33 @@ public class DoorBarricadeStruggle : MonoBehaviour
     }
 
     // ───────── การควบคุม ─────────
-    /// <summary>อ่านแรงลากขึ้นของเฟรมนี้ ตามวิธีควบคุมที่เลือก (0 = ไม่ได้ดัน)</summary>
+    /// <summary>
+    /// [2026-11-27] ความเร็วดันที่ผู้เล่นอยากได้เฟรมนี้ (0 = ไม่ได้ดัน)
+    /// DpiFair: ค่าเมาส์ที่ Unity ได้ = จำนวนจุดที่เมาส์นับ → เมาส์ DPI สูงขยับนิดเดียวได้ค่าเยอะ (เดิมเลยดันแรงกว่า)
+    ///          ตอนนี้นับแค่ "ลากขึ้นต่อเนื่องอยู่ไหม" เกินเกณฑ์ต่ำๆ = เต็มแรง → ทุกคนต้องลากนานเท่ากัน ไม่ใช่ลากเร็ว/ไกลกว่า
+    /// </summary>
+    private float PushTarget(float dt)
+    {
+        float y = ReadPushInput();   // + ขึ้น / − ลง · 0 = ไม่ได้ดัน (แบบใหม่ ไม่ได้กดปุ่มค้าง)
+
+        if (pushSpeedMode == PushSpeedMode.LegacySpeed)
+        {
+            float up = Mathf.Max(0f, y);
+            return up > 0f ? Mathf.Min(maxPushVelocity, (up / dt) * mousePushSensitivity) : 0f;
+        }
+
+        // เฉลี่ยแบบมีทิศ: มือสั่นขึ้น-ลงหักล้างกัน · ลากลงตั้งหลัก = ค่าติดลบ ไม่ดัน
+        float k = 1f - Mathf.Exp(-dt / Mathf.Max(0.01f, fairSmoothing));
+        smoothedDrag = Mathf.Lerp(smoothedDrag, y / dt, k);
+        float full = Mathf.Max(fairDeadzone + 0.01f, fairFullSpeed);
+        float effort = Mathf.InverseLerp(fairDeadzone, full, smoothedDrag);
+        return maxPushVelocity * effort;
+    }
+
+    /// <summary>อ่านการลากเมาส์แนวตั้งของเฟรมนี้ ตามวิธีควบคุมที่เลือก (+ ขึ้น / − ลง · 0 = ไม่ได้ดัน)</summary>
     private float ReadPushInput()
     {
-        float up = Mathf.Max(0f, Input.GetAxisRaw("Mouse Y"));
+        float up = Input.GetAxisRaw("Mouse Y");
 
         if (CurrentControl == PushControl.DragMouse) return up; // แบบเก่า: ลากได้เลย
 

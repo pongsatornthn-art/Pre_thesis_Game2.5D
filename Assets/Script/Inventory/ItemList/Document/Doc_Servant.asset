@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e2dfb7dca3e9b54b98fc84a8e08ab2b, type: 3}
+  m_Name: Doc_Servant
+  m_EditorClassIdentifier: 
+  itemId: c0acc1ebf34244f8b95e3b36287687ac
+  itemName: "\u0E08\u0E14\u0E2B\u0E21\u0E32\u0E22\u0E25\u0E31\u0E1A\u0E02\u0E2D\u0E07\u0E04\u0E19\u0E43\u0E0A\u0E49"
+  icon: {fileID: 21300000, guid: 725ca1e1e82637a44ae87537907608a2, type: 3}
+  description: 
+  descriptionImage: {fileID: 0}
+  isStackable: 0
+  maxStack: 99
+  itemType: 7
+  price: 50
+  equippedSprite: {fileID: 0}
+  itemNameKey: 
+  descriptionKey: 
+  documentId: DOC_SERVANT
+  titleKey: DOC_SERVANT_TITLE
+  bodyKey: "DOC_SERVANT_BODY\t"
+  pageImage: {fileID: 21300000, guid: 32a9cec63b71c8c4fbe37324ffd37be3, type: 3}

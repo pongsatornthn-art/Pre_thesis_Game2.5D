@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using TMPro; // 🌟 1. เรียกใช้ระบบ TextMeshPro
 using System.Collections; // 🌟 2. เรียกใช้ระบบนับเวลา (Coroutine)
+using System.Collections.Generic;
 
 public class DoorController : MonoBehaviour
 {
@@ -34,20 +35,97 @@ public class DoorController : MonoBehaviour
     private Coroutine notificationCoroutine; // ตัวเก็บค่าเวลานับถอยหลัง
     private float nextToggleTime;            // [แก้ 2026-11-22] กดได้อีกครั้งเมื่อไหร่
 
+    // [2026-11-27] ประตูหลายบานอยู่ชิดกัน (เช่น 2 บานตรงมุมห้องที่ใช้ Key_Q3 เหมือนกัน) → กด E ครั้งเดียวโดนทั้งคู่
+    //   บานแรกใช้กุญแจไป บานที่สองหากุญแจไม่เจอ → ขึ้น "ประตูล็อก" / เปิดบานนึง อีกบานปิด
+    //   ตอนนี้: กด E แล้วให้ "บานที่ใกล้ผู้เล่นที่สุด" ทำงานบานเดียว
+    private static readonly List<DoorController> doorsNearPlayer = new List<DoorController>();
+    private Transform nearPlayer;
+    private Vector3 closedCenter;            // [2026-11-27] จุดกลางประตูตอนปิด (บานเปิดแล้วกล่องชนหมุนไปด้วย → วัดระยะเพี้ยน)
+    private bool hasClosedCenter;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics() => doorsNearPlayer.Clear();
+
+    /// <summary>[2026-11-27] ปลดล็อกแล้วจำไว้ในความจำกลาง (StoryFlags) → เซฟ/โหลดแล้วยังปลดล็อกอยู่ · ประตูที่ใช้กุญแจรหัสเดียวกันปลดล็อกพร้อมกัน</summary>
+    private string UnlockFlagKey => string.IsNullOrEmpty(requiredDoorID) ? null : "door_unlocked:" + requiredDoorID;
+
     void Start()
     {
         animator = GetComponent<Animator>();
 
         // ตอนเริ่มเกม ให้ซ่อนข้อความแจ้งเตือนไว้ก่อน
         if (notificationText != null) notificationText.text = "";
+
+        RestoreUnlockFromFlags();
+        CacheClosedCenter();
+    }
+
+    private void CacheClosedCenter()
+    {
+        if (solidCollider != null && solidCollider.enabled && solidCollider.gameObject.activeInHierarchy)
+            closedCenter = solidCollider.bounds.center;
+        else if (solidCollider != null)
+            closedCenter = solidCollider.transform.TransformPoint(solidCollider.center);
+        else
+            closedCenter = transform.position;
+        hasClosedCenter = true;
+    }
+
+    private void OnEnable()
+    {
+        if (isPlayerNear && !doorsNearPlayer.Contains(this)) doorsNearPlayer.Add(this);
+    }
+
+    private void OnDisable() => doorsNearPlayer.Remove(this);
+
+    /// <summary>[2026-11-27] เคยปลดล็อกแล้ว (รอบนี้ หรือจากเซฟ) → ปลดล็อกเลย ไม่ต้องใช้กุญแจซ้ำ</summary>
+    private bool RestoreUnlockFromFlags()
+    {
+        if (isUnlocked) return true;
+        string key = UnlockFlagKey;
+        if (key == null) return false;
+        IStoryFlags flags = ServiceLocator.GetOptional<IStoryFlags>();
+        if (flags != null && flags.HasKey(key)) isUnlocked = true;
+        return isUnlocked;
+    }
+
+    private void RememberUnlock()
+    {
+        string key = UnlockFlagKey;
+        if (key == null) return;
+        ServiceLocator.GetOptional<IStoryFlags>()?.SetKey(key);
+    }
+
+    /// <summary>[2026-11-27] ในบรรดาประตูที่ผู้เล่นยืนใกล้ บานนี้ใกล้ที่สุดไหม</summary>
+    private bool IsNearestDoor()
+    {
+        if (nearPlayer == null) return true;
+        Vector3 p = nearPlayer.position;
+        float mine = DistTo(p);
+        foreach (DoorController d in doorsNearPlayer)
+        {
+            if (d == null || d == this || !d.isPlayerNear || !d.isActiveAndEnabled) continue;
+            float other = d.DistTo(p);
+            if (other < mine - 0.01f) return false;
+            if (Mathf.Abs(other - mine) <= 0.01f && d.GetInstanceID() < GetInstanceID()) return false;   // เท่ากันเป๊ะ → เลือกบานเดียว
+        }
+        return true;
+    }
+
+    private float DistTo(Vector3 p)
+    {
+        if (!hasClosedCenter) CacheClosedCenter();
+        Vector3 c = closedCenter;   // ใช้จุดตอนปิดเสมอ — บานเปิดอยู่ก็ยังวัดจากวงกบเดิม
+        c.y = p.y;
+        return Vector3.Distance(c, p);
     }
 
     void Update()
     {
         // [Claude 2026-11-14] ป้ายลอยโชว์ของชิ้นอื่นอยู่ (เช่น ไอเทมใกล้กว่า) = E ครั้งนี้ไม่ใช่ของประตู
-        if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !InteractPromptMarker.OtherPromptShown(gameObject))
+        if (isPlayerNear && Input.GetKeyDown(KeyCode.E) && !InteractPromptMarker.OtherPromptShown(gameObject) && IsNearestDoor())
         {
-            if (isUnlocked)
+            if (isUnlocked || RestoreUnlockFromFlags())
             {
                 // [แก้ 2026-11-22] ท่าเปิด/ปิดยังเล่นไม่จบ หรือเพิ่งกดไป → ไม่รับ (กันท่ากระตุกรีเซ็ต)
                 if (Time.time < nextToggleTime || IsDoorAnimating()) return;
@@ -70,6 +148,7 @@ public class DoorController : MonoBehaviour
         if (keys != null && keys.Consume(requiredDoorID))
         {
             isUnlocked = true;
+            RememberUnlock();   // [2026-11-27] จำไว้ → โหลดเซฟ/ประตูกุญแจเดียวกัน ไม่ล็อกกลับ
             ToggleDoor();
             return;
         }
@@ -142,6 +221,8 @@ public class DoorController : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerNear = true;
+            nearPlayer = other.transform;
+            if (!doorsNearPlayer.Contains(this)) doorsNearPlayer.Add(this);
             if (interactPrompt != null) interactPrompt.SetActive(true);
             Debug.Log("[DoorController] ตรวจพบ Player อยู่ใกล้ประตูแล้ว");
         }
@@ -153,6 +234,7 @@ public class DoorController : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerNear = false;
+            doorsNearPlayer.Remove(this);
             if (interactPrompt != null) interactPrompt.SetActive(false);
             if (notificationText != null) notificationText.text = "";
         }

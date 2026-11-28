@@ -140,11 +140,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43e33079188ea46499ca50ec7b8c31b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chance: 0.35
+  enterRule: 0
+  onlyWhileBossChasing: 1
+  chaseGraceSeconds: 2
+  maxBossDistance: 25
+  chanceWhileChased: 1
   globalCooldown: 60
   perDoorCooldown: 20
   ptsdGraceSeconds: 5
   skipDuringFirstChase: 1
+  placeBossBehindDoor: 1
+  bossRetreatDistance: 15
   standDistance: 1.2
   cameraHeight: 1.5
   cameraBack: 0.3
@@ -152,6 +158,7 @@ MonoBehaviour:
   killPlayerOnFail: 1
   hidePlayer: 1
   debugAlwaysTrigger: 0
+  debugLog: 0
 --- !u!1001 &6531405055343739543
 PrefabInstance:
   m_ObjectHideFlags: 0
