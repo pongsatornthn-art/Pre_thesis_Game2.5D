@@ -26,11 +26,11 @@ public class TutorialData : ScriptableObject
     [Tooltip("โชว์ในแท็บ Tutorials ของสมุดให้อ่านซ้ำได้ไหม")]
     public bool showInJournal = true;
 
+    [Tooltip("[2026-11-28] การ์ดแทรกมินิเกม — ขึ้นทันทีแม้มินิเกมเริ่มแล้ว (ยันประตู / โดนจับ / หายใจ) · การ์ดหยุดเวลา มินิเกมหยุดตาม\nไม่ติ๊ก = รอให้ว่างก่อน (ไม่มีบทพูด/มินิเกม) แบบการ์ดปกติ")]
+    public bool interruptsMinigame;
+
     [Tooltip("หน้าในการ์ด (1 หน้าขึ้นไป) — หลายหน้า = มีปุ่ม ◀ ▶")]
     public List<TutorialPageData> pages = new List<TutorialPageData>();
-
-    /// <summary>ชื่อธงในความจำกลาง (StoryFlags) — ติดไปกับเซฟอัตโนมัติ</summary>
-    public string SeenKey => "tut:" + tutorialId;
 
     public int PageCount => pages != null ? pages.Count : 0;
 

@@ -16,6 +16,7 @@ MonoBehaviour:
   titleKey: TUT_PTSD_TITLE
   listIcon: {fileID: 0}
   showInJournal: 1
+  interruptsMinigame: 0
   pages:
   - clip: {fileID: 32900000, guid: 546061bd8035088448b5a5fd4d7c9ef9, type: 3}
     image: {fileID: 0}
@@ -25,3 +26,11 @@ MonoBehaviour:
     - TUT_PTSD_2
     - TUT_PTSD_3
     overlayIds: []
+  - clip: {fileID: 0}
+    image: {fileID: 0}
+    headingKey: TUT_PTSD_SNEAK_HEADING
+    bodyKeys:
+    - TUT_PTSD_4
+    - TUT_PTSD_5
+    overlayIds:
+    - demo_sneak

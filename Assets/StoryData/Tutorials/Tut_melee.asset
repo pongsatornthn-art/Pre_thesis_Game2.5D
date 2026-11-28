@@ -16,6 +16,7 @@ MonoBehaviour:
   titleKey: TUT_MELEE_TITLE
   listIcon: {fileID: 0}
   showInJournal: 1
+  interruptsMinigame: 0
   pages:
   - clip: {fileID: 0}
     image: {fileID: 0}
@@ -26,3 +27,10 @@ MonoBehaviour:
     - TUT_MELEE_3
     overlayIds:
     - demo_melee
+  - clip: {fileID: 0}
+    image: {fileID: 0}
+    headingKey: TUT_MELEE_BREAK_HEADING
+    bodyKeys:
+    - TUT_MELEE_4
+    overlayIds:
+    - demo_melee_break

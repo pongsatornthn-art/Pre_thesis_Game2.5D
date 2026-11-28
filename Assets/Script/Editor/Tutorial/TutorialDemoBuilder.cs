@@ -31,6 +31,14 @@ public static class TutorialDemoBuilder
 
     // ───────── เมนู ─────────
 
+    /// <summary>ล้างความจำการ์ดที่เคยเห็น (เก็บในเครื่อง ไม่ใช่ในเซฟ) — กด Play ใหม่จากซีนเกมก็ล้างให้เองอยู่แล้ว</summary>
+    [MenuItem("Tools/Tutorial/Reset Seen Tutorials")]
+    public static void ResetSeen()
+    {
+        TutorialProgress.ClearAll();
+        Debug.Log("[Tutorial] ล้างความจำการ์ดคำสอนแล้ว — ทุกใบจะเด้งใหม่");
+    }
+
     [MenuItem("Tools/Tutorial/Build Demo Animations")]
     public static void BuildAll()
     {
@@ -51,6 +59,15 @@ public static class TutorialDemoBuilder
             BuildMap(overlays, font);
             BuildMouseLook(overlays);
             BuildMouseClick(overlays);
+            // [2026-11-28 รอบ 2]
+            BuildDoorHold(overlays);
+            BuildMinionGrab(overlays);
+            BuildBossGrab(overlays);
+            BuildBreathCharge(overlays);
+            BuildBreathTiming(overlays);
+            BuildMeleeBreak(overlays);
+            BuildGunPadlock(overlays);
+            BuildSneak(overlays, font);
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
         }
@@ -204,9 +221,11 @@ public static class TutorialDemoBuilder
         Sprite[] run = ClipSprites("Assets/Animations/Run_Player/Run_Right.anim");
 
         d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
-        RectTransform item = d.Img("Item", Load<Sprite>("Assets/Art/UI-20260919T083630Z-1-001/UI/ItemInfo_Paper.png"), new Vector2(330, -150), new Vector2(46, 60), Color.white, preserve: true);
-        RectTransform glow = d.Img("Glow", Icon("White"), new Vector2(330, -150), new Vector2(70, 70), new Color(1f, 0.9f, 0.5f, 0.25f));
-        glow.SetSiblingIndex(item.GetSiblingIndex());
+        // [2026-11-28] เดิม = รูปกระดาษลอย ๆ + กล่องเรืองแสงสี่เหลี่ยม (นาว่าดูกาก) → ซองจดหมายพิกเซลวางบนพื้น + ประกายวิบวับ 3 จุด
+        RectTransform item = d.Img("Item", Icon("Letter"), new Vector2(330, -168), new Vector2(66, 51), Color.white, preserve: true);
+        var sparkles = new RectTransform[3];
+        Vector2[] sparkPos = { new Vector2(300, -132), new Vector2(362, -142), new Vector2(338, -112) };
+        for (int i = 0; i < 3; i++) sparkles[i] = d.Img("Sparkle" + i, Icon("Sparkle"), sparkPos[i], new Vector2(22, 22), Color.white, preserve: true);
         RectTransform player = d.Img("Player", idle[0], new Vector2(-360, -40), new Vector2(330, 330), Color.white, preserve: true);
         RectTransform ePrompt = Key(d, font, "E", new Vector2(330, -55), false);   // ป้าย [E] ลอยเหนือของ (เหมือนในเกม)
         ePrompt.name = "EPrompt";
@@ -235,8 +254,16 @@ public static class TutorialDemoBuilder
         d.Active(ePrompt, (0f, false), (2.9f, true), (3.75f, false));
         d.Scale(ePrompt, (0f, 1f), (2.9f, 0.6f), (3.05f, 1.1f), (3.2f, 1f), (3.5f, 1f), (3.6f, 0.85f), (3.75f, 1f));
         d.Active(item, (0f, true), (3.75f, false));
-        d.Active(glow, (0f, true), (3.75f, false));
-        d.Scale(glow, (0f, 1f), (0.6f, 1.25f), (1.2f, 1f), (1.8f, 1.25f), (2.4f, 1f), (3.0f, 1.25f), (3.75f, 1f));
+        // ประกาย: กะพริบสลับจังหวะกัน (ย่อ-ขยาย + จาง) · เก็บแล้วหาย
+        for (int i = 0; i < 3; i++)
+        {
+            float o = i * 0.33f;
+            var k = new List<(float, float)> { (0f, 0.2f) };
+            for (float t = o; t < 3.75f; t += 1f) { k.Add((t, 0.2f)); k.Add((t + 0.25f, 1.1f)); k.Add((t + 0.5f, 0.2f)); }
+            k.Add((3.75f, 0.2f)); k.Add((d.Length, 0.2f));
+            d.Scale(sparkles[i], k.ToArray());
+            d.Active(sparkles[i], (0f, true), (3.75f, false));
+        }
         d.Save();
     }
 
@@ -306,6 +333,227 @@ public static class TutorialDemoBuilder
         RectTransform mouse = d.Img("Mouse", Icon("Mouse"), new Vector2(380, -170), new Vector2(70, 105), Color.white, preserve: true);
         d.Sprites(mouse, new List<(float, Sprite)> { (0f, Icon("Mouse")), (2.0f, Icon("Mouse_Left")), (2.25f, Icon("Mouse")) });
         d.Scale(mouse, (0f, 1f), (1.99f, 1f), (2.0f, 0.9f), (2.25f, 0.9f), (2.26f, 1f), (d.Length, 1f));
+        d.Save();
+    }
+
+    // ───────── รอบ 2: มินิเกม ─────────
+
+    private static readonly Color Green = new Color(0.35f, 0.75f, 0.35f, 1f);
+    private static readonly Color Track = new Color(0.22f, 0.18f, 0.15f, 1f);
+
+    /// <summary>ยันประตู: กดค้างปุ่มวงกลม → ลากขึ้น → หลอดขึ้นถึงโซนเขียวบน (ผีกระแทกให้ลดลงบ้าง) → ค้างไว้จนล็อก</summary>
+    private static void BuildDoorHold(Transform overlays)
+    {
+        var d = new Demo("demo_door", overlays, 4.6f);
+        RectTransform door = d.Img("Door", Icon("Door"), new Vector2(-60, -10), new Vector2(200, 320), Color.white, preserve: true);
+        // หลอดแนวตั้ง (ซ้าย) — ฐานล่าง โตขึ้นบน
+        d.Img("GaugeBack", Icon("White"), new Vector2(-330, -10), new Vector2(54, 330), Ink);
+        RectTransform zone = d.Img("Zone", Icon("White"), new Vector2(-330, 122), new Vector2(46, 62), new Color(Green.r, Green.g, Green.b, 0.55f));
+        RectTransform fill = d.Img("Fill", Icon("White"), new Vector2(-330, -171), new Vector2(46, 160), new Color(0.85f, 0.2f, 0.15f, 1f));
+        fill.pivot = new Vector2(0.5f, 0f); fill.anchoredPosition = new Vector2(-330, -171);
+        // ปุ่มวงกลม + เมาส์ (ขวา)
+        d.Img("Circle", Icon("Circle"), new Vector2(250, -60), new Vector2(90, 90), Color.white, preserve: true);
+        RectTransform mouse = d.Img("Mouse", Icon("Mouse"), new Vector2(310, -110), new Vector2(70, 105), Color.white, preserve: true);
+        RectTransform arrow = d.Img("ArrowUp", Icon("Arrow"), new Vector2(250, 60), new Vector2(48, 44), Color.white, preserve: true);
+        arrow.localEulerAngles = new Vector3(0, 0, 90);
+
+        // เมาส์: วิ่งมาที่วงกลม 0.4 → กดค้าง 0.6 → ลากขึ้น 3 จังหวะ → ค้างบน
+        d.PosX(mouse, (0f, 310f), (0.4f, 262f), (d.Length, 262f));
+        d.PosY(mouse, (0f, -110f), (0.4f, -70f), (0.6f, -70f), (1.1f, 10f), (1.15f, -70f), (1.6f, 10f), (1.65f, -70f), (2.2f, 30f), (d.Length, 30f));
+        d.Sprites(mouse, new List<(float, Sprite)> { (0f, Icon("Mouse")), (0.6f, Icon("Mouse_Left")), (4.2f, Icon("Mouse")) });
+        d.Active(arrow, (0f, false), (0.6f, true), (2.3f, false));
+        d.PosY(arrow, (0f, 40f), (0.6f, 40f), (1.1f, 80f), (1.15f, 40f), (1.6f, 80f), (1.65f, 40f), (2.2f, 80f), (d.Length, 80f));
+
+        // หลอด: 50% → ขึ้นตามจังหวะลาก · ผีกระแทก 1.7 ลดลง · เข้าโซนบน 2.4 ค้างจนล็อก
+        d.Height(fill, 46f, (0f, 165f), (0.6f, 165f), (1.1f, 215f), (1.6f, 250f), (1.75f, 205f), (2.4f, 300f), (d.Length, 300f));
+        d.Tint(zone, (0f, new Color(Green.r, Green.g, Green.b, 0.4f)), (2.4f, new Color(Green.r, Green.g, Green.b, 0.4f)),
+                     (2.5f, new Color(Green.r, Green.g, Green.b, 1f)), (3.7f, new Color(Green.r, Green.g, Green.b, 1f)), (3.9f, new Color(1f, 1f, 0.6f, 1f)), (d.Length, new Color(Green.r, Green.g, Green.b, 1f)));
+        // ประตูโดนผีกระแทก (ขยับ) แล้วปิดสนิท
+        d.PosX(door, (0f, -60f), (1.7f, -60f), (1.75f, -40f), (1.9f, -60f), (d.Length, -60f));
+        d.Save();
+    }
+
+    /// <summary>โดนมินเนียนจับ: เข็มวิ่งซ้าย→ขวา · คลิกซ้ายตอนเข็มอยู่ในช่อง → สะบัดหลุด มินเนียนกระเด็น</summary>
+    private static void BuildMinionGrab(Transform overlays)
+    {
+        var d = new Demo("demo_grab", overlays, 3.4f);
+        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Left_Enemy");
+        Sprite[] idle = ClipSprites("Assets/Animations/Idle_player/Idle_Right.anim");
+        d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
+        RectTransform player = d.Img("Player", idle[0], new Vector2(-70, -40), new Vector2(330, 330), Color.white, preserve: true);
+        RectTransform foe = d.Img("Enemy", enemy[0], new Vector2(40, -30), new Vector2(330, 330), Color.white, preserve: true);
+        d.Img("Bar", Icon("White"), new Vector2(0, 190), new Vector2(560, 30), Track);
+        RectTransform zone = d.Img("Zone", Icon("White"), new Vector2(110, 190), new Vector2(90, 30), Green);
+        RectTransform needle = d.Img("Needle", Load<Sprite>("Assets/Art/02_Progress_Bar/needle_marker.png"), new Vector2(-270, 190), new Vector2(16, 56), Color.white, preserve: true);
+        RectTransform mouse = d.Img("Mouse", Icon("Mouse"), new Vector2(390, 150), new Vector2(70, 105), Color.white, preserve: true);
+
+        d.Sprites(foe, Loop(enemy, 0f, d.Length, 0.16f));
+        d.Sprites(player, new List<(float, Sprite)> { (0f, idle[0]) });
+        d.PosX(needle, (0f, -270f), (1.6f, 120f), (1.65f, 120f), (d.Length, 120f));   // หยุดตอนคลิกโดน
+        d.Sprites(mouse, new List<(float, Sprite)> { (0f, Icon("Mouse")), (1.6f, Icon("Mouse_Left")), (1.85f, Icon("Mouse")) });
+        d.Tint(zone, (0f, Green), (1.6f, Green), (1.65f, new Color(1f, 1f, 0.6f, 1f)), (2.0f, Green), (d.Length, Green));
+        // ตัวละครสั่น (โดนจับ) → สะบัด → มินเนียนกระเด็น
+        d.PosX(player, (0f, -70f), (0.2f, -66f), (0.4f, -74f), (0.6f, -66f), (0.8f, -74f), (1.0f, -66f), (1.2f, -74f), (1.4f, -66f), (1.6f, -70f), (d.Length, -70f));
+        d.PosX(foe, (0f, 40f), (1.65f, 40f), (1.85f, 260f), (d.Length, 260f));
+        d.Tint(foe, (0f, Color.white), (1.65f, Color.white), (1.7f, new Color(1f, 0.4f, 0.35f, 1f)), (2.2f, Color.white), (d.Length, Color.white));
+        d.Save();
+    }
+
+    /// <summary>โดนบอสจับ (หน้ามือผี): หลอดค่อย ๆ ลด · คลิกซ้ายรัว ๆ ดันหลอดจนเต็ม = หลุด</summary>
+    private static void BuildBossGrab(Transform overlays)
+    {
+        var d = new Demo("demo_boss_grab", overlays, 3.6f);
+        RectTransform hands = d.Img("Hands", Load<Sprite>("Assets/Art/05_Hands_and_Health/POV_Strangle_v2.png"), new Vector2(0, 0), new Vector2(980, 548), Color.white);
+        d.Img("BarBack", Icon("White"), new Vector2(0, -215), new Vector2(520, 30), Ink);
+        RectTransform fill = d.Img("Fill", Icon("White"), new Vector2(-256, -215), new Vector2(256, 22), new Color(0.85f, 0.2f, 0.15f, 1f));
+        fill.pivot = new Vector2(0f, 0.5f); fill.anchoredPosition = new Vector2(-256, -215);
+        RectTransform mouse = d.Img("Mouse", Icon("Mouse"), new Vector2(380, -150), new Vector2(80, 120), Color.white, preserve: true);
+
+        // คลิกรัวทุก 0.14 วิ ช่วง 0.6–2.8
+        var m = new List<(float, Sprite)> { (0f, Icon("Mouse")) };
+        for (float t = 0.6f; t < 2.8f; t += 0.14f) { m.Add((t, Icon("Mouse_Left"))); m.Add((t + 0.07f, Icon("Mouse"))); }
+        d.Sprites(mouse, m);
+        d.Width(fill, 22f, (0f, 256f), (0.6f, 200f), (1.2f, 300f), (1.6f, 280f), (2.2f, 420f), (2.8f, 512f), (d.Length, 512f));
+        // มือสั่น (จอสั่น) · หลุดแล้วหยุด
+        var shake = new List<(float, float)>();
+        for (float t = 0f; t < 2.85f; t += 0.07f) shake.Add((t, (shake.Count % 2 == 0 ? 1f : -1f) * 7f));
+        shake.Add((2.9f, 0f)); shake.Add((d.Length, 0f));
+        d.PosX(hands, shake.ToArray());
+        d.Tint(hands, (0f, Color.white), (2.8f, Color.white), (3.1f, new Color(1f, 1f, 1f, 0.25f)), (d.Length, new Color(1f, 1f, 1f, 0.25f)));
+        d.Save();
+    }
+
+    /// <summary>หายใจขั้น 1: ในห้องเขียว ค้าง Space → จอหัวใจเติมเต็ม</summary>
+    private static void BuildBreathCharge(Transform overlays)
+    {
+        var d = new Demo("demo_breath_charge", overlays, 3.4f);
+        string ecg = "Assets/Art/UI/PTSDMINIGAME/";
+        d.Img("Frame", Load<Sprite>(ecg + "ECG_Frame.png"), new Vector2(0, 40), new Vector2(880, 187), Color.white, preserve: true);
+        RectTransform screen = d.Img("Screen", Load<Sprite>(ecg + "ECG_Screen_Green.png"), new Vector2(0, 40), new Vector2(880, 187), Color.white, preserve: true);
+        var img = screen.GetComponent<Image>(); img.type = Image.Type.Filled; img.fillMethod = Image.FillMethod.Horizontal; img.fillOrigin = 0; img.fillAmount = 0f;
+        RectTransform space = d.Img("Space", Load<Sprite>("Assets/Art/01_QTE_Hold_Prompt/key_space.png"), new Vector2(0, -170), new Vector2(240, 96), Color.white, preserve: true);
+        d.Fill(screen, (0f, 0f), (0.5f, 0f), (2.6f, 1f), (d.Length, 1f));
+        Press(d, space, (0.5f, 2.6f));
+        d.Save();
+    }
+
+    /// <summary>หายใจขั้น 2: ค้าง Space เข็มวิ่ง · ปล่อยตอนอยู่ในช่องเขียว × 3 ครั้ง</summary>
+    private static void BuildBreathTiming(Transform overlays)
+    {
+        var d = new Demo("demo_breath_timing", overlays, 4.8f);
+        d.Img("Bar", Icon("White"), new Vector2(0, 60), new Vector2(640, 40), Track);
+        RectTransform zone = d.Img("Zone", Icon("White"), new Vector2(120, 60), new Vector2(110, 40), Green);
+        RectTransform needle = d.Img("Needle", Load<Sprite>("Assets/Art/02_Progress_Bar/needle_marker.png"), new Vector2(-310, 60), new Vector2(18, 72), Color.white, preserve: true);
+        RectTransform space = d.Img("Space", Load<Sprite>("Assets/Art/01_QTE_Hold_Prompt/key_space.png"), new Vector2(0, -150), new Vector2(240, 96), Color.white, preserve: true);
+        var pips = new RectTransform[3];
+        for (int i = 0; i < 3; i++) pips[i] = d.Img("Pip" + i, Icon("White"), new Vector2(-50 + i * 50, 150), new Vector2(30, 30), Track);
+
+        // รอบ 1: ค้าง 0.3–1.4 (เข็ม −310 → 120) ปล่อยโดน · รอบ 2: ช่องย้าย −100 ค้าง 1.8–2.5 · รอบ 3: ช่อง 220 ค้าง 3.0–4.2
+        d.PosX(needle, (0f, -310f), (0.3f, -310f), (1.4f, 120f), (1.6f, 120f), (1.61f, -310f), (1.8f, -310f), (2.5f, -100f), (2.7f, -100f), (2.71f, -310f), (3.0f, -310f), (4.2f, 220f), (d.Length, 220f));
+        d.PosX(zone, (0f, 120f), (1.6f, 120f), (1.61f, -100f), (2.7f, -100f), (2.71f, 220f), (d.Length, 220f));
+        Press(d, space, (0.3f, 1.4f));
+        d.Tint(pips[0], (0f, Track), (1.4f, Track), (1.45f, Green), (d.Length, Green));
+        d.Tint(pips[1], (0f, Track), (2.5f, Track), (2.55f, Green), (d.Length, Green));
+        d.Tint(pips[2], (0f, Track), (4.2f, Track), (4.25f, Green), (d.Length, Green));
+        // ปุ่มกดรอบ 2–3 (Press ใช้ได้ทีละช่วง → ทำเองด้วยสี)
+        Color down = new Color(0.95f, 0.55f, 0.5f, 1f);
+        d.Tint(space, (0f, Color.white), (0.29f, Color.white), (0.3f, down), (1.4f, down), (1.41f, Color.white), (1.79f, Color.white), (1.8f, down), (2.5f, down), (2.51f, Color.white),
+                      (2.99f, Color.white), (3.0f, down), (4.2f, down), (4.21f, Color.white), (d.Length, Color.white));
+        d.Save();
+    }
+
+    // ───────── รอบ 2: หน้าเพิ่มของการ์ดเดิม ─────────
+
+    /// <summary>ท่อทุบสิ่งกีดขวาง: เดินถือท่อมา → ฟัน 2 ที กองไม้สั่น → พัง ไม้กระเด็น → เดินผ่าน</summary>
+    private static void BuildMeleeBreak(Transform overlays)
+    {
+        var d = new Demo("demo_melee_break", overlays, 4.4f);
+        Sprite[] hold = ClipSprites("Assets/Animations/HoldPipe/HoldPipe_Right.anim");
+        Sprite[] walk = ClipSprites("Assets/Animations/WalkPipe/WalkPipe_Right.anim");
+        Sprite[] swing = ClipSprites("Assets/Animations/AttackPipe/AttackPipe_Right.anim");
+        d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
+        RectTransform debris = d.Img("Debris", Icon("Debris"), new Vector2(150, -95), new Vector2(288, 192), Color.white, preserve: true);
+        var planks = new RectTransform[3];
+        for (int i = 0; i < 3; i++) planks[i] = d.Img("Plank" + i, Icon("Plank"), new Vector2(150, -90), new Vector2(96, 36), Color.white, preserve: true);
+        RectTransform player = d.Img("Player", hold[0], new Vector2(-380, -40), new Vector2(330, 330), Color.white, preserve: true);
+        RectTransform mouse = d.Img("Mouse", Icon("Mouse"), new Vector2(-400, 150), new Vector2(70, 105), Color.white, preserve: true);
+
+        var p = Loop(walk, 0f, 0.9f, 0.16f);
+        p.AddRange(Sequence(swing, 1.0f, 0.08f));
+        p.AddRange(Sequence(swing, 1.6f, 0.08f));
+        p.AddRange(Loop(walk, 2.6f, d.Length, 0.16f));
+        d.Sprites(player, p);
+        d.PosX(player, (0f, -380f), (0.9f, -120f), (2.6f, -120f), (d.Length, 330f));
+        d.Sprites(mouse, new List<(float, Sprite)> { (0f, Icon("Mouse")), (1.0f, Icon("Mouse_Left")), (1.2f, Icon("Mouse")), (1.6f, Icon("Mouse_Left")), (1.8f, Icon("Mouse")) });
+
+        d.PosX(debris, (0f, 150f), (1.15f, 150f), (1.2f, 165f), (1.3f, 140f), (1.4f, 150f), (d.Length, 150f));
+        d.Active(debris, (0f, true), (1.8f, false));
+        float[] dx = { -180f, 60f, 260f }, dy = { 60f, 140f, 40f }, rot = { 220f, -300f, 160f };
+        for (int i = 0; i < 3; i++)
+        {
+            d.Active(planks[i], (0f, false), (1.8f, true), (2.6f, false));
+            d.PosX(planks[i], (0f, 150f), (1.8f, 150f), (2.6f, 150f + dx[i]));
+            d.PosY(planks[i], (0f, -90f), (1.8f, -90f), (2.1f, -90f + dy[i]), (2.6f, -190f));
+            d.Rotate(planks[i], (0f, 0f), (1.8f, 0f), (2.6f, rot[i]));
+        }
+        d.Save();
+    }
+
+    /// <summary>ปืนยิงแม่กุญแจ: เล็งที่แม่กุญแจ → ยิง → กุญแจหลุดร่วง → ประตูเปิด</summary>
+    private static void BuildGunPadlock(Transform overlays)
+    {
+        var d = new Demo("demo_gun_padlock", overlays, 3.8f);
+        Sprite[] shoot = ClipSprites("Assets/Animations/Shoot_Gun/Shoot_Gun_Right.anim");
+        Sprite[] hold = ClipSprites("Assets/Animations/Idle_Gun/Idle_Gun_Right.anim");
+        d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
+        RectTransform door = d.Img("Door", Icon("Door"), new Vector2(250, -10), new Vector2(200, 320), Color.white, preserve: true);
+        RectTransform lockR = d.Img("Padlock", Icon("Padlock"), new Vector2(205, -10), new Vector2(54, 66), Color.white, preserve: true);
+        RectTransform player = d.Img("Player", hold[0], new Vector2(-250, -40), new Vector2(330, 330), Color.white, preserve: true);
+        RectTransform cross = d.Group("Crosshair", new Vector2(205, -10));
+        RectTransform[] corners = Corners(d, cross);
+        RectTransform flash = d.Img("Muzzle", Icon("White"), new Vector2(-88, -12), new Vector2(26, 18), new Color(1f, 0.85f, 0.45f, 1f));
+        RectTransform mouse = d.Img("Mouse", Icon("Mouse"), new Vector2(-400, 150), new Vector2(70, 105), Color.white, preserve: true);
+
+        var p = Loop(hold, 0f, 0.6f, 0.19f);
+        p.Add((0.6f, shoot[0]));
+        p.AddRange(Sequence(shoot, 1.8f, 0.08f));
+        p.Add((1.8f + shoot.Length * 0.08f, shoot[0]));
+        d.Sprites(player, p);
+        d.Sprites(mouse, new List<(float, Sprite)> { (0f, Icon("Mouse")), (0.6f, Icon("Mouse_Right")), (1.75f, Icon("Mouse_Left")), (1.95f, Icon("Mouse_Right")), (2.6f, Icon("Mouse")) });
+        d.Active(cross, (0f, false), (0.6f, true), (2.2f, false));
+        Converge(d, corners, 0.6f, 1.6f, 70f, 22f, Color.white, Red);
+        d.Active(flash, (0f, false), (1.8f, true), (1.9f, false));
+
+        // กุญแจ: โดนยิง → เปลี่ยนเป็นแบบเปิด → ร่วงลงพื้น → จาง
+        d.Sprites(lockR, new List<(float, Sprite)> { (0f, Icon("Padlock")), (1.85f, Icon("Padlock_Open")) });
+        d.PosY(lockR, (0f, -10f), (1.85f, -10f), (2.4f, -160f), (d.Length, -160f));
+        d.Rotate(lockR, (0f, 0f), (1.85f, 0f), (2.4f, -70f), (d.Length, -70f));
+        d.Tint(lockR, (0f, Color.white), (2.6f, Color.white), (3.0f, new Color(1f, 1f, 1f, 0f)), (d.Length, new Color(1f, 1f, 1f, 0f)));
+        // ประตูเปิด (บานหุบเข้าหาบานพับ)
+        d.Scale(door, (0f, 1f), (2.6f, 1f), (3.2f, 1f), (d.Length, 1f));
+        d.WidthOnly(door, (0f, 200f), (2.6f, 200f), (3.2f, 40f), (d.Length, 40f));
+        d.Save();
+    }
+
+    /// <summary>ย่อตัว (C): เดินช้า ๆ ผ่านหลังมอน · เกือบโดนสังเกต "?" ขึ้นแล้วหาย</summary>
+    private static void BuildSneak(Transform overlays, TMP_FontAsset font)
+    {
+        var d = new Demo("demo_sneak", overlays, 5.0f);
+        Sprite[] walk = ClipSprites("Assets/Animations/Walk/Walk_Right.anim");
+        Sprite[] enemy = FolderSprites("Assets/Art/Enemy_Sprite/Idel_Right_Enemy");
+        d.Img("Floor", Icon("White"), new Vector2(0, -205), new Vector2(968, 140), Floor);
+        RectTransform foe = d.Img("Enemy", enemy[0], new Vector2(250, -30), new Vector2(330, 330), Color.white, preserve: true);
+        RectTransform q = d.Text("Question", font, "?", new Vector2(250, 150), 90, new Color(1f, 0.85f, 0.3f, 1f));
+        RectTransform player = d.Img("Player", walk[0], new Vector2(-400, -50), new Vector2(300, 300), Color.white, preserve: true);
+        RectTransform keyC = Key(d, font, "C", new Vector2(-380, 190), false);
+
+        d.Sprites(player, Loop(walk, 0f, d.Length, 0.28f));          // ก้าวช้ากว่าเดินปกติ
+        d.PosX(player, (0f, -400f), (d.Length, 40f));
+        d.Scale(player, (0f, 0.9f), (d.Length, 0.9f));                // ตัวเตี้ยลงนิด = ย่อ
+        d.Sprites(foe, Loop(enemy, 0f, d.Length, 0.16f));
+        Press(d, keyC, (0.1f, 0.35f));
+        d.Active(q, (0f, false), (2.6f, true), (3.8f, false));
+        d.Tint(q, (0f, new Color(1f, 0.85f, 0.3f, 0f)), (2.6f, new Color(1f, 0.85f, 0.3f, 0f)), (2.9f, new Color(1f, 0.85f, 0.3f, 1f)), (3.4f, new Color(1f, 0.85f, 0.3f, 1f)), (3.8f, new Color(1f, 0.85f, 0.3f, 0f)), (d.Length, new Color(1f, 0.85f, 0.3f, 0f)));
         d.Save();
     }
 
@@ -478,6 +726,22 @@ public static class TutorialDemoBuilder
         }
 
         public void PosX(RectTransform r, params (float t, float v)[] k) => Linear(r, typeof(RectTransform), "m_AnchoredPosition.x", k);
+
+        /// <summary>ความสูง (หลอดแนวตั้ง) — ความกว้างคงที่</summary>
+        public void Height(RectTransform r, float width, params (float t, float v)[] k)
+        {
+            r.sizeDelta = new Vector2(width, k[0].v);
+            Linear(r, typeof(RectTransform), "m_SizeDelta.y", k);
+        }
+
+        /// <summary>ความกว้างอย่างเดียว ใช้ขนาดเดิมของรูป (ประตูหุบ)</summary>
+        public void WidthOnly(RectTransform r, params (float t, float v)[] k) => Linear(r, typeof(RectTransform), "m_SizeDelta.x", k);
+
+        /// <summary>หมุนแกน Z (องศา)</summary>
+        public void Rotate(RectTransform r, params (float t, float v)[] k) => Linear(r, typeof(Transform), "localEulerAnglesRaw.z", k);
+
+        /// <summary>Image แบบ Filled — ค่าเติม 0–1</summary>
+        public void Fill(RectTransform r, params (float t, float v)[] k) => Linear(r, typeof(Image), "m_FillAmount", k);
 
         /// <summary>ความกว้าง (หลอดสตามินา) — ความสูงคงที่ตามที่สร้าง</summary>
         public void Width(RectTransform r, float height, params (float t, float v)[] k)

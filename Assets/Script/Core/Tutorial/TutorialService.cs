@@ -5,8 +5,8 @@ using UnityEngine;
 
 /// <summary>
 /// [Claude 2026-11-28] ตัวตัดสินใจของระบบคำสอน (สเปก docs/TUTORIAL_SPEC.md)
-///   • เคยขึ้นยัง → จำเป็นธงในความจำกลาง (StoryFlags key "tut:&lt;id&gt;") = ติดไปกับเซฟเอง ไม่ต้องมี ISaveable
-///   • มาหลายอันพร้อมกัน → เข้าคิว ขึ้นทีละใบ
+///   • เคยขึ้นยัง → TutorialProgress (เก็บในเครื่อง แยกจากเซฟ — ตาย/โหลดเซฟแล้วไม่สอนซ้ำ · เริ่มเกมใหม่ = ล้าง)
+///   • มาหลายอันพร้อมกัน → เข้าคิว ขึ้นทีละใบ (การ์ดแทรกมินิเกม ลัดคิวขึ้นก่อน)
 ///   • ยังไม่ว่าง (บทพูด/หยุดเกม/สลับโลก ฯลฯ ดู TutorialGate) → รอ
 /// หน้าตาการ์ดอยู่อีกตัว (ITutorialPresenter → TutorialCardPresenter)
 ///
@@ -25,10 +25,9 @@ public class TutorialService : MonoBehaviour, ITutorialService
 
     public event Action OnChanged;
 
-    private readonly Queue<TutorialData> queue = new Queue<TutorialData>();
+    private readonly List<TutorialData> queue = new List<TutorialData>();
     private readonly List<TutorialData> seenCache = new List<TutorialData>();
     private ITutorialPresenter cachedPresenter;
-    private IStoryFlags flags;
     private Coroutine runner;
     private bool replaying;
 
@@ -56,6 +55,10 @@ public class TutorialService : MonoBehaviour, ITutorialService
             Debug.LogWarning($"[TutorialService] '{presenter.name}' ไม่ได้ implement ITutorialPresenter", this);
 
         WarnDuplicateIds();
+
+        // เปิดซีนเกมโดยไม่ได้โหลดเซฟ = เริ่มเกมใหม่ (เมนูเริ่มเกมใหม่ / กด Play ใน Editor) → สอนใหม่ทั้งหมด
+        // โหลดเซฟ / ตายแล้วย้อน / เล่นต่อ = SaveManager ตั้ง HasPendingRestore ก่อนเปิดซีน → ไม่ล้าง
+        if (!SaveRestoreScope.HasPendingRestore) TutorialProgress.ClearAll();
     }
 
     private void OnDestroy()
@@ -66,38 +69,18 @@ public class TutorialService : MonoBehaviour, ITutorialService
 
     private void OnEnable()
     {
-        flags = ServiceLocator.GetOptional<IStoryFlags>();
-        if (flags != null) flags.OnChanged += RaiseChanged;
         if (queue.Count > 0 && runner == null) runner = StartCoroutine(RunQueue());
     }
 
     private void OnDisable()
     {
-        if (flags != null) flags.OnChanged -= RaiseChanged;
         runner = null;      // coroutine หยุดเองตอนปิด object — เปิดใหม่ OnEnable ทำคิวต่อให้
         replaying = false;
     }
 
-    private void RaiseChanged() => OnChanged?.Invoke();
-
-    private IStoryFlags Flags
-    {
-        get
-        {
-            if (flags == null)
-            {
-                flags = ServiceLocator.GetOptional<IStoryFlags>();
-                if (flags != null && isActiveAndEnabled) flags.OnChanged += RaiseChanged;
-            }
-            return flags;
-        }
-    }
-
     public bool HasSeen(TutorialData tutorial)
     {
-        if (tutorial == null || string.IsNullOrEmpty(tutorial.tutorialId)) return false;
-        IStoryFlags f = Flags;
-        return f != null && f.HasKey(tutorial.SeenKey);
+        return tutorial != null && TutorialProgress.Has(tutorial.tutorialId);
     }
 
     public bool Request(string tutorialId)
@@ -122,10 +105,9 @@ public class TutorialService : MonoBehaviour, ITutorialService
         }
         if (HasSeen(tutorial) || queue.Contains(tutorial)) return;
 
-        if (Flags == null)
-            Debug.LogWarning("[TutorialService] ไม่มี StoryFlagService ในซีน — คำสอนจะจำไม่ได้ว่าเคยขึ้น (ขึ้นซ้ำทุกครั้ง)", this);
-
-        queue.Enqueue(tutorial);
+        // การ์ดแทรกมินิเกม (ยันประตู/โดนจับ) ต้องขึ้นตอนนี้เลย → ลัดคิว
+        if (tutorial.interruptsMinigame) queue.Insert(0, tutorial);
+        else queue.Add(tutorial);
         if (runner == null && isActiveAndEnabled) runner = StartCoroutine(RunQueue());
     }
 
@@ -150,21 +132,24 @@ public class TutorialService : MonoBehaviour, ITutorialService
         while (queue.Count > 0)
         {
             // รอจังหวะว่าง + ไม่มีการ์ดอื่นค้าง (รวมการ์ดที่เปิดดูซ้ำจากสมุด)
-            while (TutorialGate.IsBusy || IsShowing || replaying)
+            // การ์ดแทรกมินิเกม ใช้เงื่อนไขหลวมกว่า (มินิเกม/เวลาหยุดอยู่ก็ขึ้นได้ — การ์ดหยุดมินิเกมให้เอง)
+            while (BusyFor(queue[0]) != null || IsShowing || replaying)
             {
                 if (logWaitReason && Time.unscaledTime >= nextLog)
                 {
-                    Debug.Log($"[TutorialService] รอคิว '{queue.Peek().tutorialId}' — {TutorialGate.Reason ?? "การ์ดอื่นเปิดอยู่"}", this);
+                    Debug.Log($"[TutorialService] รอคิว '{queue[0].tutorialId}' — {BusyFor(queue[0]) ?? "การ์ดอื่นเปิดอยู่"}", this);
                     nextLog = Time.unscaledTime + 2f;
                 }
                 yield return null;
             }
 
-            TutorialData next = queue.Dequeue();
-            if (next == null || HasSeen(next)) continue;   // ระหว่างรอ อาจโหลดเซฟที่เคยเห็นแล้ว
+            TutorialData next = queue[0];
+            queue.RemoveAt(0);
+            if (next == null || HasSeen(next)) continue;
 
-            // จำทันทีที่ขึ้น (ไม่รอปิด) — เซฟกลางการ์ด/ตายกลางการ์ด จะได้ไม่ขึ้นซ้ำ
-            Flags?.SetKey(next.SeenKey);
+            // จำทันทีที่ขึ้น (ไม่รอปิด) — ตายกลางการ์ด จะได้ไม่ขึ้นซ้ำ
+            TutorialProgress.Mark(next.tutorialId);
+            OnChanged?.Invoke();
             GameEventBus.Publish(new TutorialShownEvent(next));
 
             if (cachedPresenter != null) yield return cachedPresenter.Show(next);
@@ -172,6 +157,9 @@ public class TutorialService : MonoBehaviour, ITutorialService
         }
         runner = null;
     }
+
+    private static string BusyFor(TutorialData t) =>
+        t != null && t.interruptsMinigame ? TutorialGate.InterruptReason : TutorialGate.Reason;
 
     private void WarnDuplicateIds()
     {

@@ -42,11 +42,14 @@ public class PlayerAnimationController : MonoBehaviour
         // 2. ดึงค่าการเคลื่อนที่
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
-        bool isMoving = (moveX != 0 || moveY != 0); // เช็กว่ามีการกดปุ่มเดินไหม
+        // [แก้โดย Claude 2026-11-28] ตัวละครโดนล็อก (คัทซีน/บทพูด/มินิเกม) = เดินไม่ได้จริง → ห้ามเล่นท่าเดิน
+        // เดิม: กด W ค้างตอนชนทริกเกอร์คัทซีนแรก → ตัวยืนนิ่งแต่ขาเดินสับอยู่กับที่ (นาเจอ)
+        bool locked = playerMovement != null && (playerMovement.isStunned || playerMovement.IsActionLocked);
+        bool isMoving = !locked && (moveX != 0 || moveY != 0); // เช็กว่ามีการกดปุ่มเดินไหม
 
         // 3. เช็กว่ากำลังยิงอยู่ไหม
         // 🌟 [Alien Shooter Update] ยิงได้เลยไม่ต้องคลิกขวาค้างก่อนแล้ว เลยตัด isAiming ออกจากเงื่อนไขยิง
-        bool isShooting = Input.GetMouseButton(0) && isHoldingGun;
+        bool isShooting = !locked && Input.GetMouseButton(0) && isHoldingGun;
 
         // ------------------------------------------------------------------
         // 🌟 จุดที่เพิ่มเข้ามาเพื่อแก้แอนิเมชันค้าง (ส่งค่าให้ Blend Tree ทำงาน)

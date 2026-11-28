@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemId: 53adae2e698b482a92f7a25657d17ad2
   itemName: Pipe_Weapon
-  icon: {fileID: 21300000, guid: 765bde7bf5c3f654cba2f0675994b89e, type: 3}
+  icon: {fileID: 21300000, guid: 50097e136b3decf408ef23c80d3687c2, type: 3}
   description: 
   descriptionImage: {fileID: 21300000, guid: 765bde7bf5c3f654cba2f0675994b89e, type: 3}
   isStackable: 1

@@ -171,3 +171,28 @@ TUT_DESK_RADIO_HEADING;วิทยุ;Radio
 TUT_DESK_3;มองที่วิทยุแล้วคลิกซ้าย เพื่อเลือกฟังเทปที่เก็บมา;Look at the radio and Left-Click to choose one of your collected tapes
 TUT_DESK_SAVE_HEADING;บันทึกเกม;Saving
 TUT_DESK_4;มองที่สมุดบนโต๊ะแล้วคลิกซ้าย เพื่อเปิดหน้าบันทึกเกม;Look at the journal on the desk and Left-Click to open the save window
+TUT_DOOR_TITLE;ยันประตูไว้!;Hold the Door!
+TUT_DOOR_1;คลิกซ้ายค้างที่ปุ่มวงกลมด้านขวา แล้วลากเมาส์ขึ้นเพื่อดันประตู;Click and hold the circle on the right, then drag the mouse UP to push the door
+TUT_DOOR_2;มันจะกระแทกประตูเป็นระยะ ลากซ้ำเพื่อดันกลับ;It will slam the door now and then. Keep dragging to push back
+TUT_DOOR_3;ดันหลอดให้อยู่ในช่องเขียวด้านบนจนกว่าประตูจะล็อก;Keep the gauge in the green zone at the top until the door locks
+TUT_GRAB_TITLE;โดนจับ!;Grabbed!
+TUT_GRAB_1;มินเนียนตะครุบตัวคุณไว้ และจะกรีดร้องเรียกบอส;A minion has grabbed you and is screaming for the Stalker
+TUT_GRAB_2;คลิกซ้ายตอนเข็มอยู่ในช่องเขียวเพื่อสะบัดให้หลุด;Left-Click when the needle is inside the green zone to break free
+TUT_GRAB_3;ถ้าพลาดจะโดนทำร้ายเพิ่ม และช่องจะย้ายที่;Missing hurts you and moves the zone
+TUT_BOSS_TITLE;ดิ้นให้หลุด!;Struggle Free!
+TUT_BOSS_1;เมื่อบอสจับตัวคุณได้ หลอดด้านล่างจะค่อย ๆ ลดลง;When the Stalker catches you, the bar at the bottom slowly drains
+TUT_BOSS_2;คลิกซ้ายรัว ๆ ดันหลอดให้เต็มเพื่อผลักมันออก;Rapidly Left-Click to fill the bar and push it away
+TUT_BOSS_3;ถ้าหลอดหมด คุณจะโดนทำร้าย;If the bar empties, you will be hurt
+TUT_BREATH_TITLE;ตั้งสติ;Calm Your Mind
+TUT_BREATH_1;ห้องสีเขียวคือที่ปลอดภัย ใช้ตั้งสติเพื่อกลับสู่โลกปกติ;The green room is safe. Calm yourself here to return to the real world
+TUT_BREATH_2;ค้าง [Space] จนเส้นชีพจรเต็มจอ;Hold [Space] until the heartbeat monitor fills up
+TUT_BREATH_TIMING_HEADING;หายใจให้เป็นจังหวะ;Steady Your Breathing
+TUT_BREATH_3;ค้าง [Space] เข็มจะวิ่ง ปล่อยตอนเข็มอยู่ในช่องเขียว;Hold [Space] to move the needle and release it inside the green zone
+TUT_BREATH_4;ทำให้สำเร็จ 3 ครั้ง ยิ่งพลาดช่องจะยิ่งแคบลง;Succeed 3 times. Each miss makes the zone narrower
+TUT_MELEE_BREAK_HEADING;ทุบสิ่งกีดขวาง;Smash Obstacles
+TUT_MELEE_4;ท่อเหล็กใช้ทุบกองของที่ขวางทางให้พังได้;The pipe can smash through debris blocking your way
+TUT_GUN_LOCK_HEADING;ยิงแม่กุญแจ;Shoot the Lock
+TUT_GUN_5;ประตูที่มีแม่กุญแจคล้องอยู่ เล็งแล้วยิงให้หลุดได้;Aim at a padlock on a door and shoot it off
+TUT_PTSD_SNEAK_HEADING;หลบให้พ้นสายตา;Stay Unseen
+TUT_PTSD_4;กด [C] เพื่อย่อตัว เดินช้าลงแต่เงียบ มอนได้ยินยากขึ้น;Press [C] to sneak. You move slower but quieter, so monsters hear you less
+TUT_PTSD_5;ถ้ามอนเริ่มสงสัย มันจะเดินมาดู รีบถอยออกจากสายตา;If a monster grows suspicious it will come to look. Back away out of sight

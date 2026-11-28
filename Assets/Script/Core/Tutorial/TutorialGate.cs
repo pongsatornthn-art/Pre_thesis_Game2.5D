@@ -35,4 +35,26 @@ public static class TutorialGate
             return null;
         }
     }
+
+    /// <summary>
+    /// [2026-11-28] สำหรับการ์ด "แทรกมินิเกม" (ยันประตู / โดนจับ / หายใจ) — ขึ้นทั้งที่มินิเกมเล่นอยู่ได้
+    /// การ์ดตั้งเวลาเกม = 0 → มินิเกมพวกนั้นหยุดเอง (เช็ค timeScale / ใช้ deltaTime) แล้วเดินต่อหลังปิดการ์ด
+    /// ห้ามเฉพาะ: โหลดเซฟ · เพิ่งเข้าซีน · เมนูหยุดเกม · สมุด · หน้าเซฟ · สลับโลก
+    /// </summary>
+    public static string InterruptReason
+    {
+        get
+        {
+            if (SaveRestoreScope.IsBusy) return "กำลังโหลดเซฟ";
+            if (Time.timeSinceLevelLoad < StartupDelay) return "เพิ่งเข้าซีน";
+            if (PauseManager.Instance != null && PauseManager.Instance.IsPaused) return "เมนูหยุดเกม";
+            if (JournalController.IsAnyOpen) return "เปิดสมุดอยู่";
+            if (SaveSlotPickerUI.IsOpen) return "หน้าเลือกช่องเซฟ";
+
+            IWorldModeService world = ServiceLocator.GetOptional<IWorldModeService>();
+            if (world != null && world.Mode != world.VisibleWorld) return "กำลังสลับโลก";
+
+            return null;
+        }
+    }
 }
