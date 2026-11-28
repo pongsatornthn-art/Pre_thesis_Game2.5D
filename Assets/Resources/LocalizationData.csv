@@ -134,3 +134,40 @@ DOC_DIARY1_TITLE;บันทึก 12 ตุลาคม 1995;October 12, 1995
 DOC_DIARY1_BODY;วันนี้ Rowan กลับบ้านเร็วกว่าปกติ ตอนแรกฉันนึกว่ามีเรื่องอะไร แต่เขาบอกว่างานเสร็จเร็วกว่าที่คิด ฉันชวนเขามาดูภาพที่ฉันกำลังวาด เขาบอกว่าไม่ค่อยรู้เรื่องพวกนี้ แต่สุดท้ายก็ยอมนั่งเป็นแบบให้<br><br>ปัญหาเดียวคือเขานั่งนิ่งไม่เป็น พอฉันละสายตาเมื่อไหร่ เขาก็ขยับ ฉันต้องคอยเตือนให้อยู่นิ่งๆ จนเขาบ่นออกมา ก็น่ารักดีนะ<br><br>พอฉันให้ดูภาพ Rowan ถามว่าทำไมวาดเขากำลังยิ้ม ฉันบอกตรงๆ ว่าชอบตอนเขายิ้มที่สุด เขาทำหน้าเหมือนไม่ค่อยเชื่อ แถมบอกว่าฉันคงเข้าใจเขาผิดไปแล้ว<br><br>จริงๆ ฉันชอบตอนที่เขายิ้มแบบไม่มีอะไรต้องกังวล ปกติเขาดูจริงจังตลอด ได้เห็นเขาผ่อนคลายบ้างก็ดีใจ คิดว่าจะเก็บภาพนี้ไว้ในห้องของเรา หวังว่าสักวันตอนเขาเหนื่อยจากงาน เขาจะได้เห็นแล้วยิ้มอีกครั้ง;Rowan came home earlier than usual today. At first, I thought something had happened, but he said he'd finished work sooner than expected. I asked him to come take a look at the picture I was painting. He said he didn't know much about this sort of thing, but in the end, he agreed to sit for me anyway.<br><br>The only trouble was, he wasn't very good at sitting still. The moment I looked away, he'd move. I kept having to remind him to stay still until he finally complained. It was kind of cute, though.<br><br>When I showed him the picture, Rowan asked why I'd painted him smiling. I honestly told him that I liked it best when he smiled. He looked like he didn't quite believe me, and even said I must have the wrong idea about him.<br><br>Truthfully, I like it when he smiles without a care in the world. He usually looks so serious, so it feels nice to see him relax for a change. I think I'll keep the picture in our room. I hope that one day, when he's tired from work, he'll see it and smile again.
 DOC_DIARY2_TITLE;บันทึก 16 ตุลาคม 1995;October 16, 1995
 DOC_DIARY2_BODY;วันนี้ฉันตั้งใจทำอาหารให้ Rowan เพราะช่วงนี้เขากลับบ้านดึกเกือบทุกคืน อยากให้เขาได้กินอะไรดีๆ ก่อนกลับไปทำงานต่อ แต่ดูเหมือนฉันจะประเมินฝีมือทำอาหารตัวเองสูงไปหน่อย<br><br>ระหว่างรออาหาร ฉันมัวแต่จัดโต๊ะจนลืมเตาไปเลย กว่าจะรู้ตัว ทั้งครัวก็เต็มไปด้วยกลิ่นไหม้ Rowan เดินเข้ามาพอดี เขาจ้องหม้ออยู่ครู่หนึ่ง แล้วถามว่าเราควรโทรเรียกดับเพลิงไหม<br><br>ฉันรีบตีแขนเขา แล้วเขาก็หัวเราะลั่น ทั้งที่เป็นคนช่วยฉันยกหม้อลงจากเตาเองแท้ๆ สุดท้ายเราต้องทำอะไรง่ายๆ กินแทน แต่มื้อเย็นนั้นกลับสนุกกว่าที่คิด ไม่ได้กินตามที่วางแผนไว้ก็ไม่เป็นไร อย่างน้อยคืนนี้เขาไม่ได้เอางานมาที่โต๊ะอาหาร และเราได้หัวเราะด้วยกันหลายครั้ง<br><br>คราวหน้าต้องคอยดูเตาให้ดีกว่านี้;I decided to cook something for Rowan today since he's been coming home late almost every night lately. I wanted him to have a nice meal before getting back to work, but I think I overestimated my cooking skills a little.<br><br>While the food was cooking, I got caught up setting the table and completely forgot about the stove. By the time I noticed, the whole kitchen was filled to smell of something burning. Rowan walked in just then. He stared at the pot for a moment, then asked if we should call the fire department.<br><br>I quickly swatted his arm, and he burst out laughing—even though he was the one who helped me take the pot off the stove. In the end, we had to make something simple to eat instead, but dinner was more fun than I expected. It was okay that we didn't get to eat what I'd planned. At least he didn't bring his work to the table tonight, and we got to laugh together so many times.<br><br>Next time, I'll have to keep a closer eye on the stove.
+TUT_UI_GOTIT;เข้าใจแล้ว;Got it
+TUT_UI_NEXT;ถัดไป;Next
+TUT_UI_TAB;คำแนะนำ;Tutorials
+TUT_UI_EMPTY;ยังไม่มีคำแนะนำ;No tutorials yet
+TUT_BASICS_TITLE;การควบคุมพื้นฐาน;Basic Controls
+TUT_BASICS_1;[W][A][S][D] เดิน · ค้าง [Shift] วิ่ง;[W][A][S][D] Move · Hold [Shift] to run
+TUT_BASICS_2;[Space] พุ่งหลบ (ใช้สตามินา) · [C] ย่อตัว;[Space] Dash (uses stamina) · [C] Sneak
+TUT_BASICS_3;เมื่อมีป้าย [E] ขึ้นเหนือสิ่งของ กด [E] เพื่อเก็บ ตรวจดู หรือเปิดประตู;When an [E] icon appears above an object, press [E] to pick it up, inspect it, or open a door
+TUT_CLOSEUP_TITLE;โหมดสืบสวน;Investigation Mode
+TUT_CLOSEUP_1;บางจุดจะเปลี่ยนเป็นมุมมองบุคคลที่หนึ่ง ขยับเมาส์เพื่อมองไปรอบ ๆ;Some spots switch to a first-person view. Move the mouse to look around
+TUT_CLOSEUP_2;เลื่อนเคอร์เซอร์ไปที่สิ่งของ ถ้าไฮไลต์ขึ้น คลิกซ้ายเพื่อตรวจดูหรือเก็บเบาะแส;Hover over an object. If it highlights, Left-Click to examine it or collect a clue
+TUT_JOURNAL_TITLE;สมุดนักสืบ;Detective's Journal
+TUT_JOURNAL_1;กด [Tab] เพื่อเปิดสมุดได้ทุกเมื่อ;Press [Tab] at any time to open your journal
+TUT_JOURNAL_2;แท็บด้านซ้าย: Bag ของใช้ · Key Items ของสำคัญ · Notes เอกสาร · Quests สิ่งที่ต้องทำ;Tabs on the left: Bag for items · Key Items · Notes for documents · Quests for your objectives
+TUT_JOURNAL_MAP_HEADING;แผนที่;Map
+TUT_JOURNAL_3;กด [M] เพื่อดูแผนผังคฤหาสน์;Press [M] to view the floor plan of the manor
+TUT_PTSD_TITLE;โลกแห่งความหลอน;The Haunted World
+TUT_PTSD_1;บางครั้งความทรงจำจะดึงคุณเข้าสู่อีกโลกหนึ่ง;Sometimes your memories will drag you into another world
+TUT_PTSD_2;ที่นี่มีสิ่งที่ตามล่าคุณอยู่ ระวังตัวให้ดี;Something here is hunting you. Stay alert
+TUT_PTSD_3;ทำเป้าหมายในสมุดให้สำเร็จเพื่อกลับสู่โลกปกติ;Complete your objective in the journal to return to the real world
+TUT_MELEE_TITLE;การต่อสู้ระยะประชิด;Melee Combat
+TUT_MELEE_1;[คลิกซ้าย] ฟันเบา เร็วและใช้สตามินาน้อย;[Left-Click] Light attack. Fast and uses little stamina
+TUT_MELEE_2;[คลิกขวา] ฟันหนัก แรงมากแต่ใช้สตามินาเยอะ;[Right-Click] Heavy attack. Massive damage but costs a lot of stamina
+TUT_MELEE_3;จัดการสตามินาให้ดี และเลือกท่าให้เหมาะกับสถานการณ์;Manage your stamina and choose the right attack for each encounter
+TUT_GUN_TITLE;การใช้ปืน;Firearms
+TUT_GUN_1;ยืนนิ่งแล้วค้าง [คลิกขวา] เพื่อเล็งศัตรูหรือสิ่งของ;Stand still and hold [Right-Click] to aim at an enemy or object
+TUT_GUN_2;[คลิกซ้าย] ยิง · [R] เปลี่ยนกระสุน;[Left-Click] Fire · [R] Reload
+TUT_GUN_CRIT_HEADING;ยิงคริติคอล;Critical Shot
+TUT_GUN_3;เล็งนิ่ง ๆ เป้าจะค่อย ๆ หดลง;Hold your aim steady and the crosshair will narrow
+TUT_GUN_4;ยิงตอนเป้าหดสุดเพื่อสร้างความเสียหายคริติคอล;Fire when it is at its tightest to land a Critical Hit for massive damage
+TUT_DESK_TITLE;ห้องปลอดภัย;The Safe Room
+TUT_DESK_1;มอนสเตอร์ตามเข้ามาในห้องนี้ไม่ได้;Monsters cannot follow you into this room
+TUT_DESK_2;กด [E] ที่โต๊ะเพื่อนั่ง แล้วขยับเมาส์ซ้าย-ขวาเพื่อมองรอบโต๊ะ;Press [E] at the desk to sit down, then move the mouse left and right to look around the desk
+TUT_DESK_RADIO_HEADING;วิทยุ;Radio
+TUT_DESK_3;มองที่วิทยุแล้วคลิกซ้าย เพื่อเลือกฟังเทปที่เก็บมา;Look at the radio and Left-Click to choose one of your collected tapes
+TUT_DESK_SAVE_HEADING;บันทึกเกม;Saving
+TUT_DESK_4;มองที่สมุดบนโต๊ะแล้วคลิกซ้าย เพื่อเปิดหน้าบันทึกเกม;Look at the journal on the desk and Left-Click to open the save window

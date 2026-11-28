@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54ee60ea95c1c8f42bd85637a9648e40, type: 3}
+  m_Name: Tut_safe_desk
+  m_EditorClassIdentifier: 
+  tutorialId: safe_desk
+  titleKey: TUT_DESK_TITLE
+  listIcon: {fileID: 0}
+  showInJournal: 1
+  pages:
+  - clip: {fileID: 32900000, guid: 11387dc6745ce4e459085225362ac308, type: 3}
+    image: {fileID: 0}
+    headingKey: 
+    bodyKeys:
+    - TUT_DESK_1
+    - TUT_DESK_2
+    overlayIds:
+    - mouse_look
+  - clip: {fileID: 32900000, guid: d2ed8b8c93fe7c34e8f027ed0c4066d6, type: 3}
+    image: {fileID: 0}
+    headingKey: TUT_DESK_RADIO_HEADING
+    bodyKeys:
+    - TUT_DESK_3
+    overlayIds:
+    - mouse_click
+  - clip: {fileID: 32900000, guid: d1625d37663357e4a8a9f30d13253c15, type: 3}
+    image: {fileID: 0}
+    headingKey: TUT_DESK_SAVE_HEADING
+    bodyKeys:
+    - TUT_DESK_4
+    overlayIds:
+    - mouse_click

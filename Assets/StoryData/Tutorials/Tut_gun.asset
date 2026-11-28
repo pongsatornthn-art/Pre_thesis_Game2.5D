@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54ee60ea95c1c8f42bd85637a9648e40, type: 3}
+  m_Name: Tut_gun
+  m_EditorClassIdentifier: 
+  tutorialId: gun
+  titleKey: TUT_GUN_TITLE
+  listIcon: {fileID: 0}
+  showInJournal: 1
+  pages:
+  - clip: {fileID: 0}
+    image: {fileID: 0}
+    headingKey: 
+    bodyKeys:
+    - TUT_GUN_1
+    - TUT_GUN_2
+    overlayIds:
+    - demo_gun_aim
+  - clip: {fileID: 0}
+    image: {fileID: 0}
+    headingKey: TUT_GUN_CRIT_HEADING
+    bodyKeys:
+    - TUT_GUN_3
+    - TUT_GUN_4
+    overlayIds:
+    - demo_gun_crit
